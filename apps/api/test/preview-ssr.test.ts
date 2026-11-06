@@ -119,7 +119,7 @@ beforeAll(async () => {
     SITE_URL: 'https://www.example.com',
   };
   delete env.BUILD_TOKEN; // der Vorschau-Server braucht kein dauerhaftes Secret
-  await run('pnpm', ['--filter', '@serend/web', 'exec', 'astro', 'build'], {
+  await run('pnpm', ['--filter', '@serend/web', 'build'], {
     cwd: REPO,
     env,
     maxBuffer: 20 * 1024 * 1024,
