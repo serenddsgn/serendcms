@@ -58,6 +58,17 @@ document.addEventListener('click', (e) => {
   leave(url.href);
 });
 
+// ── CTA-Hover: Verlauf füllt kreisförmig von der Stelle, an der die Maus den Button betritt ──
+for (const el of $$<HTMLElement>('.cta')) {
+  el.addEventListener('pointerenter', (e) => {
+    // Zieht sich die Füllung gerade noch zurück, bleibt ihr Mittelpunkt, sonst würde der Kreis springen
+    if (parseFloat(getComputedStyle(el, '::before').getPropertyValue('--r')) > 1) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    el.style.setProperty('--my', `${e.clientY - r.top}px`);
+  });
+}
+
 // ── Mobile-Menü ──────────────────────────────────────────────────────
 const menu = $<HTMLElement>('#menu');
 const menuBtn = $<HTMLButtonElement>('[data-menu-open]');
