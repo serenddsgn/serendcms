@@ -35,6 +35,13 @@ describe('deploy/env.production.example', () => {
     expect(cfg.caddyReloadCommand).toMatch(/^\/usr\/bin\/caddy reload/);
   });
 
+  it('legt den Deploy-Ordner ohne DEPLOY_DIR neben den Releases ab (dort wartet serend-deploy.path)', () => {
+    const env = parse(fill());
+    delete env.DEPLOY_DIR;
+    expect(loadConfig(env).deploy.dir).toBe('/var/lib/serendportfolio/deploy');
+    expect(loadConfig({ ...env, DEPLOY_DIR: '/tmp/x' }).deploy.dir).toBe('/tmp/x');
+  });
+
   it('verwendet für die Datenbank den Unix-Socket und enthält kein Passwort', () => {
     expect(parse(fill()).DATABASE_URL).toBe('postgres:///serendportfolio?host=/var/run/postgresql');
   });

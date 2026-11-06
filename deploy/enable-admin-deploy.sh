@@ -26,6 +26,10 @@ echo "→ systemd-Units"
 install -m 644 "$REPO_DIR/deploy/systemd/serend-deploy.path" "$REPO_DIR/deploy/systemd/serend-deploy.service" "$UNIT_DIR/"
 
 echo "→ $ENV_FILE"
+# Endet die Datei ohne Zeilenumbruch, würde die erste neue Zeile an die letzte alte geklebt und deren Wert verfälschen
+[ -z "$(tail -c1 "$ENV_FILE")" ] || echo >> "$ENV_FILE"
+# Reparatur: ein früher angeklebtes „…DEPLOY_DIR=…“ wieder auf eine eigene Zeile lösen
+sed -i 's/\(.\)DEPLOY_DIR=\(.*\)$/\1\nDEPLOY_DIR=\2/' "$ENV_FILE"
 set_env() { # KEY VALUE
   if grep -q "^$1=" "$ENV_FILE"; then sed -i "s|^$1=.*|$1=$2|" "$ENV_FILE"; else printf '%s=%s\n' "$1" "$2" >> "$ENV_FILE"; fi
 }
@@ -34,7 +38,7 @@ set_env DEPLOY_REPO_DIR "$REPO_DIR"
 
 echo "→ Aktivieren"
 # Eine Anfrage, die die API vor der Einrichtung in den Standardordner gelegt hat, würde sonst weitere Klicks blockieren
-rm -f "$REPO_DIR/.data/deploy/request"
+rm -f "$REPO_DIR/.data/deploy/request" "$REPO_DIR/apps/api/.data/deploy/request"
 "$SYSTEMCTL" daemon-reload
 "$SYSTEMCTL" enable --now serend-deploy.path
 "$SYSTEMCTL" restart serend-api
