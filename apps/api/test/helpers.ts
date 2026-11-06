@@ -41,6 +41,10 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     siteOrigin: 'https://www.example.com',
     previewUrl: 'https://preview.example.com',
     contact: { notifyTo: 'inbox@example.com', retentionDays: 180 },
+    maintenance: {
+      dir: mkdtempSync(join(tmpdir(), 'serend-maint-')),
+      fontsDir: join(process.cwd(), '../web/public/fonts'),
+    },
     releasesDir: mkdtempSync(join(tmpdir(), 'serend-releases-')),
     caddyReloadCommand: undefined,
     media: { storageDir: mkdtempSync(join(tmpdir(), 'serend-media-')), maxBytes: 1024 * 1024 },

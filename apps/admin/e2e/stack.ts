@@ -38,6 +38,7 @@ const env = {
   SMTP_FROM: 'e2e@localhost',
   STORAGE_DIR: join(dir, 'media'),
   RELEASES_DIR: join(dir, 'releases'),
+  MAINTENANCE_DIR: join(dir, 'maintenance'),
   SEED_ADMIN_EMAIL: E2E_USER.email,
   SEED_ADMIN_PASSWORD: E2E_USER.password,
   SEED_CONTENT: 'false',

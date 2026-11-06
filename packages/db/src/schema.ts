@@ -499,3 +499,21 @@ export const contactMessages = pgTable(
 
 export type TeamMemberRow = typeof teamMembers.$inferSelect;
 export type ContactMessageRow = typeof contactMessages.$inferSelect;
+
+// ── Wartungsmodus (Einzeiler-Tabelle) ─────────────────────────────────
+/** Genau eine Zeile (`singleton`). Der Wartungsmodus wird von Caddy über eine Flag-Datei ausgeliefert. */
+export const maintenanceMode = pgTable(
+  'maintenance_mode',
+  {
+    singleton: boolean('singleton').primaryKey().default(true),
+    enabled: boolean('enabled').notNull().default(false),
+    /** Inline-Schreibweise mit [[Schlüsselwort]] für den Liquid-Verlauf. */
+    headlineDe: text('headline_de').notNull().default('Wir überarbeiten unsere [[Webseite]]'),
+    headlineEn: text('headline_en').notNull().default('We are reworking our [[website]]'),
+    logoMediaId: uuid('logo_media_id').references(() => media.id, { onDelete: 'restrict' }),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+    updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (t) => [check('maintenance_singleton_check', sql`${t.singleton} = true`)],
+);
+export type MaintenanceRow = typeof maintenanceMode.$inferSelect;

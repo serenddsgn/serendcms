@@ -11,6 +11,7 @@ import { MediaPage } from './pages/MediaPage';
 import { ServicesPage, NavigationPage, TeamPage } from './pages/SitePages';
 import { SettingsPage } from './pages/SettingsPage';
 import { MessagesPage, UsersPage } from './pages/AdminPages';
+import { MaintenancePage } from './pages/MaintenancePage';
 import { SessionGate } from './session';
 import './styles.css';
 
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: 'navigation', element: <NavigationPage /> },
       { path: 'team', element: <TeamPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'maintenance', element: <MaintenancePage /> },
       { path: 'messages', element: <MessagesPage /> },
       { path: 'users', element: <UsersPage /> },
     ],

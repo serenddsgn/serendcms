@@ -53,11 +53,11 @@ install -d -o caddy -g caddy /var/log/caddy
 
 say "Benutzer, Verzeichnisse"
 id "$APP_USER" >/dev/null 2>&1 || useradd --system --create-home --home-dir "$DATA_DIR/home" --shell /usr/sbin/nologin "$APP_USER"
-install -d -o "$APP_USER" -g "$APP_USER" -m 750 "$DATA_DIR" "$DATA_DIR"/{media,releases,cache,cache-preview,backups,admin,browsers,home}
+install -d -o "$APP_USER" -g "$APP_USER" -m 750 "$DATA_DIR" "$DATA_DIR"/{media,releases,cache,cache-preview,backups,admin,maintenance,browsers,home}
 install -d -o "$APP_USER" -g "$APP_USER" "$APP_DIR"
 # Caddy muss die Releases und das Admin-Verzeichnis lesen können
 usermod -aG "$APP_USER" caddy
-chmod 750 "$DATA_DIR"; chmod g+rx "$DATA_DIR"/releases "$DATA_DIR"/admin
+chmod 750 "$DATA_DIR"; chmod g+rx "$DATA_DIR"/releases "$DATA_DIR"/admin "$DATA_DIR"/maintenance
 
 # Datenbank: Rolle = Dienstbenutzer, Anmeldung per Peer über den Unix-Socket (kein Datenbank-Passwort)
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$APP_USER'" | grep -q 1 || sudo -u postgres createuser "$APP_USER"
