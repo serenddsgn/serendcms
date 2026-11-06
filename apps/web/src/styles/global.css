@@ -1107,6 +1107,44 @@ img {
   padding-bottom: 96px;
   scroll-margin-top: 110px;
 }
+/* Bild auf Inhaltsseiten: Größen als Anteil der Textspalte, „full“ liegt in eigener Zeile über die ganze Seitenbreite */
+.pimg {
+  margin: 8px 0 40px;
+}
+.pimg picture,
+.pimg img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pimg img {
+  border-radius: var(--r-section);
+  background: var(--chip, rgba(127, 127, 127, 0.12));
+}
+.pimg-small {
+  width: 34%;
+}
+.pimg-medium {
+  width: 66%;
+}
+.pimg-large,
+.pimg-full {
+  width: 100%;
+}
+.pimg figcaption {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+@media (max-width: 900px) {
+  .pimg-small {
+    width: 60%;
+  }
+  .pimg-medium {
+    width: 100%;
+  }
+}
 .ch p {
   margin: 0 0 18px;
   font-size: 19px;

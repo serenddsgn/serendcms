@@ -5,6 +5,7 @@ import {
   FeaturedProjects,
   Heading,
   Hero,
+  ImageFigure,
   MediaTextCard,
   PageTitle,
   ProjectIndex,
@@ -22,9 +23,20 @@ export function PageBlocks({
   locale: Locale;
   projectCount: number;
 }) {
-  const rich = blocks.filter((b) => b.type === 'heading' || b.type === 'richtext');
   const out = [];
-  let richDone = false;
+  // Überschriften, Texte und Bilder in Textspaltenbreite stehen in der Reihenfolge des Admins in einer gemeinsamen Spalte.
+  // Ein Bild in „Volle Breite“ beendet die Spalte und steht in eigener Zeile; danach beginnt sie neu.
+  let column: unknown[] = [];
+  const flush = () => {
+    if (column.length === 0) return;
+    out.push(
+      <section class="section side" style="padding-bottom:48px">
+        <div class="hide-m" />
+        <div style="max-width:760px">{column}</div>
+      </section>,
+    );
+    column = [];
+  };
   for (const raw of blocks) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b = raw as any;
@@ -45,29 +57,33 @@ export function PageBlocks({
         out.push(<ContactCta b={b} locale={locale} />);
         break;
       case 'page_title':
+        flush();
         out.push(<PageTitle b={b} locale={locale} count={projectCount} />);
         break;
       case 'project_index':
         out.push(<ProjectIndex b={b} locale={locale} />);
         break;
       case 'heading':
+        column.push(<Heading b={b} />);
+        break;
       case 'richtext':
-        if (!richDone) {
-          richDone = true;
+        column.push(<RichText b={b} />);
+        break;
+      case 'image':
+        if (b.size === 'full') {
+          flush();
           out.push(
-            <section class="section side" style="padding-bottom:96px">
-              <div class="hide-m" />
-              <div style="max-width:760px">
-                {rich.map((r) =>
-                  r.type === 'heading' ? <Heading b={r as never} /> : <RichText b={r as never} />,
-                )}
-              </div>
+            <section class="section" style="padding-bottom:48px">
+              <ImageFigure b={b} locale={locale} />
             </section>,
           );
+        } else {
+          column.push(<ImageFigure b={b} locale={locale} />);
         }
         break;
     }
   }
+  flush();
   return <>{out}</>;
 }
 

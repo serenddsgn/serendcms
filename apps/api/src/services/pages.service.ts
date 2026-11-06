@@ -75,6 +75,7 @@ function describeIssues(error: ZodError): string {
   const lines = error.issues.map((i) => {
     const [first] = i.path;
     const where = typeof first === 'number' ? `Block ${first + 1}` : 'Inhalt';
+    if (i.path.at(-1) === 'mediaId') return `${where}: Bitte ein Bild wählen`;
     let why = i.message;
     if (i.code === 'too_big')
       why =

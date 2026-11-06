@@ -23,6 +23,7 @@ export const BLOCK_LABELS: Record<string, string> = {
   interactive_demo: 'Interaktive Demo',
   heading: 'Überschrift',
   richtext: 'Text',
+  image: 'Bild',
 };
 
 export function newBlock(type: string): Block {
@@ -55,6 +56,8 @@ export function newBlock(type: string): Block {
       return { id, type, nodes: [{ kind: 'paragraph', runs: run('Text') }] };
     case 'page_title':
       return { id, type, title: 'Titel', showCount: false };
+    case 'image':
+      return { id, type, mediaId: '', size: 'medium' };
     default:
       return { id, type };
   }
@@ -508,6 +511,30 @@ function BlockForm({ block: b, onChange }: { block: Block; onChange: (b: Block) 
             </select>
           </Field>
         </div>
+      );
+    case 'image':
+      return (
+        <>
+          <MediaField label="Bild" value={b.mediaId} onChange={(v) => up({ mediaId: v ?? '' })} />
+          <div className="grid2">
+            <Field label="Größe">
+              <select value={b.size ?? 'medium'} onChange={(e) => up({ size: e.target.value })}>
+                <option value="small">Klein (ein Drittel der Textspalte)</option>
+                <option value="medium">Mittel (zwei Drittel)</option>
+                <option value="large">Groß (ganze Textspalte)</option>
+                <option value="full">Volle Breite (über die ganze Seite)</option>
+              </select>
+            </Field>
+            <Text
+              label="Bildunterschrift (optional)"
+              value={b.caption}
+              onChange={(v) => up({ caption: v || undefined })}
+            />
+          </div>
+          <p className="muted small" style={{ margin: '4px 0 0' }}>
+            Der Alt-Text für Screenreader und Suchmaschinen kommt aus der Medienbibliothek.
+          </p>
+        </>
       );
     case 'richtext':
       return (

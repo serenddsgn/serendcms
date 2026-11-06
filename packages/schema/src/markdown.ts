@@ -57,6 +57,11 @@ export function blocksToMarkdown(blocks: readonly unknown[], ctx: MarkdownContex
         if (alt) out.push(`_Bild: ${alt}_`);
         break;
       }
+      case 'image': {
+        const text = (b.caption ? String(b.caption) : null) ?? ctx.mediaAlt(String(b.mediaId));
+        if (text) out.push(`_Bild: ${text}_`);
+        break;
+      }
       case 'contact_cta':
         out.push(`## ${String(b.line1)} ${String(b.line2)}`, `${String(b.eyebrow)}: ${ctx.email}`);
         break;

@@ -140,6 +140,18 @@ export const HeadingBlock = z.object({
   level: z.union([z.literal(2), z.literal(3)]),
   text: z.string().min(1).max(120),
 });
+/** Größen eines Bildes auf Inhaltsseiten: Anteile der Textspalte, „full“ bricht auf die volle Seitenbreite aus. */
+export const IMAGE_SIZES = ['small', 'medium', 'large', 'full'] as const;
+export const ImageSize = z.enum(IMAGE_SIZES);
+export type ImageSize = z.infer<typeof ImageSize>;
+export const ImageBlock = z.object({
+  ...Base,
+  type: z.literal('image'),
+  /** Alt-Text kommt aus der Medienbibliothek (je Sprache). */
+  mediaId: Uuid,
+  size: ImageSize.default('medium'),
+  caption: z.string().max(200).optional(),
+});
 export const RichTextBlock = z.object({
   ...Base,
   type: z.literal('richtext'),
@@ -170,7 +182,7 @@ export const ProjectContent = z
 export type ProjectContent = z.infer<typeof ProjectContent>;
 
 export const ContentPageContent = z
-  .array(z.discriminatedUnion('type', [PageTitleBlock, HeadingBlock, RichTextBlock]))
+  .array(z.discriminatedUnion('type', [PageTitleBlock, HeadingBlock, RichTextBlock, ImageBlock]))
   .max(80)
   .refine(unique, uniqueIds);
 
