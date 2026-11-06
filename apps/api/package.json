@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "create-admin": "tsx --env-file-if-exists=../../.env src/cli/create-admin.ts",
-    "request-build": "tsx --env-file-if-exists=../../.env src/cli/request-build.ts"
+    "request-build": "tsx --env-file-if-exists=../../.env src/cli/request-build.ts",
+    "seed-content": "tsx --env-file-if-exists=../../.env src/cli/seed-content.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

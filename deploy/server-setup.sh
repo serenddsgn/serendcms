@@ -158,6 +158,7 @@ Nächste Schritte (siehe deploy/README.md):
   1. DNS: A/AAAA für $DOMAIN, www.$DOMAIN, admin.$DOMAIN, preview.$DOMAIN auf diesen Server.
   2. $CONF_DIR/serendportfolio.env ergänzen (SMTP, CONTACT_NOTIFY_TO).
   3. Erstes Deployment als $ADMIN_SSH_USER:   sudo -u $APP_USER -H bash -lc 'cd $APP_DIR && pnpm run deploy main'
-  4. Ersten Admin anlegen:                   sudo -u $APP_USER -H bash -lc 'cd $APP_DIR && DATABASE_URL=postgres:///serendportfolio?host=/var/run/postgresql pnpm --filter @serend/api create-admin -- --email du@example.com --name "Dein Name"'
+  4. Ersten Admin anlegen:                   sudo -u $APP_USER -H bash -lc 'cd $APP_DIR && DATABASE_URL=postgres:///serendportfolio?host=/var/run/postgresql pnpm --filter @serend/api create-admin --email du@example.com --name "Dein Name"'
+  4b. Startinhalte (sonst schlägt der erste Seiten-Build fehl):   sudo -u $APP_USER -H bash -lc 'cd $APP_DIR && DATABASE_URL=postgres:///serendportfolio?host=/var/run/postgresql STORAGE_DIR=$DATA_DIR/media pnpm --filter @serend/api seed-content --admin du@example.com'
   5. Backups einrichten ($CONF_DIR/backup.env, age-Schlüsselpaar, Storage-Box-Zugang), dann: systemctl start serend-backup
 DONE
