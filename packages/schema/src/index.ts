@@ -9,3 +9,4 @@ export * from './markdown.js';
 export * from './pages.js';
 export * from './builds.js';
 export * from './site.js';
+export * from './inline-markup.js';
