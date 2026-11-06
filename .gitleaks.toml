@@ -1,0 +1,8 @@
+title = "serendportfolio"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Platzhalter in der Beispiel-Konfiguration"
+paths = ['''^\.env\.example$''']

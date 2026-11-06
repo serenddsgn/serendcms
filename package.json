@@ -1,0 +1,20 @@
+{
+  "name": "serendportfolio",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @serend/api --filter @serend/admin --filter @serend/web dev",
+    "setup:env": "node scripts/setup-env.mjs",
+    "db:generate": "pnpm --filter @serend/db generate",
+    "db:migrate": "pnpm --filter @serend/db migrate",
+    "db:seed": "pnpm --filter @serend/api seed",
+    "test": "pnpm -r --workspace-concurrency=1 test && pnpm audit --audit-level=high",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
+  }
+}

@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+# Pre-Commit: gitleaks (Secrets), danach lint + typecheck.
+# Aktivierung: `pnpm install` setzt core.hooksPath (Skript "prepare").
+set -eu
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --config .gitleaks.toml --no-banner
+else
+  echo "WARNUNG: gitleaks ist nicht installiert (brew install gitleaks). Secret-Scan übersprungen." >&2
+  if [ "${CI:-}" = "true" ]; then
+    echo "In CI ist gitleaks Pflicht." >&2
+    exit 1
+  fi
+fi
+
+pnpm -s lint
+pnpm -s typecheck

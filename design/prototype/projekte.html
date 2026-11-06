@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>serend.design · Arbeiten</title>
+<script src="./runtime.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}
+.root{--bg:#0a0a0a;--fg:#f5f5f4;--mute:#a3a3a3;--line:rgba(255,255,255,.1);--raised:#262626;--chip:rgba(255,255,255,.07);--curtain:#f5f5f4;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif;min-height:100vh;transition:background-color .6s cubic-bezier(.65,0,.35,1),color .6s cubic-bezier(.65,0,.35,1)}
+.root.light{--bg:#f6f5f2;--fg:#111111;--mute:#57534e;--line:rgba(0,0,0,.1);--raised:#ffffff;--chip:rgba(0,0,0,.06);--curtain:#0a0a0a}
+.display{font-family:"Plus Jakarta Sans",Inter,sans-serif;font-weight:800;letter-spacing:-.035em}
+.mono{font-family:"Geist Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+.wrap{max-width:1360px;margin:0 auto;padding:0 40px}
+.liquid{background-image:radial-gradient(40% 80% at 15% 50%,#b06bb4 0,transparent 70%),radial-gradient(35% 90% at 85% 40%,#e0a98f 0,transparent 70%),radial-gradient(45% 90% at 50% 90%,#5d6b93 0,transparent 70%),linear-gradient(90deg,#703b58,#8d4557 50%,#4a3a5e);background-size:220% 220%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:liquid 16s ease-in-out infinite alternate}
+.liquid-bg{background-image:radial-gradient(40% 80% at 15% 50%,#b06bb4 0,transparent 70%),radial-gradient(35% 90% at 85% 40%,#e0a98f 0,transparent 70%),radial-gradient(45% 90% at 50% 90%,#5d6b93 0,transparent 70%),linear-gradient(90deg,#703b58,#8d4557 50%,#4a3a5e);background-size:220% 220%;animation:liquid 16s ease-in-out infinite alternate}
+@keyframes liquid{0%{background-position:0% 30%}33%{background-position:60% 80%}66%{background-position:100% 20%}100%{background-position:30% 60%}}
+.curtain{position:fixed;inset:0;z-index:100;pointer-events:none;display:grid;grid-template-columns:repeat(5,1fr)}
+.curtain span{background:var(--curtain);transform-origin:top;animation:shut .9s cubic-bezier(.77,0,.18,1) forwards}
+.curtain span:nth-child(2){animation-delay:.05s}.curtain span:nth-child(3){animation-delay:.1s}.curtain span:nth-child(4){animation-delay:.15s}.curtain span:nth-child(5){animation-delay:.2s}
+@keyframes shut{to{transform:scaleY(0)}}
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.w>span{display:inline-block;transform:translateY(105%);animation:up 1s cubic-bezier(.16,1,.3,1) .6s forwards}
+@keyframes up{to{transform:none}}
+.fade{opacity:0;transform:translateY(14px);animation:fadeup .9s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fadeup{to{opacity:1;transform:none}}
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:60;transform-origin:left;transform:scaleX(.1)}
+@supports (animation-timeline: scroll()){.progress{animation:grow linear both,liquid 16s ease-in-out infinite alternate;animation-timeline:scroll(),auto}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line);transition:background-color .6s}
+.mark{font-family:"Plus Jakarta Sans",Inter,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em}
+.mark sup{font-size:10px}
+.nl{position:relative;font-size:14px;padding:12px 0;display:inline-block}
+.nl::after{content:"";position:absolute;left:0;right:0;bottom:8px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s cubic-bezier(.65,0,.35,1)}
+.nl:hover::after,.nl.on::after{transform:scaleX(1);transform-origin:left}
+.cta{position:relative;display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 20px;border-radius:999px;font-size:14px;font-weight:500;overflow:hidden;isolation:isolate;background:var(--fg);color:var(--bg);white-space:nowrap;transition:color .4s,background-color .6s}
+.cta::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background-image:linear-gradient(90deg,#b06bb4,#8d4557,#5d6b93);transform:translateY(101%);transition:transform .5s cubic-bezier(.65,0,.35,1)}
+.cta:hover::before{transform:none}
+.cta:hover{color:#fff}
+.lang{position:relative;display:inline-flex;padding:3px;border-radius:999px;border:1px solid var(--line);height:44px;box-sizing:border-box}
+.lang button{position:relative;z-index:1;width:38px;border:0;background:transparent;border-radius:999px;font:500 11px "Geist Mono",monospace;letter-spacing:.06em;color:var(--mute);cursor:pointer;transition:color .3s}
+.lang button.on{color:var(--fg)}
+.lang button:focus-visible{outline:2px solid #e0a98f;outline-offset:2px}
+.lang .thumb{position:absolute;top:3px;bottom:3px;left:3px;width:38px;border-radius:999px;background:var(--chip);transition:transform .45s cubic-bezier(.34,1.3,.64,1)}
+.iconbtn{width:44px;height:44px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--fg);cursor:pointer;transition:border-color .3s,transform .3s}
+.iconbtn:hover{border-color:var(--fg)}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn svg{transition:transform .7s cubic-bezier(.34,1.56,.64,1)}
+.light .iconbtn .tg{transform:rotate(180deg)}
+.dot{width:7px;height:7px;border-radius:99px;background:#1aa179;animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(26,161,121,.55)}50%{box-shadow:0 0 0 6px rgba(26,161,121,0)}}
+.bar{position:sticky;top:81px;z-index:20;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;transition:background-color .6s}
+.tab{position:relative;height:44px;padding:0 4px;margin-right:18px;border:0;background:transparent;color:var(--mute);font:500 15px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:color .3s}
+.tab sup{font-family:"Geist Mono",monospace;font-size:10px}
+.tab:hover{color:var(--fg)}
+.tab::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:2px;border-radius:2px;background-image:linear-gradient(90deg,#b06bb4,#8d4557,#5d6b93,#e0a98f);transform:scaleX(0);transition:transform .5s cubic-bezier(.65,0,.35,1)}
+.tab.on{color:var(--fg)}
+.tab.on::after{transform:scaleX(1)}
+.seg{display:inline-flex;padding:4px;border-radius:999px;background:var(--chip);position:relative}
+.seg button{position:relative;z-index:1;height:36px;min-width:44px;padding:0 16px;border:0;background:transparent;border-radius:999px;font:500 13px Inter,sans-serif;color:var(--mute);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:color .3s}
+.seg button.on{color:var(--fg)}
+.seg .thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;background:var(--raised);box-shadow:0 1px 3px rgba(0,0,0,.18);transition:transform .45s cubic-bezier(.34,1.3,.64,1),background-color .6s}
+.g{display:block;opacity:0;animation:fadeup .7s cubic-bezier(.16,1,.3,1) forwards}
+.g .ph{display:block;position:relative;overflow:hidden;border-radius:16px;background:var(--tc)}
+.g .ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.2s cubic-bezier(.16,1,.3,1)}
+.g:hover .ph img{transform:scale(1.04)}
+.g .tag{position:absolute;top:14px;left:14px;padding:6px 10px;border-radius:999px;background:rgba(10,10,10,.62);color:#f5f5f4;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transform:translateY(-6px);transition:all .45s cubic-bezier(.16,1,.3,1)}
+.g:hover .tag{opacity:1;transform:none}
+.g .t{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 2px 0}
+.g .t b{font-weight:600;font-size:18px;letter-spacing:-.015em;transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.g:hover .t b{transform:translateX(6px)}
+.lr{display:grid;grid-template-columns:56px minmax(0,1.4fr) minmax(0,1fr) 80px 32px;gap:20px;align-items:center;padding:22px 0;border-top:1px solid var(--line);position:relative;opacity:0;animation:fadeup .6s cubic-bezier(.16,1,.3,1) forwards}
+.lr .nm{font-family:"Plus Jakarta Sans",Inter,sans-serif;font-weight:700;font-size:clamp(22px,2.6vw,36px);letter-spacing:-.035em;transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.lr:hover .nm{transform:translateX(12px)}
+.lr .sw{width:10px;height:10px;border-radius:99px;background:var(--tc);display:inline-block;margin-right:12px;vertical-align:middle;transform:scale(0);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.lr:hover .sw{transform:scale(1)}
+.lr .peek{position:absolute;right:140px;top:50%;width:200px;height:250px;margin-top:-125px;border-radius:12px;overflow:hidden;opacity:0;transform:scale(.85) rotate(3deg);transition:all .55s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:2;box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.lr:hover .peek{opacity:1;transform:scale(1) rotate(3deg)}
+.lr .peek img{width:100%;height:100%;object-fit:cover}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.lr{grid-template-columns:40px minmax(0,1fr) 32px}.lr .hm,.lr .peek{display:none}.hide-m{display:none!important}.cta .lbl{display:none}}
+@media (max-width:560px){.grid{grid-template-columns:1fr!important}}
+</style>
+</helmet>
+<div class="root {{themeClass}}" lang="{{lang}}">
+<div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="progress liquid-bg"></div>
+<header class="nav">
+<div class="wrap" style="height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 24px">
+<a href="start.html" class="mark">serend.design<sup>®</sup></a>
+<nav class="hide-m" aria-label="{{t.navLabel}}" style="display: flex; gap: 36px">
+<a class="nl on" href="projekte.html" aria-current="page">{{t.work}}</a>
+<a class="nl" href="start.html">{{t.services}}</a>
+<a class="nl" href="start.html">{{t.studio}}</a>
+</nav>
+<div style="display: flex; gap: 8px; align-items: center">
+<div class="lang" role="group" aria-label="{{t.langLabel}}">
+<span class="thumb" style="transform: translateX({{langX}})"></span>
+<button type="button" class="{{deCls}}" lang="de" aria-label="Deutsch" aria-pressed="{{dePressed}}" onClick="{{toDe}}">DE</button>
+<button type="button" class="{{enCls}}" lang="en" aria-label="English" aria-pressed="{{enPressed}}" onClick="{{toEn}}">EN</button>
+</div>
+<button class="iconbtn" type="button" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><svg class="tg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 3.5 A8.5 8.5 0 0 1 12 20.5 Z" fill="currentColor"></path></svg></button>
+<a class="cta" href="start.html" aria-label="{{t.cta}}"><span class="dot"></span><span class="lbl">{{t.cta}}</span></a>
+</div>
+</div>
+</header>
+
+<main class="wrap" key="{{lang}}" style="padding-bottom: 140px">
+<section style="padding: 104px 0 56px; display: flex; justify-content: space-between; align-items: end; gap: 32px; flex-wrap: wrap">
+<h1 class="display" style="margin: 0; font-size: clamp(72px, 12vw, 184px); line-height: .86; letter-spacing: -.055em"><span class="w"><span>{{t.work}}</span></span><sup class="mono fade" style="font-size: 16px; vertical-align: top; margin-left: 12px; color: var(--mute); animation-delay: 1s">({{total}})</sup></h1>
+<p class="fade" style="margin: 0; max-width: 380px; font-size: 17px; line-height: 1.6; color: var(--mute); animation-delay: 1.05s">{{t.intro}}</p>
+</section>
+
+<div class="bar fade" style="animation-delay: 1.15s">
+<div role="group" aria-label="{{t.filterLabel}}" style="display: flex; flex-wrap: wrap">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="5">
+<button type="button" class="tab {{tb.cls}}" aria-pressed="{{tb.pressed}}" onClick="{{tb.pick}}">{{tb.label}}<sup>{{tb.n}}</sup></button>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 16px">
+<span class="mono" aria-live="polite" style="color: var(--mute)">{{countLabel}}</span>
+<div class="seg" role="group" aria-label="{{t.viewLabel}}">
+<span class="thumb" style="transform: translateX({{thumbX}})"></span>
+<button type="button" class="{{gridCls}}" aria-pressed="{{gridPressed}}" onClick="{{toGrid}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>{{t.grid}}</button>
+<button type="button" class="{{listCls}}" aria-pressed="{{listPressed}}" onClick="{{toList}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>{{t.list}}</button>
+</div>
+</div>
+</div>
+
+<sc-if value="{{isGrid}}" hint-placeholder-val="{{ true }}">
+<div class="grid" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 56px 20px; padding-top: 40px; align-items: start">
+<sc-for list="{{shown}}" as="p" hint-placeholder-count="6">
+<a class="g" href="detail.html" style="--tc: {{p.color}}; animation-delay: {{p.delay}}; margin-top: {{p.offset}}">
+<span class="ph" style="aspect-ratio: {{p.ratio}}"><img src="{{p.img}}" alt="{{p.name}}"><span class="tag mono">{{p.cats}}</span></span>
+<span class="t"><b>{{p.name}}</b><span class="mono" style="color: var(--mute)">{{p.year}}</span></span>
+</a>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
+<div style="padding-top: 24px; border-bottom: 1px solid var(--line)">
+<div class="lr" style="opacity: 1; animation: none; padding: 10px 0; border-top: 0"><span class="mono" style="color: var(--mute)">{{t.colNr}}</span><span class="mono" style="color: var(--mute)">{{t.colClient}}</span><span class="mono hm" style="color: var(--mute)">{{t.colArea}}</span><span class="mono hm" style="color: var(--mute)">{{t.colYear}}</span><span></span></div>
+<sc-for list="{{shown}}" as="p" hint-placeholder-count="8">
+<a class="lr" href="detail.html" style="--tc: {{p.color}}; animation-delay: {{p.delay}}">
+<span class="mono" style="color: var(--mute)">{{p.nr}}</span>
+<span class="nm"><span class="sw"></span>{{p.name}}</span>
+<span class="hm" style="color: var(--mute)">{{p.cats}}</span>
+<span class="mono hm" style="color: var(--mute)">{{p.year}}</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+<span class="peek"><img src="{{p.img}}" alt=""></span>
+</a>
+</sc-for>
+</div>
+</sc-if>
+</main>
+
+<footer style="border-top: 1px solid var(--line)">
+<div class="wrap" style="padding-top: 28px; padding-bottom: 36px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap"><span class="mono" style="color: var(--mute)">© 2026 serend.design®</span><a class="liquid display" href="start.html" style="font-weight: 700">hallo@serend.design</a><span class="mono" style="color: var(--mute)">{{t.madeWith}}</span></div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["system","dark","light"],"default":"system"},"language":{"editor":"enum","options":["browser","de","en"],"default":"browser"},"$preview":{"width":1440,"height":2900}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    let sysLight = false, sysLang = 'de';
+    try { sysLight = window.matchMedia('(prefers-color-scheme: light)').matches; } catch (e) {}
+    try { sysLang = /^de\b/i.test(navigator.language || 'de') ? 'de' : 'en'; } catch (e) {}
+    this.state = { f: 'all', view: 'grid', light: null, sysLight, lang: null, sysLang };
+  }
+  renderVals() {
+    const T = {
+      de: {
+        navLabel: 'Hauptnavigation', langLabel: 'Sprache wählen', work: 'Arbeiten', services: 'Leistungen', studio: 'Studio', cta: 'Projekt anfragen',
+        lightOn: 'Licht an', lightOff: 'Licht aus',
+        intro: 'Webseiten, Shops, Marken und Drucksachen. 2023 bis heute, aus Wuppertal.',
+        filterLabel: 'Nach Bereich filtern', viewLabel: 'Ansicht', grid: 'Raster', list: 'Liste',
+        colNr: 'Nr.', colClient: 'Kunde', colArea: 'Bereich', colYear: 'Jahr',
+        cats: { all: 'Alle', web: 'Webdesign', shop: 'E-Commerce', brand: 'Branding', print: 'Druckbares' },
+        madeWith: 'Gemacht mit Hingabe in Wuppertal'
+      },
+      en: {
+        navLabel: 'Main navigation', langLabel: 'Choose language', work: 'Work', services: 'Services', studio: 'Studio', cta: 'Start a project',
+        lightOn: 'Lights on', lightOff: 'Lights off',
+        intro: 'Websites, shops, brands and print. 2023 to today, from Wuppertal.',
+        filterLabel: 'Filter by discipline', viewLabel: 'View', grid: 'Grid', list: 'List',
+        colNr: 'No.', colClient: 'Client', colArea: 'Discipline', colYear: 'Year',
+        cats: { all: 'All', web: 'Web design', shop: 'E-commerce', brand: 'Branding', print: 'Print' },
+        madeWith: 'Made with devotion in Wuppertal'
+      }
+    };
+    const B = '/_blob/';
+    const P = [
+      { name: 'Dolce & Falcone', cats: ['shop'], year: 2026, color: '#66a903', img: '../images/dolce-falcone-cover.jpg' },
+      { name: 'Schramowski Getränke', cats: ['web'], year: 2025, color: '#deb633', img: '../images/schramowski-cover.jpg' },
+      { name: 'Cista', cats: ['web'], year: 2025, color: '#d9b66d', img: '../images/cista-cover.jpg' },
+      { name: 'IP NRW', cats: ['web'], year: 2026, color: '#91120e', img: '../images/ip-nrw-cover.jpg' },
+      { name: 'Catering Borghs', cats: ['web'], year: 2026, color: '#ba1f2a', img: '../images/catering-borghs-cover.jpg' },
+      { name: 'Oxé Werbedesign', cats: ['web'], year: 2024, color: '#d20c05', img: '../images/oxe-werbedesign-cover.jpg' },
+      { name: 'GIEGT B2B', cats: ['brand','shop'], year: 2025, color: '#45af29', img: '../images/giegt-b2b-cover.jpg' },
+      { name: 'Suchthilfe Wuppertal', cats: ['brand','print','web'], year: 2025, color: '#ba2849', img: '../images/suchthilfe-wuppertal-cover.jpg' },
+      { name: 'Cardex Autoteile', cats: ['brand','web'], year: 2026, color: '#ff6601', img: '../images/cardex-autoteile-cover.jpg' },
+      { name: 'SachXpert', cats: ['brand','print','web'], year: 2026, color: '#78b72b', img: '../images/sachxpert-cover.jpg' },
+      { name: 'Rainbow Park', cats: ['brand','print','web'], year: 2023, color: '#8ab92e', img: '../images/rainbow-park-cover.jpg' },
+      { name: 'MyCocktailTaxi', cats: ['shop','web'], year: 2024, color: '#f7cd42', img: '../images/mycocktailtaxi-cover.jpg' }
+    ];
+    const { f, view } = this.state;
+    const th = this.props.theme ?? 'system';
+    const baseLight = th === 'light' ? true : th === 'dark' ? false : this.state.sysLight;
+    const light = this.state.light ?? baseLight;
+    const lp = this.props.language ?? 'browser';
+    const lang = this.state.lang ?? (lp === 'browser' ? this.state.sysLang : lp);
+    const t = T[lang];
+    const isDe = lang === 'de';
+    const keys = ['all','web','shop','brand','print'];
+    const tabs = keys.map(k => ({
+      label: t.cats[k], n: k === 'all' ? P.length : P.filter(p => p.cats.includes(k)).length,
+      cls: k === f ? 'on' : '', pressed: k === f ? 'true' : 'false',
+      pick: () => this.setState({ f: k })
+    }));
+    const list = f === 'all' ? P : P.filter(p => p.cats.includes(f));
+    const ratios = ['4 / 5', '1 / 1', '4 / 5'];
+    const offsets = ['0px', '64px', '24px'];
+    const shown = list.map((p, i) => ({
+      ...p, cats: p.cats.map(c => t.cats[c]).join(' · '),
+      nr: String(i + 1).padStart(2, '0'),
+      ratio: ratios[i % 3], offset: offsets[i % 3],
+      delay: (i * 0.05).toFixed(2) + 's'
+    }));
+    const isGrid = view === 'grid';
+    return {
+      t, lang, tabs, shown, total: P.length,
+      countLabel: shown.length + ' / ' + P.length,
+      isGrid, isList: !isGrid,
+      thumbX: isGrid ? '0%' : '100%',
+      gridCls: isGrid ? 'on' : '', listCls: isGrid ? '' : 'on',
+      gridPressed: isGrid ? 'true' : 'false', listPressed: isGrid ? 'false' : 'true',
+      toGrid: () => this.setState({ view: 'grid' }),
+      toList: () => this.setState({ view: 'list' }),
+      langX: isDe ? '0px' : '38px',
+      deCls: isDe ? 'on' : '', enCls: isDe ? '' : 'on',
+      dePressed: isDe ? 'true' : 'false', enPressed: isDe ? 'false' : 'true',
+      toDe: () => this.setState({ lang: 'de' }),
+      toEn: () => this.setState({ lang: 'en' }),
+      themeClass: light ? 'light' : '',
+      themeLabel: light ? t.lightOff : t.lightOn,
+      toggleTheme: () => this.setState({ light: !light })
+    };
+  }
+}
+</script>
+</body>
+</html>

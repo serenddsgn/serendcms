@@ -1,0 +1,27 @@
+# Nur Datenbank und Mailpit. Die Apps laufen nativ mit Node (`pnpm dev`).
+# Alle Ports sind ausschließlich an localhost gebunden.
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: serend
+      POSTGRES_PASSWORD: serend # nur lokale Entwicklung
+      POSTGRES_DB: serend
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - dbdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U serend -d serend']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1025:1025' # SMTP
+      - '127.0.0.1:8025:8025' # Web-UI
+volumes:
+  dbdata:

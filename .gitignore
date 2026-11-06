@@ -1,0 +1,27 @@
+# Abhängigkeiten und Build-Output
+node_modules/
+dist/
+.astro/
+.vite/
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Secrets: nur .env.example gehört ins Repo
+.env
+.env.*
+!.env.example
+
+# Uploads, Releases, lokale Daten
+uploads/
+storage/
+releases/
+.data/
+*.pcraft
+
+# System / Editor
+.DS_Store
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,119 @@
+/* serend.design · Design-Tokens
+   Quelle der Wahrheit für Farben, Typo, Abstände, Radien und Bewegung.
+   Dunkel ist der Default; .light auf <html> schaltet um. */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Farben · Dunkel (Default) */
+  --bg: #0a0a0a;
+  --fg: #f5f5f4;
+  --mute: #a3a3a3;          /* Sekundärtext, Labels; 4.5:1 auf --bg */
+  --body: #d6d3d1;          /* Fließtext in langen Artikeln */
+  --line: rgba(255,255,255,.10);
+  --card: #141414;          /* Karten (Präambel) */
+  --raised: #262626;        /* Segment-Thumb, erhöhte Flächen */
+  --chip: rgba(255,255,255,.07);
+  --panel: #151515;         /* immer-dunkle Flächen (Konfigurator, Next-Project) */
+  --panel-line: rgba(255,255,255,.10);
+  --curtain: #f5f5f4;       /* Seitenübergang = Gegenfarbe */
+
+  /* Akzente */
+  --status: #1aa179;        /* pulsierender Punkt „verfügbar / Kontakt“ */
+  --focus: #e0a98f;         /* Fokusring */
+
+  /* Liquid-Gradient · Markenzeichen (nur Text, dünne Linien, Fortschritt) */
+  --liquid-1: #b06bb4;      /* Orchidee */
+  --liquid-2: #8d4557;      /* Altrosa */
+  --liquid-3: #5d6b93;      /* Schieferblau */
+  --liquid-4: #e0a98f;      /* Pfirsich */
+  --liquid-5: #703b58;      /* Pflaume */
+  --liquid-6: #4a3a5e;
+  --liquid:
+    radial-gradient(40% 80% at 15% 50%, var(--liquid-1) 0, transparent 70%),
+    radial-gradient(35% 90% at 85% 40%, var(--liquid-4) 0, transparent 70%),
+    radial-gradient(45% 90% at 50% 90%, var(--liquid-3) 0, transparent 70%),
+    linear-gradient(90deg, var(--liquid-5), var(--liquid-2) 50%, var(--liquid-6));
+  --liquid-line: linear-gradient(90deg, var(--liquid-1), var(--liquid-2), var(--liquid-3), var(--liquid-4));
+
+  /* Typografie */
+  --font-display: "Plus Jakarta Sans", Inter, system-ui, sans-serif;  /* 700/800 */
+  --font-body: Inter, system-ui, sans-serif;                          /* 400/500/600 */
+  --font-mono: "Geist Mono", ui-monospace, monospace;                 /* Labels */
+  --tracking-display: -0.035em;
+  --tracking-hero: -0.055em;
+  --fs-hero: clamp(48px, 7.4vw, 112px);
+  --fs-page-title: clamp(72px, 12vw, 184px);
+  --fs-case-title: clamp(56px, 9.6vw, 152px);
+  --fs-h2: clamp(36px, 4.6vw, 64px);
+  --fs-quote: clamp(36px, 5.4vw, 80px);
+  --fs-contact: clamp(56px, 9vw, 150px);
+  --fs-lead: clamp(24px, 2.4vw, 32px);
+  --fs-body-l: 19px;
+  --fs-body: 17px;
+  --fs-ui: 14px;
+  --fs-label: 11px;          /* mono, uppercase, letter-spacing .08em */
+
+  /* Layout */
+  --container: 1360px;
+  --gutter: 40px;            /* 16px auf Phone */
+  --nav-h: 80px;
+  --side-col: 200px;         /* Label-Spalte links neben Inhalten */
+  --measure: 760px;          /* max. Textbreite in Artikeln */
+
+  /* Radien */
+  --r-tile: 14px;
+  --r-card: 16px;
+  --r-section: 20px;
+  --r-panel: 28px;
+  --r-pill: 999px;
+
+  /* Bewegung */
+  --ease-out: cubic-bezier(.16, 1, .3, 1);        /* Standard: Reveals, Hover */
+  --ease-inout: cubic-bezier(.65, 0, .35, 1);     /* Linien, Theme-Wechsel */
+  --ease-curtain: cubic-bezier(.77, 0, .18, 1);   /* Seitenübergang */
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1); /* kleine Elemente poppen */
+  --dur-fast: .3s;
+  --dur-base: .5s;
+  --dur-slow: .9s;
+  --dur-theme: .6s;
+  --dur-liquid: 16s;
+}
+
+:root.light {
+  --bg: #f6f5f2;
+  --fg: #111111;
+  --mute: #57534e;
+  --body: #2b2b2a;
+  --line: rgba(0,0,0,.10);
+  --card: #ffffff;
+  --raised: #ffffff;
+  --chip: rgba(0,0,0,.06);
+  --panel: #0c0c0d;          /* bleibt dunkel – bewusster Kontrast */
+  --panel-line: transparent;
+  --curtain: #0a0a0a;
+}
+
+@keyframes liquid {
+  0%   { background-position: 0% 30%; }
+  33%  { background-position: 60% 80%; }
+  66%  { background-position: 100% 20%; }
+  100% { background-position: 30% 60%; }
+}
+
+.liquid-text {
+  background-image: var(--liquid);
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: liquid var(--dur-liquid) ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

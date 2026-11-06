@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>serend.design · Dolce &amp; Falcone</title>
+<script src="./runtime.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}
+.root{--bg:#0a0a0a;--fg:#f5f5f4;--mute:#a3a3a3;--body:#d6d3d1;--line:rgba(255,255,255,.1);--chip:rgba(255,255,255,.07);--panel:#151515;--panel-line:rgba(255,255,255,.1);--curtain:#f5f5f4;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif;min-height:100vh;transition:background-color .6s cubic-bezier(.65,0,.35,1),color .6s cubic-bezier(.65,0,.35,1)}
+.root.light{--bg:#f6f5f2;--fg:#111111;--mute:#57534e;--body:#2b2b2a;--line:rgba(0,0,0,.1);--chip:rgba(0,0,0,.06);--panel:#0c0c0d;--panel-line:transparent;--curtain:#0a0a0a}
+.display{font-family:"Plus Jakarta Sans",Inter,sans-serif;font-weight:800;letter-spacing:-.035em}
+.mono{font-family:"Geist Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+.wrap{max-width:1360px;margin:0 auto;padding:0 40px}
+.liquid{background-image:radial-gradient(40% 80% at 15% 50%,#b06bb4 0,transparent 70%),radial-gradient(35% 90% at 85% 40%,#e0a98f 0,transparent 70%),radial-gradient(45% 90% at 50% 90%,#5d6b93 0,transparent 70%),linear-gradient(90deg,#703b58,#8d4557 50%,#4a3a5e);background-size:220% 220%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:liquid 16s ease-in-out infinite alternate}
+.liquid-bg{background-image:radial-gradient(40% 80% at 15% 50%,#b06bb4 0,transparent 70%),radial-gradient(35% 90% at 85% 40%,#e0a98f 0,transparent 70%),radial-gradient(45% 90% at 50% 90%,#5d6b93 0,transparent 70%),linear-gradient(90deg,#703b58,#8d4557 50%,#4a3a5e);background-size:220% 220%;animation:liquid 16s ease-in-out infinite alternate}
+@keyframes liquid{0%{background-position:0% 30%}33%{background-position:60% 80%}66%{background-position:100% 20%}100%{background-position:30% 60%}}
+.curtain{position:fixed;inset:0;z-index:100;pointer-events:none;display:grid;grid-template-columns:repeat(5,1fr)}
+.curtain span{background:var(--curtain);transform-origin:top;animation:shut .9s cubic-bezier(.77,0,.18,1) forwards}
+.curtain span:nth-child(2){animation-delay:.05s}.curtain span:nth-child(3){animation-delay:.1s}.curtain span:nth-child(4){animation-delay:.15s}.curtain span:nth-child(5){animation-delay:.2s}
+@keyframes shut{to{transform:scaleY(0)}}
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.w>span{display:inline-block;transform:translateY(105%);animation:up 1s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes up{to{transform:none}}
+.fade{opacity:0;transform:translateY(14px);animation:fadeup .9s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fadeup{to{opacity:1;transform:none}}
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:60;transform-origin:left;transform:scaleX(.06)}
+@supports (animation-timeline: scroll()){.progress{animation:grow linear both,liquid 16s ease-in-out infinite alternate;animation-timeline:scroll(),auto}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line);transition:background-color .6s}
+.mark{font-family:"Plus Jakarta Sans",Inter,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em}
+.mark sup{font-size:10px}
+.nl{position:relative;font-size:14px;padding:12px 0;display:inline-block}
+.nl::after{content:"";position:absolute;left:0;right:0;bottom:8px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s cubic-bezier(.65,0,.35,1)}
+.nl:hover::after,.nl.on::after{transform:scaleX(1);transform-origin:left}
+.cta{position:relative;display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 20px;border-radius:999px;font-size:14px;font-weight:500;overflow:hidden;isolation:isolate;background:var(--fg);color:var(--bg);white-space:nowrap;transition:color .4s,background-color .6s}
+.cta::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background-image:linear-gradient(90deg,#b06bb4,#8d4557,#5d6b93);transform:translateY(101%);transition:transform .5s cubic-bezier(.65,0,.35,1)}
+.cta:hover::before{transform:none}
+.cta:hover{color:#fff}
+.lang{position:relative;display:inline-flex;padding:3px;border-radius:999px;border:1px solid var(--line);height:44px;box-sizing:border-box}
+.lang button{position:relative;z-index:1;width:38px;border:0;background:transparent;border-radius:999px;font:500 11px "Geist Mono",monospace;letter-spacing:.06em;color:var(--mute);cursor:pointer;transition:color .3s}
+.lang button.on{color:var(--fg)}
+.lang button:focus-visible{outline:2px solid #e0a98f;outline-offset:2px}
+.lang .thumb{position:absolute;top:3px;bottom:3px;left:3px;width:38px;border-radius:999px;background:var(--chip);transition:transform .45s cubic-bezier(.34,1.3,.64,1)}
+.iconbtn{width:44px;height:44px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--fg);cursor:pointer;transition:border-color .3s,transform .3s}
+.iconbtn:hover{border-color:var(--fg)}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn svg{transition:transform .7s cubic-bezier(.34,1.56,.64,1)}
+.light .iconbtn .tg{transform:rotate(180deg)}
+.dot{width:7px;height:7px;border-radius:99px;background:#1aa179;animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(26,161,121,.55)}50%{box-shadow:0 0 0 6px rgba(26,161,121,0)}}
+.meta div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;padding:12px 0;border-top:1px solid var(--line);font-size:15px}
+.strip{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 40px 8px;scrollbar-width:thin}
+.strip figure{margin:0;flex:0 0 auto;scroll-snap-align:start;border-radius:16px;overflow:hidden;height:min(62vh,560px)}
+.strip img{height:100%;width:auto;display:block}
+.chap a{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;padding:9px 0;color:var(--mute);font-size:15px;transition:color .3s}
+.chap a:hover{color:var(--fg)}
+.chap a .n{font-family:"Geist Mono",monospace;font-size:11px;padding-top:3px}
+.rail{position:absolute;left:-20px;top:0;bottom:0;width:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.rail i{position:absolute;inset:0;transform-origin:top;transform:scaleY(.25)}
+@supports (animation-timeline: scroll()){.rail i{animation:growy linear both,liquid 16s ease-in-out infinite alternate;animation-timeline:scroll(),auto}}
+@keyframes growy{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.ch{padding-bottom:96px}
+.ch p{margin:0 0 18px;font-size:19px;line-height:1.7;color:var(--body);transition:color .6s}
+.ch .lead{font-size:clamp(24px,2.4vw,32px);line-height:1.4;letter-spacing:-.02em;color:var(--fg)}
+.ch .label{font-family:"Geist Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.panel{background:var(--panel);color:#f3f2ef;border:1px solid var(--panel-line);transition:background-color .6s,border-color .6s}
+.size{height:44px;min-width:56px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#e7e6e3;font:500 15px Inter,sans-serif;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1)}
+.size:hover{border-color:rgba(255,255,255,.4)}
+.size.on{background:#f3f2ef;color:#0c0c0d;border-color:#f3f2ef}
+.item{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-top:1px solid rgba(255,255,255,.1)}
+.step{width:44px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#f3f2ef;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .25s}
+.step:hover{background:rgba(255,255,255,.08)}
+.step:active{transform:scale(.9)}
+.step:disabled{opacity:.25;cursor:default;background:transparent;transform:none}
+.slot{aspect-ratio:1;border-radius:99px;border:1px dashed rgba(255,255,255,.2);transition:background .3s,border-color .3s}
+.slot.full{border-style:solid;border-color:transparent}
+.pop{animation:pop .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.4)}100%{transform:scale(1)}}
+.next{display:block;position:relative;overflow:hidden;border-top:1px solid var(--panel-line)}
+.next img{position:absolute;right:40px;top:50%;width:300px;height:380px;margin-top:-190px;object-fit:cover;border-radius:16px;transform:rotate(4deg) scale(.9);opacity:0;transition:all .7s cubic-bezier(.34,1.3,.64,1)}
+.next:hover img{opacity:1;transform:rotate(4deg) scale(1)}
+.next .nt{transition:transform .8s cubic-bezier(.16,1,.3,1)}
+.next:hover .nt{transform:translateX(18px)}
+@supports (animation-timeline: view()){.reveal{animation:fadeup linear both;animation-timeline:view();animation-range:entry 0% cover 22%;opacity:0;transform:translateY(24px)}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media (max-width:900px){.split{grid-template-columns:1fr!important}.hide-m{display:none!important}.next img{display:none}.cta .lbl{display:none}}
+</style>
+</helmet>
+<div class="root {{themeClass}}" lang="{{lang}}">
+<div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="progress liquid-bg"></div>
+<header class="nav">
+<div class="wrap" style="height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 24px">
+<a href="start.html" class="mark">serend.design<sup>®</sup></a>
+<nav class="hide-m" aria-label="{{t.navLabel}}" style="display: flex; gap: 36px">
+<a class="nl on" href="projekte.html">{{t.work}}</a>
+<a class="nl" href="start.html">{{t.services}}</a>
+<a class="nl" href="start.html">{{t.studio}}</a>
+</nav>
+<div style="display: flex; gap: 8px; align-items: center">
+<div class="lang" role="group" aria-label="{{t.langLabel}}">
+<span class="thumb" style="transform: translateX({{langX}})"></span>
+<button type="button" class="{{deCls}}" lang="de" aria-label="Deutsch" aria-pressed="{{dePressed}}" onClick="{{toDe}}">DE</button>
+<button type="button" class="{{enCls}}" lang="en" aria-label="English" aria-pressed="{{enPressed}}" onClick="{{toEn}}">EN</button>
+</div>
+<button class="iconbtn" type="button" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><svg class="tg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 3.5 A8.5 8.5 0 0 1 12 20.5 Z" fill="currentColor"></path></svg></button>
+<a class="cta" href="start.html" aria-label="{{t.cta}}"><span class="dot"></span><span class="lbl">{{t.cta}}</span></a>
+</div>
+</div>
+</header>
+
+<main key="{{lang}}">
+<section class="wrap split" style="padding-top: 96px; padding-bottom: 64px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px">
+<p class="mono fade" style="margin: 16px 0 0; color: var(--mute); animation-delay: .9s">Case 01 / 12 · E-Commerce</p>
+<div>
+<h1 class="display" style="margin: 0; font-size: clamp(56px, 9.6vw, 152px); letter-spacing: -.055em; line-height: .88"><span class="w"><span style="animation-delay: .55s">Dolce &amp;</span></span><br><span class="w"><span style="animation-delay: .65s">Falcone</span></span></h1>
+<div class="split" style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 48px; margin-top: 48px; align-items: start">
+<p class="fade display" style="margin: 0; font-size: clamp(26px, 2.6vw, 38px); line-height: 1.15; font-weight: 700; animation-delay: 1s">{{t.subA}}<span class="liquid">{{t.subLiq}}</span>{{t.subB}}</p>
+<dl class="meta fade" style="margin: 0; animation-delay: 1.1s">
+<div><dt class="mono" style="color: var(--mute)">{{t.mClient}}</dt><dd style="margin: 0">{{t.mClientV}}</dd></div>
+<div><dt class="mono" style="color: var(--mute)">{{t.mArea}}</dt><dd style="margin: 0">E-Commerce</dd></div>
+<div><dt class="mono" style="color: var(--mute)">{{t.mYear}}</dt><dd style="margin: 0">2026</dd></div>
+<div style="border-bottom: 1px solid var(--line)"><dt class="mono" style="color: var(--mute)">Live</dt><dd style="margin: 0"><a href="#" style="text-decoration: underline; text-underline-offset: 4px">dolce-falcone.de ↗</a></dd></div>
+</dl>
+</div>
+</div>
+</section>
+
+<div class="strip fade" role="region" aria-label="{{t.stripLabel}}" tabindex="0" style="animation-delay: 1.2s; max-width: 1440px; margin: 0 auto">
+<sc-for list="{{t.imgs}}" as="im" hint-placeholder-count="5"><figure><img src="{{im.src}}" alt="{{im.alt}}"></figure></sc-for>
+</div>
+
+<section class="wrap split" style="padding-top: 128px; display: grid; grid-template-columns: 200px minmax(0, 760px); gap: 32px; justify-content: start">
+<nav class="chap hide-m" aria-label="{{t.chapLabel}}" style="position: sticky; top: 120px; align-self: start">
+<div style="position: relative">
+<span class="rail" aria-hidden="true"><i class="liquid-bg"></i></span>
+<a href="#c1"><span class="n">01</span>{{t.c1}}</a>
+<a href="#c2"><span class="n">02</span>{{t.c2}}</a>
+<a href="#c3"><span class="n">03</span>{{t.c3}}</a>
+<a href="#demo"><span class="n">↳</span>{{t.cDemo}}</a>
+<a href="#c4"><span class="n">04</span>{{t.c4}}</a>
+</div>
+</nav>
+<div>
+<article id="c1" class="ch reveal">
+<p class="label">01 · {{t.c1}}</p>
+<p class="lead">{{t.c1lead}}</p>
+<p>{{t.c1p}}</p>
+</article>
+<article id="c2" class="ch reveal">
+<p class="label">02 · {{t.c2}}</p>
+<p class="lead">{{t.c2lead}}</p>
+<p>{{t.c2p}}</p>
+</article>
+</div>
+</section>
+
+<section class="wrap reveal" style="padding-bottom: 128px">
+<blockquote style="margin: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 64px 0">
+<p class="display" style="margin: 0; font-size: clamp(36px, 5.4vw, 80px); line-height: 1; letter-spacing: -.05em">{{t.q1}}<br><span class="liquid">{{t.q2}}</span></p>
+</blockquote>
+</section>
+
+<section class="wrap split" style="display: grid; grid-template-columns: 200px minmax(0, 760px); gap: 32px">
+<div class="hide-m"></div>
+<article id="c3" class="ch reveal">
+<p class="label">03 · {{t.c3}}</p>
+<p class="lead">{{t.c3lead}}</p>
+<p>{{t.c3p}}</p>
+</article>
+</section>
+
+<section id="demo" class="wrap" style="padding-bottom: 128px">
+<div class="panel reveal split" style="border-radius: 28px; padding: clamp(28px, 4vw, 56px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px">
+<div>
+<p class="mono" style="margin: 0 0 10px; color: #9b9b98">{{t.dEyebrow}}</p>
+<p class="display" style="margin: 0 0 28px; font-size: 32px; font-weight: 700">{{t.dTitle}}</p>
+<p class="mono" id="sz" style="margin: 0 0 12px; color: #9b9b98">{{t.dStep1}}</p>
+<div role="radiogroup" aria-labelledby="sz" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px">
+<sc-for list="{{sizes}}" as="s" hint-placeholder-count="4">
+<button type="button" role="radio" aria-checked="{{s.checked}}" class="size {{s.cls}}" onClick="{{s.pick}}">{{s.n}}</button>
+</sc-for>
+</div>
+<p class="mono" style="margin: 0 0 4px; color: #9b9b98">{{t.dStep2}}</p>
+<sc-for list="{{items}}" as="it" hint-placeholder-count="4">
+<div class="item">
+<span style="width: 14px; height: 14px; border-radius: 99px; background: {{it.color}}"></span>
+<span><span style="display: block; font-size: 17px">{{it.name}}</span><span class="mono" style="color: #9b9b98">{{it.price}}</span></span>
+<span style="display: inline-flex; align-items: center; gap: 12px">
+<button type="button" class="step" aria-label="{{it.minusLabel}}" onClick="{{it.minus}}" disabled="{{it.noMinus}}">−</button>
+<span style="min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; font-size: 17px" aria-live="polite">{{it.q}}</span>
+<button type="button" class="step" aria-label="{{it.plusLabel}}" onClick="{{it.plus}}" disabled="{{full}}">+</button>
+</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 20px">
+<div style="border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 24px; flex: 1">
+<div style="display: grid; grid-template-columns: repeat({{cols}}, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{slots}}" as="sl" hint-placeholder-count="12">
+<span class="slot {{sl.cls}}" style="background: {{sl.bg}}"></span>
+</sc-for>
+</div>
+</div>
+<div>
+<div style="height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden"><div class="liquid-bg" style="height: 100%; width: {{pct}}; transition: width .5s cubic-bezier(.16,1,.3,1)"></div></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 16px; gap: 16px">
+<span aria-live="polite" style="font-size: 17px">{{status}}</span>
+<span class="display" style="font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums">{{total}}</span>
+</div>
+<button type="button" disabled="{{notFull}}" style="margin-top: 20px; width: 100%; height: 56px; border-radius: 999px; border: 0; font: 500 16px Inter, sans-serif; cursor: pointer; background: {{btnBg}}; color: {{btnFg}}; transition: all .4s">{{btnLabel}}</button>
+</div>
+</div>
+</div>
+</section>
+
+<section class="wrap split" style="display: grid; grid-template-columns: 200px minmax(0, 760px); gap: 32px">
+<div class="hide-m"></div>
+<article id="c4" class="ch reveal">
+<p class="label">04 · {{t.c4}}</p>
+<p class="lead">{{t.c4lead}}</p>
+<p>{{t.c4p}}</p>
+</article>
+</section>
+
+<a class="next panel" href="detail.html" style="border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0">
+<img src="../images/mycocktailtaxi-cover.jpg" alt="">
+<span class="wrap" style="display: block; padding-top: 112px; padding-bottom: 112px; position: relative">
+<span class="mono" style="display: block; color: #9b9b98; margin-bottom: 20px">{{t.next}} · 02 / 12</span>
+<span class="nt display" style="display: block; font-size: clamp(56px, 9vw, 140px); letter-spacing: -.055em; line-height: .9">MyCocktailTaxi →</span>
+</span>
+</a>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["system","dark","light"],"default":"system"},"language":{"editor":"enum","options":["browser","de","en"],"default":"browser"},"$preview":{"width":1440,"height":4600}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    let sysLight = false, sysLang = 'de';
+    try { sysLight = window.matchMedia('(prefers-color-scheme: light)').matches; } catch (e) {}
+    try { sysLang = /^de\b/i.test(navigator.language || 'de') ? 'de' : 'en'; } catch (e) {}
+    this.state = { size: 12, q: { a: 4, b: 3, c: 0, d: 2 }, light: null, sysLight, lang: null, sysLang };
+  }
+  renderVals() {
+    const B = '/_blob/';
+    const T = {
+      de: {
+        navLabel: 'Hauptnavigation', langLabel: 'Sprache wählen', work: 'Arbeiten', services: 'Leistungen', studio: 'Studio', cta: 'Projekt anfragen',
+        lightOn: 'Licht an', lightOff: 'Licht aus',
+        subA: 'Die digitale ', subLiq: 'Gebäcktheke', subB: ': ein Shop, der den Kaufmoment versteht.',
+        mClient: 'Kunde', mClientV: 'Dolce & Falcone, Pasticceria', mArea: 'Bereich', mYear: 'Jahr',
+        stripLabel: 'Projektbilder, horizontal scrollbar',
+        imgs: [
+          { src: '../images/dolce-falcone-hero.jpg', alt: 'Konfigurator auf dem Tablet' },
+          { src: '../images/dolce-falcone-gallery-02.jpg', alt: 'Produktdetail' },
+          { src: '../images/dolce-falcone-cover.jpg', alt: 'Shop im Hochformat' },
+          { src: '../images/dolce-falcone-gallery-03.jpg', alt: 'Boxgröße wählen' },
+          { src: '../images/dolce-falcone-gallery-04.jpg', alt: 'Shop-Übersicht' }
+        ],
+        chapLabel: 'Kapitel', c1: 'Um wen es geht', c2: 'Die Aufgabe', c3: 'Was wir gebaut haben', cDemo: 'Ausprobieren', c4: 'Was sich ändert',
+        c1lead: 'Dolce & Falcone ist eine italienische Pasticceria aus Wuppertal. Bekannt für handgemachtes Mandelgebäck, Crostatine und kleine Spezialitäten, die im Laden Stück für Stück ausgesucht werden.',
+        c1p: 'Genau dieses Aussuchen ist Teil des Produkts.',
+        c2lead: 'Dolce & Falcone wollte online verkaufen, ohne das Ladengeschäft zu verlieren.',
+        c2p: 'Kunden sollten sich ihre Gebäckschachtel selbst zusammenstellen können: feste Stückzahl, freie Mischung, unterschiedliche Preise pro Stück, Allergene, Zutaten und Nährwerte direkt an jedem Produkt. Ein Standard-Shop kann einzelne Artikel verkaufen. Er kann auch Varianten abbilden. Aber er versteht keine Gebäcktheke.',
+        q1: 'Das Problem war nicht der Shop.', q2: 'Das Problem war die Box.',
+        c3lead: 'Ein eigener Pick&Mix-Konfigurator.',
+        c3p: 'Kunden wählen zuerst die Boxgröße. Danach stellen sie ihre Schachtel aus den einzelnen Gebäcken zusammen, mit Plus- und Minus-Steuerung, eigenem Stückpreis und Detailinformationen. Der Konfigurator zählt in Echtzeit mit: wie viele Stücke schon in der Box liegen, wie viele noch fehlen und was die Auswahl kostet.',
+        dEyebrow: 'Ausprobieren · Nachbau mit Beispielsorten und -preisen', dTitle: 'Stellen Sie Ihre Box zusammen.', dStep1: '1 · Boxgröße', dStep2: '2 · Mischen',
+        names: { a: 'Mandelgebäck', b: 'Crostatina', c: 'Pistazie', d: 'Amaretto' },
+        perPiece: ' € / Stück', add: ' hinzufügen', remove: ' entfernen',
+        full: 'Box ist voll. Alles drin.', of: ' von ', left: ' · noch ', piece: ' Stück', pieces: ' Stücke',
+        toCart: 'In den Warenkorb', choose: (n) => 'Noch ' + n + ' auswählen',
+        money: (v) => v.toFixed(2).replace('.', ',') + ' €',
+        c4lead: 'Der Online-Shop verkauft nicht nur Gebäck. Er bildet den eigentlichen Kaufmoment ab: aussuchen, mischen, prüfen, abschließen.',
+        c4p: 'Das ist kein „schönerer“ Shop. Es ist die digitale Gebäcktheke.',
+        next: 'Nächstes Projekt'
+      },
+      en: {
+        navLabel: 'Main navigation', langLabel: 'Choose language', work: 'Work', services: 'Services', studio: 'Studio', cta: 'Start a project',
+        lightOn: 'Lights on', lightOff: 'Lights off',
+        subA: 'The digital ', subLiq: 'pastry counter', subB: ': a shop that understands the moment of purchase.',
+        mClient: 'Client', mClientV: 'Dolce & Falcone, pasticceria', mArea: 'Discipline', mYear: 'Year',
+        stripLabel: 'Project images, scrolls horizontally',
+        imgs: [
+          { src: '../images/dolce-falcone-hero.jpg', alt: 'Configurator on a tablet' },
+          { src: '../images/dolce-falcone-gallery-02.jpg', alt: 'Product detail' },
+          { src: '../images/dolce-falcone-cover.jpg', alt: 'Shop in portrait format' },
+          { src: '../images/dolce-falcone-gallery-03.jpg', alt: 'Choosing the box size' },
+          { src: '../images/dolce-falcone-gallery-04.jpg', alt: 'Shop overview' }
+        ],
+        chapLabel: 'Chapters', c1: 'Who it’s about', c2: 'The brief', c3: 'What we built', cDemo: 'Try it', c4: 'What changes',
+        c1lead: 'Dolce & Falcone is an Italian pasticceria in Wuppertal. Known for handmade almond pastries, crostatine and small specialities that customers pick out piece by piece in the shop.',
+        c1p: 'That picking is part of the product.',
+        c2lead: 'Dolce & Falcone wanted to sell online without losing what makes the shop.',
+        c2p: 'Customers should be able to build their own pastry box: a fixed number of pieces, a free mix, different prices per piece, and allergens, ingredients and nutrition right on every product. A standard shop can sell single items. It can handle variants. But it doesn’t understand a pastry counter.',
+        q1: 'The problem wasn’t the shop.', q2: 'The problem was the box.',
+        c3lead: 'A custom Pick&Mix configurator.',
+        c3p: 'Customers first choose the box size. Then they fill it with individual pastries, using plus and minus controls, a price per piece and detailed information. The configurator counts along in real time: how many pieces are in the box, how many are missing and what the selection costs.',
+        dEyebrow: 'Try it · rebuilt with sample flavours and prices', dTitle: 'Build your box.', dStep1: '1 · Box size', dStep2: '2 · Mix',
+        names: { a: 'Almond pastry', b: 'Crostatina', c: 'Pistachio', d: 'Amaretto' },
+        perPiece: ' / piece', add: ': add one', remove: ': remove one',
+        full: 'Box is full. All set.', of: ' of ', left: ' · ', piece: ' piece to go', pieces: ' pieces to go',
+        toCart: 'Add to cart', choose: (n) => 'Choose ' + n + ' more',
+        money: (v) => '€' + v.toFixed(2),
+        c4lead: 'The online shop doesn’t just sell pastries. It recreates the real moment of purchase: choose, mix, check, done.',
+        c4p: 'It isn’t a “prettier” shop. It’s the digital pastry counter.',
+        next: 'Next project'
+      }
+    };
+    const S = [12, 18, 24, 46];
+    const D = [
+      { id: 'a', price: 1.6, color: '#e0a98f' },
+      { id: 'b', price: 2.2, color: '#b06bb4' },
+      { id: 'c', price: 1.9, color: '#7fa66b' },
+      { id: 'd', price: 1.8, color: '#5d6b93' }
+    ];
+    const { size, q } = this.state;
+    const th = this.props.theme ?? 'system';
+    const baseLight = th === 'light' ? true : th === 'dark' ? false : this.state.sysLight;
+    const light = this.state.light ?? baseLight;
+    const lp = this.props.language ?? 'browser';
+    const lang = this.state.lang ?? (lp === 'browser' ? this.state.sysLang : lp);
+    const t = T[lang];
+    const isDe = lang === 'de';
+    const count = D.reduce((s, d) => s + q[d.id], 0);
+    const full = count >= size;
+    const set = (id, v) => this.setState({ q: { ...q, [id]: v } });
+    const items = D.map(d => {
+      const name = t.names[d.id];
+      return {
+        name, color: d.color, q: q[d.id],
+        price: (isDe ? d.price.toFixed(2).replace('.', ',') + ' €' : '€' + d.price.toFixed(2)) + (isDe ? ' / Stück' : ' / piece'),
+        noMinus: q[d.id] === 0,
+        minusLabel: name + t.remove, plusLabel: name + t.add,
+        minus: () => set(d.id, Math.max(0, q[d.id] - 1)),
+        plus: () => { if (count < size) set(d.id, q[d.id] + 1); }
+      };
+    });
+    const fill = [];
+    D.forEach(d => { for (let i = 0; i < q[d.id]; i++) fill.push(d.color); });
+    const slots = Array.from({ length: size }, (_, i) => ({ cls: i < fill.length ? 'full pop' : '', bg: i < fill.length ? fill[i] : 'transparent' }));
+    const total = D.reduce((s, d) => s + q[d.id] * d.price, 0);
+    const left = size - count;
+    const sizes = S.map(n => ({
+      n, cls: n === size ? 'on' : '', checked: n === size ? 'true' : 'false',
+      pick: () => {
+        const nq = { ...q }; let c = count;
+        for (const d of [...D].reverse()) { while (c > n && nq[d.id] > 0) { nq[d.id]--; c--; } }
+        this.setState({ size: n, q: nq });
+      }
+    }));
+    return {
+      t, lang, sizes, items, slots, full,
+      cols: size > 24 ? 8 : 6,
+      pct: Math.round(count / size * 100) + '%',
+      status: full ? t.full : count + t.of + size + t.left + left + (left === 1 ? t.piece : t.pieces),
+      total: t.money(total),
+      notFull: !full,
+      btnBg: full ? '#f3f2ef' : 'rgba(255,255,255,.08)',
+      btnFg: full ? '#0c0c0d' : '#9b9b98',
+      btnLabel: full ? t.toCart : t.choose(left),
+      langX: isDe ? '0px' : '38px',
+      deCls: isDe ? 'on' : '', enCls: isDe ? '' : 'on',
+      dePressed: isDe ? 'true' : 'false', enPressed: isDe ? 'false' : 'true',
+      toDe: () => this.setState({ lang: 'de' }),
+      toEn: () => this.setState({ lang: 'en' }),
+      themeClass: light ? 'light' : '',
+      themeLabel: light ? t.lightOff : t.lightOn,
+      toggleTheme: () => this.setState({ light: !light })
+    };
+  }
+}
+</script>
+</body>
+</html>
