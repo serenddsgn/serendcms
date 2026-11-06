@@ -28,3 +28,5 @@ releases/
 
 # Claude Code lokale Konfiguration
 .claude/
+dist-preview/
+apps/web/dist-test-*/

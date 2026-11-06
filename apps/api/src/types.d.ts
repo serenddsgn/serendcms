@@ -9,5 +9,7 @@ declare module 'fastify' {
   interface FastifyContextConfig {
     /** Nur für den Login: dort gibt es noch kein CSRF-Token. */
     skipCsrf?: boolean;
+    /** Öffentliches Formular der Website: Origin muss die Website-Domain sein, keine Session. */
+    publicForm?: boolean;
   }
 }

@@ -1376,3 +1376,15 @@ img {
     transform: none !important;
   }
 }
+
+.preview-banner {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 90;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #b06bb4;
+  color: #fff;
+  pointer-events: none;
+}

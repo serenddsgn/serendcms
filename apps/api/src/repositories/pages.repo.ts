@@ -96,6 +96,14 @@ export function pagesRepo(x: Executor) {
         .limit(1);
       return row;
     },
+    async hasPublishedRevision(pageId: string): Promise<boolean> {
+      const rows = await x
+        .select({ id: pageRevisions.id })
+        .from(pageRevisions)
+        .where(and(eq(pageRevisions.pageId, pageId), sql`${pageRevisions.publishedAt} is not null`))
+        .limit(1);
+      return rows.length > 0;
+    },
     async replaceMediaRefs(revisionId: string, mediaIds: string[]): Promise<void> {
       await x.delete(pageMedia).where(eq(pageMedia.revisionId, revisionId));
       const unique = [...new Set(mediaIds)];

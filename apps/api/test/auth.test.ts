@@ -224,7 +224,9 @@ describe('Passwort ändern', () => {
 
 describe('Rate Limiting', () => {
   it('begrenzt Login-Versuche und nutzt das einheitliche Fehlerformat', async () => {
-    const limited = await createTestApp({ rateLimit: { loginMax: 3, loginWindowMs: 60_000 } });
+    const limited = await createTestApp({
+      rateLimit: { loginMax: 3, loginWindowMs: 60_000, contactMax: 5, contactWindowMs: 60_000 },
+    });
     try {
       const attempt = () =>
         limited.app.inject({

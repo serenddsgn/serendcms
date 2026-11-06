@@ -10,18 +10,20 @@ import {
   RevisionListResponse,
   RevisionParams,
   RevisionResponse,
+  PreviewLinkResponse,
   SaveDraftBody,
   TranslateBody,
   UpdateProjectBody,
 } from '@serend/schema';
 import { requireRole } from '../plugins/auth-context.js';
+import type { PreviewService } from '../services/preview.service.js';
 import type { ProjectsService } from '../services/projects.service.js';
 import { errorResponses } from './schemas.js';
 
-export const projectsRoutes: FastifyPluginAsyncZod<{ projectsService: ProjectsService }> = async (
-  app,
-  { projectsService },
-) => {
+export const projectsRoutes: FastifyPluginAsyncZod<{
+  projectsService: ProjectsService;
+  previewService: PreviewService;
+}> = async (app, { projectsService, previewService }) => {
   const tags = ['projects'];
   const editor = requireRole('admin', 'editor');
   const detail = { 200: ProjectDetailResponse, ...errorResponses };
@@ -176,6 +178,20 @@ export const projectsRoutes: FastifyPluginAsyncZod<{ projectsService: ProjectsSe
       reply
         .status(201)
         .send(await projectsService.translate(actor(request), request.params.id, request.body)),
+  );
+
+  app.post(
+    '/projects/:id/preview-link',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Signierter Vorschau-Link (max. 15 Minuten)',
+        params: ProjectIdParams,
+        response: { 200: PreviewLinkResponse, ...errorResponses },
+      },
+    },
+    async (request) => previewService.projectLink(request.params.id),
   );
 
   app.delete(

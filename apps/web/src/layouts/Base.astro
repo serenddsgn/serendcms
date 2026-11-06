@@ -20,7 +20,10 @@ interface Props {
   mdPath?: string | undefined;
 }
 await loadData();
-const { locale, title, description, path, alternates = {}, ogImage, ogType = 'website', jsonLd = [], noindex = false, mdPath } = Astro.props;
+const { locale, title, description, path, alternates = {}, ogImage, ogType = 'website', jsonLd = [], mdPath } = Astro.props;
+// Die Vorschau ist nie indexierbar (zusätzlich zum X-Robots-Tag der Middleware).
+const preview = Astro.locals.preview === true;
+const noindex = Astro.props.noindex === true || preview;
 const ui = t(locale);
 const identity = setting(locale, 'site.identity');
 const seo = setting(locale, 'seo.defaults');
@@ -78,6 +81,7 @@ const canonical = abs(path);
     <noscript><style>.pgrid[hidden],.plist[hidden]{display:revert !important}.pgrid{display:grid}.plist{display:none !important}.g,.lr,.fade,.reveal,.mask>span,.w>span{opacity:1 !important;transform:none !important;animation:none !important}</style></noscript>
   </head>
   <body>
+    {preview && <div class="preview-banner mono">Vorschau · nicht öffentlich</div>}
     <a class="skip" href="#main">{ui.skip}</a>
     <div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="progress liquid-bg" aria-hidden="true"></div>

@@ -1,6 +1,6 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { ProjectsPageContent, ContentPageContent, type Locale } from '@serend/schema';
+import { ContentPageContent, HomeContent, ProjectsPageContent, type Locale } from '@serend/schema';
 import Base from '../../layouts/Base.astro';
 import DemoSection from '../../components/DemoSection.astro';
 import { PageBlocks, planProject } from '../../components/Blocks';
@@ -8,20 +8,21 @@ import { Chapter, Quote } from '../../components/Sections';
 import { ChapterNav } from '../../components/Project';
 import { ImageStrip, NextProject, ProjectHero } from '../../components/Project';
 import { altOf, loadData, pageFor, projectsFor, setting } from '../../lib/data';
-import { allEntries, mdPath, ogPath, type Entry } from '../../lib/pages';
-import { breadcrumbJsonLd, creativeWorkJsonLd, plainText } from '../../lib/seo';
+import { allEntries, findEntry, mdPath, ogPath, type Entry } from '../../lib/pages';
+import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText } from '../../lib/seo';
 import { data } from '../../lib/data';
 import { t } from '../../i18n';
 
 export const getStaticPaths = (async () => {
   await loadData();
-  return allEntries()
-    .filter((e) => e.kind !== 'home')
-    .map((entry) => ({ params: { locale: entry.locale, slug: entry.slug }, props: { entry } }));
+  // Startseite = leerer Slug (`/de/`), alles andere über den Pfad
+  return allEntries().map((entry) => ({ params: { locale: entry.locale, slug: entry.slug || undefined }, props: { entry } }));
 }) satisfies GetStaticPaths;
 
 await loadData();
-const { entry } = Astro.props as { entry: Entry };
+// Statischer Build: Eintrag kommt aus getStaticPaths; Vorschau (SSR): aus der URL.
+const entry = (Astro.props as { entry?: Entry }).entry ?? findEntry(Astro.params.locale!, Astro.params.slug);
+if (!entry) return new Response(null, { status: 404 });
 const locale = entry.locale as Locale;
 const ui = t(locale);
 const seo = setting(locale, 'seo.defaults');
@@ -48,6 +49,10 @@ if (entry.kind === 'project') {
       { name: r.title, path: entry.url },
     ]),
   ];
+} else if (entry.kind === 'home') {
+  title = entry.page.revision.seoTitle ?? seo.siteName;
+  description = entry.page.revision.seoDescription ?? undefined;
+  jsonLd = [organizationJsonLd(locale)];
 } else {
   title = entry.page.revision.seoTitle ?? entry.page.revision.title;
   description = entry.page.revision.seoDescription ?? undefined;
@@ -61,7 +66,9 @@ if (entry.kind === 'project') {
 }
 const plan = planProject(entry.kind === 'project' ? (entry.project.revision.content as never) : []);
 const blocks =
-  entry.kind === 'projects'
+  entry.kind === 'home'
+    ? HomeContent.parse(entry.page.revision.content)
+    : entry.kind === 'projects'
     ? ProjectsPageContent.parse(entry.page.revision.content)
     : entry.kind === 'content'
       ? ContentPageContent.parse(entry.page.revision.content)
