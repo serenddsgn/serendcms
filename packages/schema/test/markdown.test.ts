@@ -32,6 +32,21 @@ describe('Markdown-Serialisierung', () => {
     expect(md).toBe('Die digitale Gebäcktheke[* Link*](/a)');
   });
 
+  it('gibt Leerzeilen im Textfeld als getrennte Absätze aus', () => {
+    const md = blocksToMarkdown(
+      [
+        {
+          id: randomUUID(),
+          type: 'richtext',
+          nodes: [{ kind: 'paragraph', runs: [{ text: 'Erster.\n\nZweiter.' }] }],
+        },
+      ],
+      ctx,
+    );
+    expect(md).toContain('Erster.\n\nZweiter.');
+    expect(md).not.toContain('Erster.\n\n\n');
+  });
+
   it('nummeriert Kapitel und überspringt Demos nicht', () => {
     const md = blocksToMarkdown(
       [

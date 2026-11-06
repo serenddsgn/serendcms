@@ -1,4 +1,5 @@
 import type { Inline } from './blocks.js';
+import { splitParagraphs } from './inline-markup.js';
 
 /** Kontext für datengetriebene Blöcke und Link-/Medienauflösung. */
 export interface MarkdownContext {
@@ -96,7 +97,8 @@ export function blocksToMarkdown(blocks: readonly unknown[], ctx: MarkdownContex
           ordered?: boolean;
           items?: Inline[];
         }[]) {
-          if (n.kind === 'paragraph' && n.runs) out.push(inlineToMarkdown(n.runs));
+          if (n.kind === 'paragraph' && n.runs)
+            for (const p of splitParagraphs(n.runs)) out.push(inlineToMarkdown(p));
           if (n.kind === 'list' && n.items) {
             out.push(
               n.items
