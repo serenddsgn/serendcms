@@ -47,6 +47,18 @@ describe('Markdown-Serialisierung', () => {
     expect(md).not.toContain('Erster.\n\n\n');
   });
 
+  it('gibt Bilder mit Bildunterschrift oder Alt-Text aus', () => {
+    const md = blocksToMarkdown(
+      [
+        { id: randomUUID(), type: 'image', mediaId: 'm1', size: 'medium', caption: 'Unser Studio' },
+        { id: randomUUID(), type: 'image', mediaId: 'm2', size: 'full' },
+      ],
+      ctx,
+    );
+    expect(md).toContain('_Bild: Unser Studio_');
+    expect(md).toContain('_Bild: Porträt_'); // ohne Bildunterschrift der Alt-Text aus der Medienbibliothek
+  });
+
   it('nummeriert Kapitel und überspringt Demos nicht', () => {
     const md = blocksToMarkdown(
       [

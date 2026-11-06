@@ -144,6 +144,48 @@ describe('Seiten', () => {
     );
   });
 
+  it('speichert Bildblöcke, prüft das Medium und nennt ein fehlendes Bild verständlich', async () => {
+    const photo = await createMedia(t, ed);
+    const image = (mediaId: string, size = 'large') => [
+      { id: randomUUID(), type: 'image', mediaId, size, caption: 'Unser Studio' },
+    ];
+    const ok = await as(
+      t,
+      ed,
+      'POST',
+      '/api/v1/pages',
+      body('mit-bild', { content: image(photo, 'full') }),
+    );
+    expect(ok.statusCode).toBe(201);
+    expect(ok.json().latest.content[0]).toMatchObject({ type: 'image', size: 'full' });
+
+    // Noch kein Bild gewählt (Block frisch hinzugefügt): lesbare Meldung statt „Invalid UUID“
+    const empty = await as(
+      t,
+      ed,
+      'POST',
+      '/api/v1/pages',
+      body('ohne-bild', { content: image('') }),
+    );
+    expectError(empty, 400, 'validation_error');
+    expect(empty.json().error.message).toBe(
+      'Ungültiger Seiteninhalt: Block 1: Bitte ein Bild wählen',
+    );
+
+    // Unbekanntes Medium
+    expectError(
+      await as(
+        t,
+        ed,
+        'POST',
+        '/api/v1/pages',
+        body('falsches-bild', { content: image(randomUUID()) }),
+      ),
+      400,
+      'validation_error',
+    );
+  });
+
   it('legt beim Veröffentlichen einer Slug-Änderung einen 301 an', async () => {
     const created = (await as(t, ed, 'POST', '/api/v1/pages', body('alt-slug'))).json();
     await as(t, ed, 'POST', `/api/v1/pages/${created.page.id}/publish`);

@@ -12,6 +12,7 @@ import type {
   QuoteBlock,
   ServicesOverviewBlock,
   HeadingBlock,
+  ImageBlock,
   RichTextBlock,
 } from '@serend/schema';
 import {
@@ -495,6 +496,27 @@ export function Heading({ b }: { b: B<typeof HeadingBlock> }) {
     >
       {b.text}
     </Tag>
+  );
+}
+
+const IMAGE_SIZES_ATTR: Record<string, string> = {
+  small: '(max-width: 900px) 60vw, 260px',
+  medium: '(max-width: 900px) 100vw, 520px',
+  large: '(max-width: 900px) 100vw, 760px',
+  full: '(max-width: 1400px) 100vw, 1360px',
+};
+
+/** Bild auf einer Inhaltsseite. Größe als Anteil der Textspalte; „full“ steht außerhalb der Spalte (siehe PageBlocks). */
+export function ImageFigure({ b, locale }: { b: B<typeof ImageBlock>; locale: Locale }) {
+  return (
+    <figure class={`pimg pimg-${b.size}`} id={b.anchor}>
+      <Picture
+        mediaId={b.mediaId}
+        alt={altOf(b.mediaId, locale)}
+        sizes={IMAGE_SIZES_ATTR[b.size] ?? IMAGE_SIZES_ATTR.medium!}
+      />
+      {b.caption && <figcaption>{b.caption}</figcaption>}
+    </figure>
   );
 }
 

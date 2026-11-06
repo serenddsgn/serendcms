@@ -232,7 +232,7 @@ export function PageEditPage() {
       <BlockEditor
         blocks={content}
         onChange={setContent}
-        allowed={system ? [] : ['page_title', 'heading', 'richtext']}
+        allowed={system ? [] : ['page_title', 'heading', 'richtext', 'image']}
       />
       <div className="row" style={{ marginTop: 20 }}>
         {d.page.status === 'published' && (
