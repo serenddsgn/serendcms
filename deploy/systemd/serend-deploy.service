@@ -1,0 +1,13 @@
+[Unit]
+Description=serendCMS: Code-Deployment (git pull, Build, Neustart der Dienste)
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=serend
+Group=serend
+WorkingDirectory=/srv/serendportfolio
+ExecStart=/usr/bin/bash /srv/serendportfolio/deploy/deploy-run.sh
+TimeoutStartSec=30min
+# Bewusst OHNE NoNewPrivileges/ProtectSystem: deploy.sh startet die anderen Dienste per `sudo systemctl restart` (siehe
+# sudoers.d/serend) und schreibt ins Repository. Der Dienst läuft nur kurz und wird nur von der Anfrage-Datei ausgelöst.

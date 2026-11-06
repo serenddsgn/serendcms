@@ -30,6 +30,8 @@ export interface AppConfig {
   contact: { notifyTo: string | undefined; retentionDays: number };
   maintenance: { dir: string; fontsDir: string };
   releasesDir: string;
+  /** Code-Deployment aus dem Admin: Anfrage-/Status-Dateien und der git-Checkout des Servers. */
+  deploy: { dir: string; repoDir: string; branch: string };
   caddyReloadCommand: string | undefined;
   rateLimit: {
     loginMax: number;
@@ -75,6 +77,12 @@ const EnvSchema = z.object({
   CONTACT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(180),
   MAINTENANCE_DIR: z.string().min(1).default('.data/maintenance'),
   RELEASES_DIR: z.string().min(1).default('.data/releases'),
+  DEPLOY_DIR: z.string().min(1).default('.data/deploy'),
+  DEPLOY_REPO_DIR: z.string().min(1).optional(),
+  DEPLOY_BRANCH: z
+    .string()
+    .regex(/^[A-Za-z0-9][A-Za-z0-9._/-]*$/)
+    .default('main'),
   CADDY_RELOAD_COMMAND: z.string().optional(),
   MEDIA_MAX_BYTES: z.coerce
     .number()
@@ -159,6 +167,12 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       fontsDir: fileURLToPath(new URL('../../web/public/fonts', import.meta.url)),
     },
     releasesDir: resolve(e.RELEASES_DIR),
+    deploy: {
+      dir: resolve(e.DEPLOY_DIR),
+      // Standard: das Repository, in dem diese API liegt (apps/api/src/config.ts → drei Ebenen hoch)
+      repoDir: resolve(e.DEPLOY_REPO_DIR ?? fileURLToPath(new URL('../../..', import.meta.url))),
+      branch: e.DEPLOY_BRANCH,
+    },
     caddyReloadCommand: e.CADDY_RELOAD_COMMAND,
     media: { storageDir: resolve(e.STORAGE_DIR), maxBytes: e.MEDIA_MAX_BYTES },
     argon2: { memoryCost: 19456, timeCost: 2, parallelism: 1 },

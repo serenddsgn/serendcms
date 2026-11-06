@@ -46,6 +46,11 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       fontsDir: join(process.cwd(), '../web/public/fonts'),
     },
     releasesDir: mkdtempSync(join(tmpdir(), 'serend-releases-')),
+    deploy: {
+      dir: mkdtempSync(join(tmpdir(), 'serend-deploy-')),
+      repoDir: process.cwd(),
+      branch: 'main',
+    },
     caddyReloadCommand: undefined,
     media: { storageDir: mkdtempSync(join(tmpdir(), 'serend-media-')), maxBytes: 1024 * 1024 },
     argon2: { memoryCost: 1024, timeCost: 1, parallelism: 1 }, // nur für Tests billig
@@ -68,7 +73,7 @@ export async function createTestApp(
   overrides: Partial<AppConfig> = {},
   extra: Pick<
     Parameters<typeof buildApp>[0],
-    'onPublishedChange' | 'storage' | 'queue' | 'mailer'
+    'onPublishedChange' | 'storage' | 'queue' | 'mailer' | 'git'
   > = {},
 ): Promise<TestApp> {
   const database: TestDatabase = await createTestDatabase(inject('pgAdminUrl'));

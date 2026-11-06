@@ -1,0 +1,10 @@
+[Unit]
+Description=serendCMS: Code-Deployment aus dem Admin anfordern (Anfrage-Datei beobachten)
+
+[Path]
+# Die API legt diese Datei an (Admin → Veröffentlichung → „Jetzt deployen“); deploy-run.sh nimmt sie sofort weg.
+PathExists=/var/lib/serendportfolio/deploy/request
+Unit=serend-deploy.service
+
+[Install]
+WantedBy=multi-user.target

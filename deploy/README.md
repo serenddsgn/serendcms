@@ -9,6 +9,7 @@ Wiederherstellung in [`docs/03-backup-restore.md`](../docs/03-backup-restore.md)
 | `server-setup.sh` | richtet einen frischen Server ein (Pakete, Benutzer, Firewall, SSH-Härtung, PostgreSQL 18, Caddy, systemd, Deploy-Key) |
 | `deploy.sh` | Code-Deployment auf dem Server (`pnpm run deploy`) |
 | `deploy-remote.sh` | lokal: führt `deploy.sh` per SSH aus (`pnpm run deploy:remote`) |
+| `deploy-run.sh` | läuft als `serend-deploy.service`: führt `deploy.sh` aus, wenn der Admin „Jetzt deployen“ klickt (`docs/02-deployment.md`) |
 | `backup.sh`, `restore.sh` | verschlüsselte Sicherung nach außen, Wiederherstellung |
 | `Caddyfile` | Website, Admin/API, Vorschau; Security-Header, Redirects, Kontaktformular-Weiterleitung |
 | `systemd/` | `serend-api`, `serend-worker`, `serend-preview`, Backup-Service und -Timer |
@@ -72,7 +73,7 @@ Danach:
 
 ## 3. Laufender Betrieb
 
-- Neue Softwareversion: lokal `pnpm run deploy:remote`.
+- Neue Softwareversion: im Admin unter *Veröffentlichung* auf **Jetzt deployen** klicken (der Kasten „Software-Stand“ zeigt neue Commits auf `main`), oder lokal `pnpm run deploy:remote`.
 - Inhalte: im Admin veröffentlichen.
 - Rechtstexte (Impressum, Datenschutz) liegen als **Entwürfe** im Admin und müssen von dir mit echtem Inhalt gefüllt und veröffentlicht werden;
   bis dahin ist die Fußzeilenspalte „Rechtliches“ leer.
