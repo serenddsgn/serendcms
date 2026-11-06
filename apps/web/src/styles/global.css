@@ -422,6 +422,12 @@ img {
     color 0.4s,
     background-color 0.6s;
 }
+/* Radius der Hover-Füllung: als <percentage> registriert, damit nur er animiert (der Mittelpunkt springt bei 0 unsichtbar). */
+@property --r {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
 .cta::before {
   content: '';
   position: absolute;
@@ -429,14 +435,21 @@ img {
   z-index: -1;
   border-radius: inherit;
   background-image: linear-gradient(90deg, #b06bb4, #8d4557, #5d6b93);
-  transform: translateY(101%);
-  transition: transform 0.5s var(--ease-inout);
+  /* Kreis um die Stelle, an der die Maus den Button betritt (--mx/--my setzt scripts/site.ts). 150 % reicht von jedem
+     Punkt bis in die fernste Ecke. Verlässt die Maus den Button früher, schrumpft der Kreis zur Eintrittsstelle zurück. */
+  clip-path: circle(var(--r) at var(--mx, 50%) var(--my, 50%));
+  transition: --r 0.45s var(--ease-inout);
 }
 .cta:hover::before {
-  transform: none;
+  --r: 150%;
+  transition-duration: 0.65s;
 }
 .cta:hover {
   color: #fff;
+  /* Text erst weiß, wenn der Verlauf ihn erreicht hat (sonst wäre er auf dem hellen Button kurz unlesbar) */
+  transition:
+    color 0.25s 0.22s,
+    background-color 0.6s;
 }
 .lang {
   position: relative;
