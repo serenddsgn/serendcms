@@ -1,4 +1,5 @@
-import type { Database, PageRevisionRow, PageRow } from '@serend/db';
+import { eq } from 'drizzle-orm';
+import { pages, type Database, type PageRevisionRow, type PageRow } from '@serend/db';
 import {
   CONTENT_SCHEMA_VERSION,
   ROUTE_SEGMENTS,
@@ -12,7 +13,7 @@ import {
   upgradeContent,
 } from '@serend/schema';
 import { AppError, errors } from '../lib/errors.js';
-import { isUniqueViolation } from '../lib/pg-errors.js';
+import { isForeignKeyViolation, isUniqueViolation } from '../lib/pg-errors.js';
 import { mediaRepo } from '../repositories/media.repo.js';
 import { pagesRepo, type NewPageRevision } from '../repositories/pages.repo.js';
 import { projectsRepo } from '../repositories/projects.repo.js';
@@ -302,6 +303,29 @@ export function createPagesService({
       });
       await onPublishedChange?.();
       return result;
+    },
+
+    /** Hartes Löschen nur für freie Inhaltsseiten, die nie veröffentlicht waren und nirgends verlinkt sind. */
+    async remove(id: string): Promise<void> {
+      await db.transaction(async (tx) => {
+        const repo = pagesRepo(tx);
+        const page = await lockOrFail(tx, id);
+        if (page.systemKey !== null)
+          throw errors.conflict('Systemseiten können nicht gelöscht werden.');
+        if (page.publishedRevisionId || (await repo.hasPublishedRevision(id))) {
+          throw errors.conflict(
+            'Veröffentlichte Seiten können nur zurück zum Entwurf gesetzt werden.',
+          );
+        }
+        await projectsRepo(tx).deleteClaims(id);
+        try {
+          await tx.delete(pages).where(eq(pages.id, id));
+        } catch (err) {
+          if (isForeignKeyViolation(err))
+            throw errors.conflict('Die Seite wird noch von der Navigation verwendet.');
+          throw err;
+        }
+      });
     },
 
     async unpublish(id: string) {

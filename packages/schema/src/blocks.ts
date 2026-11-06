@@ -26,7 +26,7 @@ export type Inline = z.infer<typeof Inline>;
 export const LinkTarget = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('page'), pageId: Uuid, fragment: Slug.optional() }),
   z.object({ kind: z.literal('project'), projectId: Uuid }),
-  z.object({ kind: z.literal('url'), url: z.url() }),
+  z.object({ kind: z.literal('url'), url: z.url({ protocol: /^(https?|mailto|tel)$/ }) }),
 ]);
 export const Link = z.object({ label: z.string().min(1).max(80), target: LinkTarget });
 export type Link = z.infer<typeof Link>;

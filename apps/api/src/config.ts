@@ -24,9 +24,17 @@ export interface AppConfig {
   };
   argon2: { memoryCost: number; timeCost: number; parallelism: number };
   media: { storageDir: string; maxBytes: number };
+  siteOrigin: string;
+  previewUrl: string;
+  contact: { notifyTo: string | undefined; retentionDays: number };
   releasesDir: string;
   caddyReloadCommand: string | undefined;
-  rateLimit: { loginMax: number; loginWindowMs: number };
+  rateLimit: {
+    loginMax: number;
+    loginWindowMs: number;
+    contactMax: number;
+    contactWindowMs: number;
+  };
 }
 
 /** Mindestens 32 Byte Zufall, base64url/hex-kodiert ≥ 43 Zeichen. */
@@ -59,6 +67,10 @@ const EnvSchema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().min(3),
   STORAGE_DIR: z.string().min(1).default('.data/media'),
+  SITE_URL: z.url().default('http://localhost:4321'),
+  PREVIEW_URL: z.url().default('http://localhost:4323'),
+  CONTACT_NOTIFY_TO: z.email().optional(),
+  CONTACT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(180),
   RELEASES_DIR: z.string().min(1).default('.data/releases'),
   CADDY_RELOAD_COMMAND: z.string().optional(),
   MEDIA_MAX_BYTES: z.coerce
@@ -136,10 +148,18 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       from: e.SMTP_FROM,
     },
     // OWASP-Empfehlung für argon2id: 19 MiB, t=2, p=1
+    siteOrigin: new URL(e.SITE_URL).origin,
+    previewUrl: e.PREVIEW_URL.replace(/\/$/, ''),
+    contact: { notifyTo: e.CONTACT_NOTIFY_TO, retentionDays: e.CONTACT_RETENTION_DAYS },
     releasesDir: resolve(e.RELEASES_DIR),
     caddyReloadCommand: e.CADDY_RELOAD_COMMAND,
     media: { storageDir: resolve(e.STORAGE_DIR), maxBytes: e.MEDIA_MAX_BYTES },
     argon2: { memoryCost: 19456, timeCost: 2, parallelism: 1 },
-    rateLimit: { loginMax: 5, loginWindowMs: 15 * 60 * 1000 },
+    rateLimit: {
+      loginMax: 5,
+      loginWindowMs: 15 * 60 * 1000,
+      contactMax: 5,
+      contactWindowMs: 60 * 60 * 1000,
+    },
   };
 }

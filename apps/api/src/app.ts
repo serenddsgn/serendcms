@@ -23,12 +23,20 @@ import { authRoutes } from './routes/auth.routes.js';
 import { internalRoutes } from './routes/internal.routes.js';
 import { buildRoutes } from './routes/build.routes.js';
 import { buildsRoutes } from './routes/builds.routes.js';
+import { pagesRoutes } from './routes/pages.routes.js';
+import { previewRoutes } from './routes/preview.routes.js';
+import { publicRoutes } from './routes/public.routes.js';
+import { siteRoutes } from './routes/site.routes.js';
 import { mediaRoutes } from './routes/media.routes.js';
 import { projectsRoutes } from './routes/projects.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
 import { createAuthService } from './services/auth.service.js';
 import { createLocalStorage } from './storage/local.js';
 import type { Storage } from './storage/storage.js';
+import { createContactService } from './services/contact.service.js';
+import { createPreviewService } from './services/preview.service.js';
+import { createSiteService } from './services/site.service.js';
+import { createSmtpMailer, type Mailer } from './lib/mailer.js';
 import { createBuildsService, type BuildQueue } from './services/builds.service.js';
 import { createBuildService } from './services/build.service.js';
 import { createMediaService } from './services/media.service.js';
@@ -47,6 +55,8 @@ export interface BuildAppOptions {
   onPublishedChange?: () => Promise<void>;
   /** Warteschlange für Build-Jobs (pg-boss im Betrieb). Ohne Angabe wird nur der Build-Datensatz angelegt. */
   queue?: BuildQueue;
+  /** Versand der Kontakt-Benachrichtigung (SMTP im Betrieb, Attrappe in Tests). */
+  mailer?: Mailer;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -58,6 +68,7 @@ export async function buildApp({
   storage,
   onPublishedChange,
   queue,
+  mailer,
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: createLogger(config, logStream),
@@ -120,21 +131,33 @@ export async function buildApp({
   };
   const projectsService = createProjectsService({ db, onPublishedChange: publishedChanged });
   const pagesService = createPagesService({ db, onPublishedChange: publishedChanged });
-  void pagesService;
+  const buildService = createBuildService({ db, storage: storageImpl });
+  const siteService = createSiteService({
+    db,
+    onSiteChange: () => buildsService.onPublishedChange(),
+  });
+  const contactService = createContactService({
+    db,
+    mailer: mailer ?? createSmtpMailer(config.smtp),
+    config,
+    log: app.log,
+  });
+  const previewService = createPreviewService({ db, config, buildService });
 
   registerAuthContext(app, { config, authService });
 
   await app.register(internalRoutes, { db });
-  await app.register(buildRoutes, {
-    buildService: createBuildService({ db, storage: storageImpl }),
-    buildToken: config.buildToken,
-  });
+  await app.register(buildRoutes, { buildService, buildToken: config.buildToken });
+  await app.register(previewRoutes, { previewService, buildService });
   await app.register(
     async (api) => {
       await api.register(authRoutes, { authService, config });
       await api.register(usersRoutes, { usersService });
       await api.register(mediaRoutes, { mediaService });
-      await api.register(projectsRoutes, { projectsService });
+      await api.register(projectsRoutes, { projectsService, previewService });
+      await api.register(pagesRoutes, { pagesService, previewService });
+      await api.register(siteRoutes, { siteService, contactService });
+      await api.register(publicRoutes, { contactService, config });
       await api.register(buildsRoutes, { buildsService });
     },
     { prefix: API_PREFIX },

@@ -161,6 +161,18 @@ export function createBuildService({ db, storage }: { db: Database; storage: Sto
       };
     },
 
+    /** Für die Vorschau: Datei ohne Prüfung auf veröffentlichte Verwendung (die Vorschau prüft selbst). */
+    async mediaFileUnchecked(id: string): Promise<{ buffer: Buffer; mime: string }> {
+      const [row] = await repo.mediaByIds([id]);
+      if (!row) throw errors.notFound('Medium nicht gefunden.');
+      try {
+        return { buffer: await storage.get(row.storageKey), mime: row.mime };
+      } catch (err) {
+        if (err instanceof StorageNotFoundError) throw errors.notFound('Datei nicht gefunden.');
+        throw err;
+      }
+    },
+
     /** Dateien nur für Medien, die von veröffentlichtem Inhalt verwendet werden. */
     async mediaFile(id: string): Promise<{ buffer: Buffer; mime: string }> {
       const allowed = new Set(await repo.referencedMediaIds());

@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import { createDb, failStaleBuilds, queuedBuilds } from '@serend/db';
+import { createDb, failStaleBuilds, purgeContactMessages, queuedBuilds } from '@serend/db';
 import { z } from 'zod';
 import { ConfigError, loadWorkerConfig } from './config.js';
 import { BUILD_QUEUE, pgBossQueue, startBoss } from './queue.js';
@@ -54,6 +54,14 @@ async function sweep() {
   for (const b of await queuedBuilds(handle.db)) await queue.enqueue(b.id);
 }
 await sweep();
+// Datenschutz: Kontaktnachrichten nach Ablauf der Aufbewahrungsfrist löschen (täglich, beim Start einmal)
+const retentionDays = Number(process.env.CONTACT_RETENTION_DAYS ?? 180);
+const purge = () =>
+  purgeContactMessages(handle.db, retentionDays)
+    .then((n) => n > 0 && console.log(`${n} Kontaktnachricht(en) gelöscht.`))
+    .catch((e) => console.error('purge:', e.message));
+void purge();
+const purgeTimer = setInterval(() => void purge(), 24 * 3_600_000);
 const timer = setInterval(
   () => void sweep().catch((e) => console.error('sweep:', e.message)),
   60_000,
@@ -61,6 +69,7 @@ const timer = setInterval(
 
 async function shutdown() {
   clearInterval(timer);
+  clearInterval(purgeTimer);
   await boss.stop({ graceful: true, timeout: 30_000 });
   await handle.close();
   process.exit(0);

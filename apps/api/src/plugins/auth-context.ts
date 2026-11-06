@@ -15,7 +15,10 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
  */
 export function registerAuthContext(
   app: FastifyInstance,
-  deps: { config: Pick<AppConfig, 'cookieSecure' | 'adminOrigin'>; authService: AuthService },
+  deps: {
+    config: Pick<AppConfig, 'cookieSecure' | 'adminOrigin' | 'siteOrigin'>;
+    authService: AuthService;
+  },
 ): void {
   const cookieName = sessionCookieName(deps.config);
   app.decorateRequest('auth', null);
@@ -27,6 +30,12 @@ export function registerAuthContext(
     if (token) request.auth = (await deps.authService.authenticate(token)) ?? null;
 
     if (SAFE_METHODS.has(request.method)) return;
+
+    // Öffentliche Formulare (Kontakt): kommen von der Website-Domain, nie mit Session/CSRF.
+    if (request.routeOptions.config.publicForm) {
+      if (request.headers.origin !== deps.config.siteOrigin) throw errors.origin();
+      return;
+    }
 
     const origin = request.headers.origin;
     if (origin !== undefined && origin !== deps.config.adminOrigin) throw errors.origin();

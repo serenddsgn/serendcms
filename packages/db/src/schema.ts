@@ -452,3 +452,50 @@ export const releases = pgTable(
 
 export type BuildRow = typeof builds.$inferSelect;
 export type ReleaseRow = typeof releases.$inferSelect;
+
+// ── Team und Kontaktnachrichten ───────────────────────────────────────
+export const teamMembers = pgTable(
+  'team_members',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    translationGroupId: uuid('translation_group_id')
+      .notNull()
+      .default(sql`uuidv7()`),
+    name: text('name').notNull(),
+    roleTitle: text('role_title').notNull(),
+    bio: text('bio'),
+    photoMediaId: uuid('photo_media_id').references(() => media.id, { onDelete: 'restrict' }),
+    sortOrder: integer('sort_order').notNull().default(0),
+    status: text('status').notNull().default('draft'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('team_locale_check', LOCALE_CHECK(t.locale)),
+    check('team_status_check', STATUS_CHECK(t.status)),
+    index('team_photo_idx').on(t.photoMediaId),
+  ],
+);
+
+export const contactMessages = pgTable(
+  'contact_messages',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    message: text('message').notNull(),
+    status: text('status').notNull().default('new'),
+    consentAt: ts('consent_at').notNull(),
+    createdAt: ts('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('contact_locale_check', LOCALE_CHECK(t.locale)),
+    check('contact_status_check', sql`${t.status} in ('new', 'read', 'spam', 'archived')`),
+    index('contact_created_idx').on(t.createdAt),
+  ],
+);
+
+export type TeamMemberRow = typeof teamMembers.$inferSelect;
+export type ContactMessageRow = typeof contactMessages.$inferSelect;
