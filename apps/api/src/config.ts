@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 export interface AppConfig {
@@ -27,6 +28,7 @@ export interface AppConfig {
   siteOrigin: string;
   previewUrl: string;
   contact: { notifyTo: string | undefined; retentionDays: number };
+  maintenance: { dir: string; fontsDir: string };
   releasesDir: string;
   caddyReloadCommand: string | undefined;
   rateLimit: {
@@ -71,6 +73,7 @@ const EnvSchema = z.object({
   PREVIEW_URL: z.url().default('http://localhost:4323'),
   CONTACT_NOTIFY_TO: z.email().optional(),
   CONTACT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(180),
+  MAINTENANCE_DIR: z.string().min(1).default('.data/maintenance'),
   RELEASES_DIR: z.string().min(1).default('.data/releases'),
   CADDY_RELOAD_COMMAND: z.string().optional(),
   MEDIA_MAX_BYTES: z.coerce
@@ -151,6 +154,10 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     siteOrigin: new URL(e.SITE_URL).origin,
     previewUrl: e.PREVIEW_URL.replace(/\/$/, ''),
     contact: { notifyTo: e.CONTACT_NOTIFY_TO, retentionDays: e.CONTACT_RETENTION_DAYS },
+    maintenance: {
+      dir: resolve(e.MAINTENANCE_DIR),
+      fontsDir: fileURLToPath(new URL('../../web/public/fonts', import.meta.url)),
+    },
     releasesDir: resolve(e.RELEASES_DIR),
     caddyReloadCommand: e.CADDY_RELOAD_COMMAND,
     media: { storageDir: resolve(e.STORAGE_DIR), maxBytes: e.MEDIA_MAX_BYTES },

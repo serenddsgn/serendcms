@@ -16,22 +16,8 @@
 	}
 }
 
-# ── Öffentliche Website: reine statische Dateien aus dem aktiven Release ──────
-{$DOMAIN} {
-	import security_headers
-	encode zstd gzip
-
-	root * /var/lib/serendportfolio/releases/current
-
-	# Baseline-CSP ohne Inline-Skripte. Die Datei csp.caddy des Releases ergänzt genau die Hashes der Inline-Skripte
-	# dieses Builds (wird mit dem Release gebaut; Caddy lädt nach dem Wechsel neu).
-	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
-	import /var/lib/serendportfolio/releases/current/build-meta/*.caddy
-
-	# Nichts Internes ausliefern
-	@internal path /build-meta/* /internal/* /api/v1/*
-	respond @internal 404
-
+# ── Handler der öffentlichen Website (wird normal und im Wartungsmodus für freigeschaltete Besucher genutzt) ──
+(public_handlers) {
 	# Kontaktformular: einziger Endpunkt, der das Backend braucht (Same-Origin, kein CORS)
 	handle /api/contact {
 		rewrite * /api/v1/public/contact
@@ -58,14 +44,96 @@
 	header @md Content-Type "text/markdown; charset=utf-8"
 
 	file_server
+}
+
+# ── Öffentliche Website: reine statische Dateien aus dem aktiven Release ──────
+{$DOMAIN} {
+	import security_headers
+	encode zstd gzip
+
+	root * /var/lib/serendportfolio/releases/current
+
+	# Baseline-CSP ohne Inline-Skripte. Die Datei csp.caddy des Releases ergänzt genau die Hashes der Inline-Skripte
+	# dieses Builds (wird mit dem Release gebaut; Caddy lädt nach dem Wechsel neu).
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
+	import /var/lib/serendportfolio/releases/current/build-meta/*.caddy
+
+	# Nichts Internes ausliefern
+	@internal path /build-meta/* /internal/* /api/v1/*
+	respond @internal 404
+
+	# Wartungsmodus: gilt, solange die Datei `on` existiert (das Admin legt sie an und entfernt sie; es wird dafür kein
+	# Backend gefragt). Besucher sehen die Wartungsseite mit 503. Eingeloggte Redakteure bekommen im Admin einen
+	# Einmal-Link, der ein Cookie setzt; die API prüft das Cookie pro Anfrage (forward_auth) und lässt sie durch.
+	@maintenance file {
+		root /var/lib/serendportfolio/maintenance
+		try_files on
+	}
+	handle @maintenance {
+		handle /maintenance-assets/* {
+			uri strip_prefix /maintenance-assets
+			root * /var/lib/serendportfolio/maintenance
+			header Cache-Control "public, max-age=300"
+			file_server
+		}
+		handle /__maintenance/enter {
+			rewrite * /api/v1/public/maintenance/enter
+			reverse_proxy 127.0.0.1:4000
+		}
+		handle {
+			forward_auth 127.0.0.1:4000 {
+				uri /internal/maintenance/check
+				handle_response {
+					root * /var/lib/serendportfolio/maintenance
+					rewrite * /maintenance.html
+					header Cache-Control "no-store"
+					header X-Robots-Tag "noindex, nofollow"
+					header Retry-After "3600"
+					file_server {
+						status 503
+					}
+				}
+			}
+			import public_handlers
+		}
+	}
+
+	handle {
+		import public_handlers
+	}
 
 	handle_errors {
-		rewrite * /404.html
-		file_server
+		# Ist die API im Wartungsmodus nicht erreichbar, bleibt die Wartungsseite stehen statt eines Fehlers
+		@maintenance_down {
+			file {
+				root /var/lib/serendportfolio/maintenance
+				try_files on
+			}
+			expression {err.status_code} >= 500
+		}
+		handle @maintenance_down {
+			root * /var/lib/serendportfolio/maintenance
+			rewrite * /maintenance.html
+			header Cache-Control "no-store"
+			header X-Robots-Tag "noindex, nofollow"
+			file_server {
+				status 503
+			}
+		}
+		handle {
+			rewrite * /404.html
+			file_server
+		}
 	}
 
 	log {
 		output file /var/log/caddy/site.log
+		format filter {
+			wrap json
+			request>uri query {
+				delete token
+			}
+		}
 	}
 }
 

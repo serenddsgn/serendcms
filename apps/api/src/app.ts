@@ -23,6 +23,7 @@ import { authRoutes } from './routes/auth.routes.js';
 import { internalRoutes } from './routes/internal.routes.js';
 import { buildRoutes } from './routes/build.routes.js';
 import { buildsRoutes } from './routes/builds.routes.js';
+import { maintenanceInternalRoutes, maintenanceRoutes } from './routes/maintenance.routes.js';
 import { pagesRoutes } from './routes/pages.routes.js';
 import { previewRoutes } from './routes/preview.routes.js';
 import { publicRoutes } from './routes/public.routes.js';
@@ -33,6 +34,7 @@ import { usersRoutes } from './routes/users.routes.js';
 import { createAuthService } from './services/auth.service.js';
 import { createLocalStorage } from './storage/local.js';
 import type { Storage } from './storage/storage.js';
+import { createMaintenanceService } from './services/maintenance.service.js';
 import { createContactService } from './services/contact.service.js';
 import { createPreviewService } from './services/preview.service.js';
 import { createSiteService } from './services/site.service.js';
@@ -142,6 +144,12 @@ export async function buildApp({
     config,
     log: app.log,
   });
+  const maintenanceService = createMaintenanceService({
+    db,
+    storage: storageImpl,
+    config,
+    log: app.log,
+  });
   const previewService = createPreviewService({ db, config, buildService });
 
   registerAuthContext(app, { config, authService });
@@ -149,6 +157,7 @@ export async function buildApp({
   await app.register(internalRoutes, { db });
   await app.register(buildRoutes, { buildService, buildToken: config.buildToken });
   await app.register(previewRoutes, { previewService, buildService });
+  await app.register(maintenanceInternalRoutes, { maintenanceService, config });
   await app.register(
     async (api) => {
       await api.register(authRoutes, { authService, config });
@@ -158,10 +167,21 @@ export async function buildApp({
       await api.register(pagesRoutes, { pagesService, previewService });
       await api.register(siteRoutes, { siteService, contactService });
       await api.register(publicRoutes, { contactService, config });
+      await api.register(maintenanceRoutes, { maintenanceService, config });
       await api.register(buildsRoutes, { buildsService });
     },
     { prefix: API_PREFIX },
   );
+
+  // Dateien passend zum gespeicherten Zustand schreiben (z. B. nach einer Wiederherstellung); schlägt nie den Start fehl
+  void maintenanceService
+    .apply()
+    .catch((err) =>
+      app.log.error(
+        { errName: err instanceof Error ? err.name : 'Error' },
+        'Wartungsmodus konnte nicht angewendet werden',
+      ),
+    );
 
   return app;
 }

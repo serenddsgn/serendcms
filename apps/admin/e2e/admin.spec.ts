@@ -74,6 +74,23 @@ test('Projekt anlegen, Cover hochladen, veröffentlichen und den Build im Status
   await expect(page.getByText('queued').first()).toBeVisible();
 });
 
+test('Wartungsmodus ein- und ausschalten (rote Leiste in der ganzen Oberfläche)', async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole('link', { name: 'Wartungsmodus' }).click();
+  await expect(page.getByText('AUS: Seite ist öffentlich')).toBeVisible();
+  await page.getByLabel('Wartungsmodus aktivieren').check();
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByText('AN: Besucher sehen die Wartungsseite')).toBeVisible();
+  await page.getByRole('link', { name: 'Projekte' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Wartungsmodus ist AN' })).toBeVisible();
+  await page.getByRole('link', { name: 'Wartungsmodus' }).first().click();
+  await page.getByLabel('Wartungsmodus aktivieren').uncheck();
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByText('AUS: Seite ist öffentlich')).toBeVisible();
+});
+
 test('Abmelden beendet die Session', async ({ page }) => {
   await login(page);
   await page.getByRole('button', { name: 'Abmelden' }).click();

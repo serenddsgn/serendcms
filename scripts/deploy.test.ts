@@ -133,6 +133,47 @@ describe('Caddyfile', () => {
   });
 });
 
+describe('Wartungsmodus im Caddyfile', () => {
+  const caddy = read('deploy/Caddyfile');
+
+  it('prüft eine Flag-Datei (ohne Backend), liefert 503 mit Retry-After und noindex', () => {
+    expect(caddy).toMatch(
+      /@maintenance file \{\s+root \/var\/lib\/serendportfolio\/maintenance\s+try_files on\s+\}/,
+    );
+    expect(caddy).toMatch(/file_server \{\s+status 503\s+\}/);
+    expect(caddy).toContain('Retry-After "3600"');
+    expect(caddy).toContain('X-Robots-Tag "noindex, nofollow"');
+  });
+
+  it('lässt nur Besucher mit gültigem Zugangs-Cookie durch (forward_auth an die lokale API)', () => {
+    expect(caddy).toMatch(/forward_auth 127\.0\.0\.1:4000 \{\s+uri \/internal\/maintenance\/check/);
+    expect(caddy).toContain('rewrite * /api/v1/public/maintenance/enter');
+    // Ist die API im Wartungsmodus nicht erreichbar, bleibt die Wartungsseite (Fail-closed)
+    expect(caddy).toMatch(/@maintenance_down \{[\s\S]*?expression \{err\.status_code\} >= 500/);
+  });
+
+  it('schreibt Einmal-Token nie ins Zugriffslog', () => {
+    const site = caddy.slice(caddy.indexOf('{$DOMAIN} {'), caddy.indexOf('www.{$DOMAIN}'));
+    expect(site).toMatch(/request>uri query \{\s+delete token\s+\}/);
+  });
+
+  it('ist für Caddy gültig (nur wenn `caddy` installiert ist)', () => {
+    try {
+      execFileSync('caddy', ['version'], { stdio: 'ignore' });
+    } catch {
+      return; // kein Caddy auf diesem Rechner: übersprungen
+    }
+    execFileSync(
+      'caddy',
+      ['adapt', '--config', join(ROOT, 'deploy/Caddyfile'), '--adapter', 'caddyfile'],
+      {
+        env: { ...process.env, DOMAIN: 'example.com', ACME_EMAIL: 'a@example.com' },
+        stdio: 'ignore',
+      },
+    );
+  });
+});
+
 describe('Server-Einrichtung', () => {
   const setup = read('deploy/server-setup.sh');
 

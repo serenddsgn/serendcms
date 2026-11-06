@@ -82,3 +82,19 @@ Es werden nie Passwörter, Tokens, Cookies oder Formularinhalte geloggt.
 - Caddy: HSTS, CSP (Skripte nur `'self'` plus Hashes der Inline-Skripte des jeweiligen Builds), `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
   `/internal/*` und `/build-meta/*` werden nie ausgeliefert. Optional: IP-Allowlist für `admin.<domain>` (Beispiel im Caddyfile).
 - Backups verschlüsselt (age) und außerhalb des Servers (siehe `docs/03-backup-restore.md`).
+
+## Wartungsmodus („Wir überarbeiten unsere Webseite“)
+
+Im Admin unter **Wartungsmodus** (nur Administratoren dürfen umschalten) lässt sich die öffentliche Seite hinter eine Wartungsseite legen: Logo
+(oder Wortmarke), die Überschrift in DE/EN, im Design der Seite. Das wirkt **sofort**, ein Build ist nicht nötig, und die Redaktion arbeitet
+normal weiter.
+
+- **Besucher** sehen die Wartungsseite mit Status 503, `Retry-After` und `noindex`; Suchmaschinen behalten den bisherigen Stand.
+- **Redakteure** klicken im Admin auf *Seite als Redakteur ansehen*: Der Einmal-Link (5 Minuten) setzt ein HttpOnly-Cookie (8 Stunden) auf der
+  öffentlichen Domain. Caddy lässt dann die echte Seite durch.
+- **Technik:** Das Admin schreibt `maintenance.html`, das Logo und die Flag-Datei `on` nach `/var/lib/serendportfolio/maintenance`. Caddy prüft nur
+  das Vorhandensein dieser Datei (kein Backend-Aufruf für normale Besucher) und fragt im Wartungsmodus die API (`forward_auth`), ob das Cookie gültig ist.
+  Ist die API dann nicht erreichbar, bleibt die Wartungsseite stehen (fail-closed).
+- Eine rote Leiste im Admin erinnert daran, solange der Modus an ist.
+- **Vor dem Livegang:** erstes Deployment, einloggen, Wartungsmodus aktivieren (Logo hochladen), erst danach die Domain freigeben bzw. Inhalte veröffentlichen.
+- Logo: PNG, WebP, JPEG oder AVIF (kein SVG, aus Sicherheitsgründen), am besten mit transparentem Hintergrund und mindestens 400 px Höhe.

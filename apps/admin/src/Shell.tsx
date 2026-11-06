@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
+import { MaintenanceBar } from './pages/MaintenancePage';
 import { useSession } from './session';
 
 const NAV: [string, string, boolean?][] = [
@@ -10,6 +11,7 @@ const NAV: [string, string, boolean?][] = [
   ['/navigation', 'Navigation'],
   ['/team', 'Team'],
   ['/settings', 'Einstellungen', true],
+  ['/maintenance', 'Wartungsmodus'],
   ['/messages', 'Nachrichten'],
   ['/users', 'Benutzer', true],
 ];
@@ -46,9 +48,12 @@ export function Shell() {
           Abmelden
         </button>
       </nav>
-      <main className="main">
-        <Outlet />
-      </main>
+      <div>
+        <MaintenanceBar />
+        <main className="main">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
