@@ -243,6 +243,25 @@ describe('Fehlgeschlagener Build lässt das aktive Release unverändert', () => 
   });
 });
 
+describe('Arbeitsverzeichnis des Builds', () => {
+  it('baut im konfigurierten Verzeichnis (nicht in /tmp) und räumt es danach auf', async () => {
+    const base = mkdtempSync(join(tmpdir(), 'serend-buildbase-'));
+    let seen = '';
+    const recording: SiteBuilder = async (input) => {
+      seen = input.outDir;
+      await goodSite('x')(input);
+    };
+    const id = await queued();
+    const r = await runBuild(
+      deps(recording, { config: { ...deps(recording).config, buildTmpDir: join(base, 'nested') } }),
+      id,
+    );
+    expect(r.status).toBe('succeeded');
+    expect(seen.startsWith(join(base, 'nested'))).toBe(true);
+    expect(readdirSync(join(base, 'nested'))).toEqual([]); // aufgeräumt
+  });
+});
+
 describe('Warteschlange und Zustand', () => {
   it('verschmilzt mehrfaches Anfordern zu einem wartenden Build', async () => {
     const a = await requestBuild(h.db, { trigger: 'publish' });

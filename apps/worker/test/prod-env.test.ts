@@ -21,6 +21,8 @@ describe('deploy/env.production.example für den Worker', () => {
     expect(cfg.releasesDir).toBe('/var/lib/serendportfolio/releases');
     expect(cfg.siteUrl).toBe('https://example.com');
     expect(cfg.lighthouse.enabled).toBe(true);
+    // gleiches Dateisystem wie das Repository (Astro verschiebt Dateien per rename)
+    expect(cfg.buildTmpDir.startsWith(cfg.repoDir)).toBe(true);
     expect(cfg.caddyReloadCommand).toMatch(/caddy reload/);
   });
 });

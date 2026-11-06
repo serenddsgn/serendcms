@@ -13,6 +13,7 @@ const Env = z.object({
   RELEASES_DIR: z.string().min(1),
   ASSET_CACHE_DIR: z.string().min(1).optional(),
   REPO_DIR: z.string().min(1).optional(),
+  BUILD_TMP_DIR: z.string().min(1).optional(),
   KEEP_RELEASES: z.coerce.number().int().min(2).max(100).default(10),
   BUILD_TIMEOUT_MS: z.coerce
     .number()
@@ -33,6 +34,8 @@ export interface WorkerConfig {
   releasesDir: string;
   assetCacheDir: string;
   repoDir: string;
+  /** Arbeitsverzeichnis des Astro-Builds; muss auf demselben Dateisystem wie apps/web/.astro liegen (Astro verschiebt Dateien per rename). */
+  buildTmpDir: string;
   keepReleases: number;
   buildTimeoutMs: number;
   lighthouse: { enabled: boolean; minScore: number };
@@ -55,6 +58,7 @@ export function loadWorkerConfig(env: Record<string, string | undefined>): Worke
     throw new ConfigError(parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`));
   const e = parsed.data;
   const releasesDir = resolve(e.RELEASES_DIR);
+  const repoDir = resolve(e.REPO_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '../../..'));
   return {
     nodeEnv: e.NODE_ENV,
     databaseUrl: e.DATABASE_URL,
@@ -63,7 +67,8 @@ export function loadWorkerConfig(env: Record<string, string | undefined>): Worke
     siteUrl: e.SITE_URL.replace(/\/$/, ''),
     releasesDir,
     assetCacheDir: resolve(e.ASSET_CACHE_DIR ?? join(releasesDir, '.cache')),
-    repoDir: resolve(e.REPO_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '../../..')),
+    repoDir,
+    buildTmpDir: resolve(e.BUILD_TMP_DIR ?? join(repoDir, 'apps/web/.build-tmp')),
     keepReleases: e.KEEP_RELEASES,
     buildTimeoutMs: e.BUILD_TIMEOUT_MS,
     lighthouse: { enabled: e.BUILD_CHECK_LIGHTHOUSE, minScore: e.LIGHTHOUSE_MIN_SCORE },
