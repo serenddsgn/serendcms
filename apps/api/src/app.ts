@@ -39,6 +39,8 @@ import { createContactService } from './services/contact.service.js';
 import { createPreviewService } from './services/preview.service.js';
 import { createSiteService } from './services/site.service.js';
 import { createSmtpMailer, type Mailer } from './lib/mailer.js';
+import { createDeployService, type GitRunner } from './services/deploy.service.js';
+import { deployRoutes } from './routes/deploy.routes.js';
 import { createBuildsService, type BuildQueue } from './services/builds.service.js';
 import { createBuildService } from './services/build.service.js';
 import { createMediaService } from './services/media.service.js';
@@ -59,6 +61,8 @@ export interface BuildAppOptions {
   queue?: BuildQueue;
   /** Versand der Kontakt-Benachrichtigung (SMTP im Betrieb, Attrappe in Tests). */
   mailer?: Mailer;
+  /** Standard: das `git` des Servers im Repository-Verzeichnis. Tests geben eine Attrappe mit. */
+  git?: GitRunner;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -71,6 +75,7 @@ export async function buildApp({
   onPublishedChange,
   queue,
   mailer,
+  git,
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: createLogger(config, logStream),
@@ -151,6 +156,7 @@ export async function buildApp({
     log: app.log,
   });
   const previewService = createPreviewService({ db, config, buildService });
+  const deployService = createDeployService({ config, git, log: app.log });
 
   registerAuthContext(app, { config, authService });
 
@@ -169,6 +175,7 @@ export async function buildApp({
       await api.register(publicRoutes, { contactService, config });
       await api.register(maintenanceRoutes, { maintenanceService, config });
       await api.register(buildsRoutes, { buildsService });
+      await api.register(deployRoutes, { deployService });
     },
     { prefix: API_PREFIX },
   );

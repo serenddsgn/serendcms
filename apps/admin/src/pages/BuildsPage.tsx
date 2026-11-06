@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import { useSession } from '../session';
 import { Modal, Notice, Pill, errText, fmtDate, useAction } from '../ui';
+import { CodeUpdateCard } from './CodeUpdateCard';
 
 interface Build {
   id: string;
@@ -71,6 +72,7 @@ export function BuildsPage() {
           Seite jetzt neu bauen
         </button>
       </div>
+      {user.role === 'admin' && <CodeUpdateCard />}
       {(status.error || trigger.error || rollback.error) && (
         <Notice>{errText(status.error ?? trigger.error ?? rollback.error)}</Notice>
       )}

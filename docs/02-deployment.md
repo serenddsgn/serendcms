@@ -36,6 +36,40 @@ Ein zweites Deployment gleichzeitig wird durch eine Sperrdatei verhindert. Brich
 Website unberührt; nur api/admin können auf dem alten oder halb gewechselten Stand stehen. Bei einem Fehler nach den Migrationen:
 Fehler beheben und erneut deployen, oder die Sicherung zurückspielen (`docs/03-backup-restore.md`).
 
+### Deployment aus dem Admin
+
+Im Admin unter *Veröffentlichung* (nur Administratoren) steht der Kasten **Software-Stand**. Die API holt dafür per `git fetch` den Stand von
+`origin/main` und vergleicht ihn mit dem Checkout des Servers (Prüfung höchstens alle 5 Minuten im Hintergrund, oder per *Jetzt prüfen*).
+Gibt es neue Commits, erscheinen sie mit Betreff und Datum, dazu der Button **Jetzt deployen (git pull)**. Der Knopf führt denselben Ablauf
+aus wie `pnpm run deploy` (Schritte 1–7 oben); der Kasten zeigt Fortschritt und Log, bei einem Fehler das Ende des Logs.
+
+So funktioniert es, weil die API per systemd gehärtet ist (kein `sudo`, würde sich beim Neustart selbst beenden):
+
+1. Die API legt die Datei `<DEPLOY_DIR>/request` an (`ref=main`).
+2. `serend-deploy.path` bemerkt sie und startet `serend-deploy.service` (Benutzer `serend`, **ohne** `NoNewPrivileges`, denn `deploy.sh` braucht `sudo systemctl restart`).
+3. `deploy/deploy-run.sh` nimmt die Anfrage weg, führt `deploy/deploy.sh main` aus und schreibt `status.json` und `deploy.log` in dasselbe Verzeichnis. Die API liest nur diese Dateien.
+
+Es gibt immer nur ein Deployment gleichzeitig (Sperre in `deploy.sh`, zusätzlich lehnt die API eine zweite Anfrage mit 409 ab). Ein Lauf, der länger als
+40 Minuten „läuft“, gilt als abgebrochen.
+
+**Einmalige Einrichtung auf einem bestehenden Server** (neue Server bekommen das durch `server-setup.sh`). Die erste Version mit dieser Funktion muss noch
+per SSH deployt werden (`pnpm run deploy:remote`), danach als Benutzer mit `sudo`:
+
+```bash
+sudo install -d -o serend -g serend -m 750 /var/lib/serendportfolio/deploy
+sudo install -m 644 /srv/serendportfolio/deploy/systemd/serend-deploy.path /srv/serendportfolio/deploy/systemd/serend-deploy.service /etc/systemd/system/
+printf 'DEPLOY_DIR=/var/lib/serendportfolio/deploy\nDEPLOY_REPO_DIR=/srv/serendportfolio\n' | sudo tee -a /etc/serendportfolio/serendportfolio.env >/dev/null
+sudo systemctl daemon-reload
+sudo systemctl enable --now serend-deploy.path
+sudo systemctl restart serend-api
+```
+
+Der Admin zeigt „Der Deploy-Dienst hat die Anfrage noch nicht übernommen“, wenn die Anfrage länger als 30 Sekunden liegen bleibt, also wenn `serend-deploy.path`
+fehlt. Fehlersuche: `systemctl status serend-deploy.path`, `journalctl -u serend-deploy`, `/var/lib/serendportfolio/deploy/deploy.log`.
+
+Voraussetzung für den Abruf ist, dass der Deploy-Key (nur Lesezugriff) auch für den Benutzer `serend` der API gilt. Er liegt in dessen Home
+(`/var/lib/serendportfolio/home/.ssh`), das die API-Unit lesen darf.
+
 ## 2. Inhalts-Veröffentlichung
 
 „Veröffentlichen“ im Admin gibt Revisionen frei und legt einen Build-Job an. Mehrere Veröffentlichungen in kurzer Zeit

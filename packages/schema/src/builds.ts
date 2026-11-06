@@ -52,3 +52,32 @@ export const BuildDetailResponse = z.object({ build: BuildDetailDto });
 export const BuildCreatedResponse = z.object({ build: BuildSummaryDto, created: z.boolean() });
 export const ReleaseListResponse = z.object({ releases: z.array(ReleaseDto) });
 export const ReleaseIdParams = z.object({ id: Uuid });
+
+// ── Code-Stand (git) und Code-Deployment ────────────────────────────────
+export const DEPLOY_STATES = ['idle', 'requested', 'running', 'success', 'failed'] as const;
+export const CodeCommitDto = z.object({
+  sha: z.string(),
+  subject: z.string(),
+  date: z.iso.datetime(),
+});
+export const CodeStatusResponse = z.object({
+  branch: z.string(),
+  /** Stand des Server-Checkouts (kurzer SHA); null, wenn git nicht lesbar ist. */
+  localSha: z.string().nullable(),
+  remoteSha: z.string().nullable(),
+  /** Anzahl Commits auf origin/<branch>, die der Server noch nicht hat. */
+  behind: z.number().int(),
+  commits: z.array(CodeCommitDto),
+  checkedAt: z.iso.datetime().nullable(),
+  checkError: z.string().nullable(),
+  deploy: z.object({
+    state: z.enum(DEPLOY_STATES),
+    requestedAt: z.iso.datetime().nullable(),
+    startedAt: z.iso.datetime().nullable(),
+    finishedAt: z.iso.datetime().nullable(),
+    sha: z.string().nullable(),
+    /** Letzte Zeilen des Deploy-Logs (nur während und nach einem fehlgeschlagenen Lauf). */
+    logTail: z.string().nullable(),
+  }),
+});
+export type CodeStatusResponse = z.infer<typeof CodeStatusResponse>;

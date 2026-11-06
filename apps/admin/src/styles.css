@@ -322,6 +322,22 @@ th {
   max-height: 90vh;
   overflow: auto;
 }
+/* Software-Stand (Code-Deployment) */
+.code-update {
+  border-left: 3px solid var(--accent);
+}
+.code-update p {
+  margin: 10px 0;
+}
+.code-update .notice {
+  margin: 10px 0;
+}
+.commits {
+  margin: 8px 0 14px;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
 pre.log {
   background: var(--chip);
   padding: 12px;
