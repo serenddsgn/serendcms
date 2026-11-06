@@ -38,6 +38,8 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       password: undefined,
       from: 'test@localhost',
     },
+    releasesDir: mkdtempSync(join(tmpdir(), 'serend-releases-')),
+    caddyReloadCommand: undefined,
     media: { storageDir: mkdtempSync(join(tmpdir(), 'serend-media-')), maxBytes: 1024 * 1024 },
     argon2: { memoryCost: 1024, timeCost: 1, parallelism: 1 }, // nur für Tests billig
     rateLimit: { loginMax: 1000, loginWindowMs: 60_000 },
@@ -57,7 +59,7 @@ export interface TestApp {
 
 export async function createTestApp(
   overrides: Partial<AppConfig> = {},
-  extra: Pick<Parameters<typeof buildApp>[0], 'onPublishedChange' | 'storage'> = {},
+  extra: Pick<Parameters<typeof buildApp>[0], 'onPublishedChange' | 'storage' | 'queue'> = {},
 ): Promise<TestApp> {
   const database: TestDatabase = await createTestDatabase(inject('pgAdminUrl'));
   const handle = createDb(database.url, { max: 4 });

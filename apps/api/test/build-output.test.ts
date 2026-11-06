@@ -18,6 +18,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import sharp from 'sharp';
+import { runChecks } from '@serend/builder';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedContent } from '../src/seed/content.js';
 import { createMediaService } from '../src/services/media.service.js';
@@ -234,42 +235,11 @@ describe('Build-Output', () => {
     }
   });
 
-  it('hält das JS-Budget ein (≤ 50 KB gzip pro Seite)', async () => {
-    const { gzipSync } = await import('node:zlib');
-    const jsOf = (html: string) => {
-      const files = [...html.matchAll(/(?:src|href)="(\/_assets\/[^"]+\.js)"/g)].map((m) => m[1]!);
-      const inline = [...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)].map(
-        (m) => m[1]!,
-      );
-      return [
-        ...files.map((f) => readFileSync(join(out, f))),
-        ...inline.map((s) => Buffer.from(s)),
-      ];
-    };
-    const imports = (file: string): string[] =>
-      [...text(join(out, file)).matchAll(/from"\.\/([^"]+\.js)"/g)].map((m) => `/_assets/${m[1]}`);
-    for (const page of [
-      'de/index.html',
-      'de/projekte/index.html',
-      'de/projekte/dolce-falcone/index.html',
-    ]) {
-      const html = text(join(out, page));
-      const direct = [...html.matchAll(/(?:src|href)="(\/_assets\/[^"]+\.js)"/g)].map((m) => m[1]!);
-      // Insel-Module (client:visible) laden Abhängigkeiten nach: transitiv zählen
-      const seen = new Set<string>();
-      const visit = (f: string) => {
-        if (seen.has(f)) return;
-        seen.add(f);
-        imports(f).forEach(visit);
-      };
-      [
-        ...[...html.matchAll(/component-url="(\/_assets\/[^"]+\.js)"/g)].map((m) => m[1]!),
-        ...direct,
-      ].forEach(visit);
-      const total =
-        [...seen].reduce((s, f) => s + gzipSync(readFileSync(join(out, f))).length, 0) +
-        jsOf(html).reduce((s, b) => s + gzipSync(b).length, 0);
-      expect(total, page).toBeLessThan(50 * 1024);
-    }
+  it('besteht die Build-Prüfungen: keine kaputten Links, gültiges HTML, JS-Budget ≤ 50 KB pro Seite', async () => {
+    const result = await runChecks(out, { siteUrl: 'https://www.example.com', lighthouse: false });
+    expect(result.problems).toEqual([]);
+    expect(result.passed).toBe(true);
+    expect(result.links.links).toBeGreaterThan(100);
+    expect(Math.max(...result.budget.pages.map((p) => p.bytes))).toBeLessThan(50 * 1024);
   });
 });

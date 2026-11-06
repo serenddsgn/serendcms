@@ -395,3 +395,60 @@ export type PageRevisionRow = typeof pageRevisions.$inferSelect;
 export type ServiceRow = typeof services.$inferSelect;
 export type NavigationItemRow = typeof navigationItems.$inferSelect;
 export type SiteSettingRow = typeof siteSettings.$inferSelect;
+
+// ── Builds und Releases ───────────────────────────────────────────────
+export const builds = pgTable(
+  'builds',
+  {
+    id: id(),
+    status: text('status').notNull().default('queued'),
+    trigger: text('trigger').notNull(),
+    triggeredBy: uuid('triggered_by').references(() => users.id, { onDelete: 'set null' }),
+    requestedAt: ts('requested_at').notNull().defaultNow(),
+    startedAt: ts('started_at'),
+    finishedAt: ts('finished_at'),
+    errorSummary: text('error_summary'),
+    /** Build-Log ohne Secrets, gekürzt. */
+    log: text('log'),
+    /** Ergebnisse der Prüfungen: Links, HTML, JS-Budget, Lighthouse. */
+    checks: jsonb('checks').$type<unknown>(),
+    /** Revisions-IDs, aus denen gebaut wurde. */
+    manifest: jsonb('manifest').$type<unknown>(),
+  },
+  (t) => [
+    check('builds_status_check', sql`${t.status} in ('queued', 'running', 'succeeded', 'failed')`),
+    check('builds_trigger_check', sql`${t.trigger} in ('publish', 'manual', 'deploy', 'settings')`),
+    index('builds_requested_idx').on(t.requestedAt),
+    // höchstens ein wartender und ein laufender Build gleichzeitig
+    uniqueIndex('builds_one_queued_key')
+      .on(t.status)
+      .where(sql`${t.status} = 'queued'`),
+    uniqueIndex('builds_one_running_key')
+      .on(t.status)
+      .where(sql`${t.status} = 'running'`),
+  ],
+);
+
+export const releases = pgTable(
+  'releases',
+  {
+    id: id(),
+    buildId: uuid('build_id')
+      .notNull()
+      .references(() => builds.id, { onDelete: 'restrict' }),
+    isActive: boolean('is_active').notNull().default(false),
+    activatedAt: ts('activated_at'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    /** Gesetzt, wenn die Dateien aufgeräumt wurden (kein Rollback mehr möglich). */
+    removedAt: ts('removed_at'),
+  },
+  (t) => [
+    uniqueIndex('releases_one_active_key')
+      .on(t.isActive)
+      .where(sql`${t.isActive}`),
+    uniqueIndex('releases_build_key').on(t.buildId),
+  ],
+);
+
+export type BuildRow = typeof builds.$inferSelect;
+export type ReleaseRow = typeof releases.$inferSelect;

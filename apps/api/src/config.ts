@@ -24,6 +24,8 @@ export interface AppConfig {
   };
   argon2: { memoryCost: number; timeCost: number; parallelism: number };
   media: { storageDir: string; maxBytes: number };
+  releasesDir: string;
+  caddyReloadCommand: string | undefined;
   rateLimit: { loginMax: number; loginWindowMs: number };
 }
 
@@ -57,6 +59,8 @@ const EnvSchema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().min(3),
   STORAGE_DIR: z.string().min(1).default('.data/media'),
+  RELEASES_DIR: z.string().min(1).default('.data/releases'),
+  CADDY_RELOAD_COMMAND: z.string().optional(),
   MEDIA_MAX_BYTES: z.coerce
     .number()
     .int()
@@ -132,6 +136,8 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       from: e.SMTP_FROM,
     },
     // OWASP-Empfehlung für argon2id: 19 MiB, t=2, p=1
+    releasesDir: resolve(e.RELEASES_DIR),
+    caddyReloadCommand: e.CADDY_RELOAD_COMMAND,
     media: { storageDir: resolve(e.STORAGE_DIR), maxBytes: e.MEDIA_MAX_BYTES },
     argon2: { memoryCost: 19456, timeCost: 2, parallelism: 1 },
     rateLimit: { loginMax: 5, loginWindowMs: 15 * 60 * 1000 },
