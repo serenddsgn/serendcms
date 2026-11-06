@@ -52,17 +52,17 @@ So funktioniert es, weil die API per systemd gehärtet ist (kein `sudo`, würde 
 Es gibt immer nur ein Deployment gleichzeitig (Sperre in `deploy.sh`, zusätzlich lehnt die API eine zweite Anfrage mit 409 ab). Ein Lauf, der länger als
 40 Minuten „läuft“, gilt als abgebrochen.
 
-**Einmalige Einrichtung auf einem bestehenden Server** (neue Server bekommen das durch `server-setup.sh`). Die erste Version mit dieser Funktion muss noch
-per SSH deployt werden (`pnpm run deploy:remote`), danach als Benutzer mit `sudo`:
+**Einmalige Einrichtung auf einem bestehenden Server** (neue Server bekommen das durch `server-setup.sh`). Dafür ist `root` nötig: Der Benutzer `deploy`
+darf per `sudo` nur als `serend` arbeiten, nicht als root, und Root-Login per SSH ist gesperrt. Die Hetzner-Cloud-Console (Server → Console, ggf. vorher
+„Root-Passwort zurücksetzen“) hat kein Copy & Paste, deshalb steckt alles in einem Skript. Erst die Version mit dem Skript per SSH deployen
+(`pnpm run deploy:remote`), dann in der Console als `root` eintippen (Tab vervollständigt die Pfade):
 
 ```bash
-sudo install -d -o serend -g serend -m 750 /var/lib/serendportfolio/deploy
-sudo install -m 644 /srv/serendportfolio/deploy/systemd/serend-deploy.path /srv/serendportfolio/deploy/systemd/serend-deploy.service /etc/systemd/system/
-printf 'DEPLOY_DIR=/var/lib/serendportfolio/deploy\nDEPLOY_REPO_DIR=/srv/serendportfolio\n' | sudo tee -a /etc/serendportfolio/serendportfolio.env >/dev/null
-sudo systemctl daemon-reload
-sudo systemctl enable --now serend-deploy.path
-sudo systemctl restart serend-api
+bash /srv/serendportfolio/deploy/enable-admin-deploy.sh
 ```
+
+Das Skript ist idempotent und legt `/var/lib/serendportfolio/deploy` an, installiert `serend-deploy.path` und `serend-deploy.service`, trägt `DEPLOY_DIR` und
+`DEPLOY_REPO_DIR` in `/etc/serendportfolio/serendportfolio.env` ein, aktiviert die Path-Unit und startet die API neu.
 
 Der Admin zeigt „Der Deploy-Dienst hat die Anfrage noch nicht übernommen“, wenn die Anfrage länger als 30 Sekunden liegen bleibt, also wenn `serend-deploy.path`
 fehlt. Fehlersuche: `systemctl status serend-deploy.path`, `journalctl -u serend-deploy`, `/var/lib/serendportfolio/deploy/deploy.log`.

@@ -9,6 +9,7 @@ Wiederherstellung in [`docs/03-backup-restore.md`](../docs/03-backup-restore.md)
 | `server-setup.sh` | richtet einen frischen Server ein (Pakete, Benutzer, Firewall, SSH-Härtung, PostgreSQL 18, Caddy, systemd, Deploy-Key) |
 | `deploy.sh` | Code-Deployment auf dem Server (`pnpm run deploy`) |
 | `deploy-remote.sh` | lokal: führt `deploy.sh` per SSH aus (`pnpm run deploy:remote`) |
+| `enable-admin-deploy.sh` | einmalig als root: schaltet den Deploy-Button im Admin frei (Units, Verzeichnis, Env) |
 | `deploy-run.sh` | läuft als `serend-deploy.service`: führt `deploy.sh` aus, wenn der Admin „Jetzt deployen“ klickt (`docs/02-deployment.md`) |
 | `backup.sh`, `restore.sh` | verschlüsselte Sicherung nach außen, Wiederherstellung |
 | `Caddyfile` | Website, Admin/API, Vorschau; Security-Header, Redirects, Kontaktformular-Weiterleitung |
