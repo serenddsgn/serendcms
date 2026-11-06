@@ -1,4 +1,5 @@
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -20,8 +21,14 @@ import { registerAuthContext } from './plugins/auth-context.js';
 import { registerErrorHandling } from './plugins/error-handler.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { internalRoutes } from './routes/internal.routes.js';
+import { mediaRoutes } from './routes/media.routes.js';
+import { projectsRoutes } from './routes/projects.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
 import { createAuthService } from './services/auth.service.js';
+import { createLocalStorage } from './storage/local.js';
+import type { Storage } from './storage/storage.js';
+import { createMediaService } from './services/media.service.js';
+import { createProjectsService } from './services/projects.service.js';
 import { createUsersService } from './services/users.service.js';
 
 export interface BuildAppOptions {
@@ -29,6 +36,10 @@ export interface BuildAppOptions {
   db: Database;
   /** Nur für Tests: Log-Ausgabe abfangen. */
   logStream?: DestinationStream;
+  /** Standard: lokales Dateisystem unter config.media.storageDir. */
+  storage?: Storage;
+  /** Wird nach Änderungen am veröffentlichten Stand aufgerufen (Phase 4: Build-Job). */
+  onPublishedChange?: () => Promise<void>;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -37,6 +48,8 @@ export async function buildApp({
   config,
   db,
   logStream,
+  storage,
+  onPublishedChange,
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: createLogger(config, logStream),
@@ -57,6 +70,9 @@ export async function buildApp({
   });
 
   await app.register(cookie);
+  await app.register(multipart, {
+    limits: { fileSize: config.media.maxBytes, files: 1, fields: 5, parts: 6 },
+  });
   await app.register(rateLimit, {
     global: false,
     errorResponseBuilder: () => errors.rateLimited(),
@@ -81,6 +97,14 @@ export async function buildApp({
   const hasher = createPasswordHasher(config.argon2);
   const authService = createAuthService({ db, config, hasher });
   const usersService = createUsersService({ db, hasher });
+  const mediaService = createMediaService({
+    db,
+    storage: storage ?? createLocalStorage(config.media.storageDir),
+  });
+  const projectsService = createProjectsService({
+    db,
+    ...(onPublishedChange && { onPublishedChange }),
+  });
 
   registerAuthContext(app, { config, authService });
 
@@ -89,6 +113,8 @@ export async function buildApp({
     async (api) => {
       await api.register(authRoutes, { authService, config });
       await api.register(usersRoutes, { usersService });
+      await api.register(mediaRoutes, { mediaService });
+      await api.register(projectsRoutes, { projectsService });
     },
     { prefix: API_PREFIX },
   );

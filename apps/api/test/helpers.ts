@@ -1,3 +1,6 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Writable } from 'node:stream';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { inject } from 'vitest';
@@ -35,6 +38,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       password: undefined,
       from: 'test@localhost',
     },
+    media: { storageDir: mkdtempSync(join(tmpdir(), 'serend-media-')), maxBytes: 1024 * 1024 },
     argon2: { memoryCost: 1024, timeCost: 1, parallelism: 1 }, // nur für Tests billig
     rateLimit: { loginMax: 1000, loginWindowMs: 60_000 },
     ...overrides,
@@ -51,7 +55,10 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
-export async function createTestApp(overrides: Partial<AppConfig> = {}): Promise<TestApp> {
+export async function createTestApp(
+  overrides: Partial<AppConfig> = {},
+  extra: Pick<Parameters<typeof buildApp>[0], 'onPublishedChange' | 'storage'> = {},
+): Promise<TestApp> {
   const database: TestDatabase = await createTestDatabase(inject('pgAdminUrl'));
   const handle = createDb(database.url, { max: 4 });
   const config = testConfig({ databaseUrl: database.url, ...overrides });
@@ -62,7 +69,7 @@ export async function createTestApp(overrides: Partial<AppConfig> = {}): Promise
       cb();
     },
   });
-  const app = await buildApp({ config, db: handle.db, logStream });
+  const app = await buildApp({ config, db: handle.db, logStream, ...extra });
   return {
     app,
     handle,
@@ -153,4 +160,136 @@ export function expectError(res: LightMyRequestResponse, status: number, code: s
   ) {
     throw new Error(`error format violated: ${res.body}`);
   }
+}
+
+// ── Medien- und Projekt-Helfer ───────────────────────────────────────
+import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
+
+export async function imageBuffer(
+  format: 'jpeg' | 'png' | 'webp' | 'avif' = 'png',
+  size = 64,
+): Promise<Buffer> {
+  const img = sharp({
+    create: { width: size, height: size, channels: 3, background: { r: 200, g: 120, b: 90 } },
+  });
+  return img[format]().toBuffer();
+}
+
+export function multipart(
+  filename: string,
+  contentType: string,
+  data: Buffer,
+): { payload: Buffer; headers: Record<string, string> } {
+  const boundary = `----serend${randomUUID()}`;
+  const head = Buffer.from(
+    `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`,
+  );
+  const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
+  return {
+    payload: Buffer.concat([head, data, tail]),
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+  };
+}
+
+export async function uploadImage(
+  t: Pick<TestApp, 'app'>,
+  session: Session,
+  opts: { filename?: string; contentType?: string; data?: Buffer } = {},
+) {
+  const data = opts.data ?? (await imageBuffer('png'));
+  const mp = multipart(opts.filename ?? 'bild.png', opts.contentType ?? 'image/png', data);
+  return t.app.inject({
+    method: 'POST',
+    url: '/api/v1/media',
+    payload: mp.payload,
+    headers: { ...mp.headers, cookie: session.cookie, 'x-csrf-token': session.csrf },
+  });
+}
+
+/** Lädt ein Bild hoch und setzt optional Alt-Texte; liefert die Media-ID. */
+export async function createMedia(
+  t: Pick<TestApp, 'app'>,
+  session: Session,
+  altText: Record<string, string> = { de: 'Alt DE', en: 'Alt EN' },
+): Promise<string> {
+  const res = await uploadImage(t, session);
+  if (res.statusCode !== 201) throw new Error(`upload failed ${res.body}`);
+  const id = res.json().media.id as string;
+  if (Object.keys(altText).length > 0) {
+    const p = await as(t, session, 'PATCH', `/api/v1/media/${id}`, { altText });
+    if (p.statusCode !== 200) throw new Error(`alt patch failed ${p.body}`);
+  }
+  return id;
+}
+
+export function projectPayload(over: Record<string, unknown> = {}) {
+  return {
+    slug: `projekt-${randomUUID().slice(0, 8)}`,
+    title: 'Testprojekt',
+    year: 2026,
+    categories: ['web'],
+    color: '#ba1f2a',
+    ...over,
+  };
+}
+
+export async function createProject(
+  t: Pick<TestApp, 'app'>,
+  session: Session,
+  over: Record<string, unknown> = {},
+) {
+  const res = await as(t, session, 'POST', '/api/v1/projects', projectPayload(over));
+  if (res.statusCode !== 201)
+    throw new Error(`create project failed ${res.statusCode} ${res.body}`);
+  return res.json() as {
+    project: {
+      id: string;
+      status: string;
+      publishedRevisionId: string | null;
+      translationGroupId: string;
+    };
+    latest: {
+      id: string;
+      revisionNo: number;
+      slug: string;
+      title: string;
+      publishedAt: string | null;
+    };
+    published: { id: string; slug: string; title: string } | null;
+    hasUnpublishedChanges: boolean;
+  };
+}
+
+export function draftBody(
+  detail: { latest: Record<string, unknown> },
+  over: Record<string, unknown> = {},
+) {
+  const l = detail.latest;
+  return {
+    slug: l.slug,
+    title: l.title,
+    subtitle: l.subtitle,
+    year: l.year,
+    categories: l.categories,
+    color: l.color,
+    tileColor: l.tileColor,
+    client: l.client,
+    liveUrl: l.liveUrl,
+    coverMediaId: l.coverMediaId,
+    nextProjectId: l.nextProjectId,
+    content: l.content,
+    gallery: l.gallery,
+    seoTitle: l.seoTitle,
+    seoDescription: l.seoDescription,
+    ogMediaId: l.ogMediaId,
+    ...over,
+  };
+}
+
+export async function editorSession(
+  t: Pick<TestApp, 'app' | 'config' | 'handle'>,
+  role: 'admin' | 'editor' = 'editor',
+) {
+  return login(t, (await createUser(t, { role })).email);
 }

@@ -1,5 +1,19 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  smallint,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  type AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 
 // IDs: UUIDv7 über PostgreSQL 18 (`uuidv7()`), Zeitstempel: timestamptz.
 const id = () =>
@@ -49,3 +63,180 @@ export const sessions = pgTable(
 export type UserRow = typeof users.$inferSelect;
 export type NewUserRow = typeof users.$inferInsert;
 export type SessionRow = typeof sessions.$inferSelect;
+
+// ── Medien ────────────────────────────────────────────────────────────
+export const media = pgTable(
+  'media',
+  {
+    id: id(),
+    storageKey: text('storage_key').notNull(),
+    originalFilename: text('original_filename').notNull(),
+    mime: text('mime').notNull(),
+    byteSize: integer('byte_size').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    sha256: text('sha256').notNull(),
+    /** Alt-Text je Sprache: { "de": "…", "en": "…" } */
+    altText: jsonb('alt_text').$type<Record<string, string>>().notNull().default({}),
+    focalX: smallint('focal_x').notNull().default(50),
+    focalY: smallint('focal_y').notNull().default(50),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('media_storage_key_key').on(t.storageKey),
+    check('media_focal_x_range', sql`${t.focalX} between 0 and 100`),
+    check('media_focal_y_range', sql`${t.focalY} between 0 and 100`),
+  ],
+);
+
+// ── Projekte: stabiler Datensatz + Revisionen ─────────────────────────
+const LOCALE_CHECK = (col: AnyPgColumn) => sql`${col} in ('de', 'en')`;
+const STATUS_CHECK = (col: AnyPgColumn) => sql`${col} in ('draft', 'published', 'archived')`;
+
+export const projects = pgTable(
+  'projects',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    /** Verknüpft die Sprachversionen eines Projekts (Sprachumschalter, hreflang). */
+    translationGroupId: uuid('translation_group_id')
+      .notNull()
+      .default(sql`uuidv7()`),
+    status: text('status').notNull().default('draft'),
+    featured: boolean('featured').notNull().default(false),
+    featuredSortOrder: integer('featured_sort_order'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    publishedRevisionId: uuid('published_revision_id').references(
+      (): AnyPgColumn => projectRevisions.id,
+      { onDelete: 'restrict' },
+    ),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('projects_locale_check', LOCALE_CHECK(t.locale)),
+    check('projects_status_check', STATUS_CHECK(t.status)),
+    uniqueIndex('projects_group_locale_key').on(t.translationGroupId, t.locale),
+    index('projects_locale_sort_idx').on(t.locale, t.sortOrder),
+  ],
+);
+
+export const projectRevisions = pgTable(
+  'project_revisions',
+  {
+    id: id(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    revisionNo: integer('revision_no').notNull(),
+    slug: text('slug').notNull(),
+    title: text('title').notNull(),
+    subtitle: jsonb('subtitle').$type<unknown[]>(),
+    year: smallint('year').notNull(),
+    categories: text('categories').array().notNull(),
+    color: text('color').notNull(),
+    tileColor: text('tile_color'),
+    client: text('client'),
+    liveUrl: text('live_url'),
+    coverMediaId: uuid('cover_media_id').references(() => media.id, { onDelete: 'restrict' }),
+    nextProjectId: uuid('next_project_id').references((): AnyPgColumn => projects.id, {
+      onDelete: 'set null',
+    }),
+    content: jsonb('content').$type<unknown[]>().notNull().default([]),
+    schemaVersion: integer('schema_version').notNull(),
+    seoTitle: text('seo_title'),
+    seoDescription: text('seo_description'),
+    ogMediaId: uuid('og_media_id').references(() => media.id, { onDelete: 'restrict' }),
+    /** NULL = Entwurf. Veröffentlichte Revisionen sind unveränderlich. */
+    publishedAt: ts('published_at'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('project_revisions_project_no_key').on(t.projectId, t.revisionNo),
+    check('project_revisions_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
+    check('project_revisions_year_range', sql`${t.year} between 2000 and 2100`),
+    check(
+      'project_revisions_categories_check',
+      sql`cardinality(${t.categories}) between 1 and 4 and ${t.categories} <@ array['web','shop','brand','print']::text[]`,
+    ),
+    check('project_revisions_color_format', sql`${t.color} ~ '^#[0-9a-fA-F]{6}$'`),
+    check(
+      'project_revisions_tile_color_format',
+      sql`${t.tileColor} is null or ${t.tileColor} ~ '^#[0-9a-fA-F]{6}$'`,
+    ),
+    index('project_revisions_cover_idx').on(t.coverMediaId),
+    index('project_revisions_og_idx').on(t.ogMediaId),
+  ],
+);
+
+/** Medienbezüge einer Revision: Galerie und (abgeleitet) Medien aus Blöcken. FK RESTRICT schützt vor Löschen. */
+export const projectMedia = pgTable(
+  'project_media',
+  {
+    id: id(),
+    revisionId: uuid('revision_id')
+      .notNull()
+      .references(() => projectRevisions.id, { onDelete: 'cascade' }),
+    mediaId: uuid('media_id')
+      .notNull()
+      .references(() => media.id, { onDelete: 'restrict' }),
+    role: text('role').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    altOverride: text('alt_override'),
+  },
+  (t) => [
+    check('project_media_role_check', sql`${t.role} in ('gallery', 'block')`),
+    uniqueIndex('project_media_unique').on(t.revisionId, t.role, t.mediaId),
+    index('project_media_media_idx').on(t.mediaId),
+  ],
+);
+
+// ── Slugs und Redirects ───────────────────────────────────────────────
+/**
+ * Slugs liegen in Revisionen; für die Eindeutigkeit pro Sprache hält jede Entität
+ * höchstens zwei Claims (Slug der veröffentlichten Revision und des Entwurfs).
+ */
+export const slugClaims = pgTable(
+  'slug_claims',
+  {
+    locale: text('locale').notNull(),
+    scope: text('scope').notNull(),
+    slug: text('slug').notNull(),
+    ownerId: uuid('owner_id').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.locale, t.scope, t.slug] }),
+    check('slug_claims_scope_check', sql`${t.scope} in ('project', 'page')`),
+    check('slug_claims_locale_check', LOCALE_CHECK(t.locale)),
+    index('slug_claims_owner_idx').on(t.ownerId),
+  ],
+);
+
+export const redirects = pgTable(
+  'redirects',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    fromPath: text('from_path').notNull(),
+    toPath: text('to_path').notNull(),
+    statusCode: smallint('status_code').notNull().default(301),
+    source: text('source').notNull().default('auto'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('redirects_from_path_key').on(t.fromPath),
+    check('redirects_status_check', sql`${t.statusCode} = 301`),
+    check('redirects_source_check', sql`${t.source} in ('auto', 'manual')`),
+    check('redirects_not_self', sql`${t.fromPath} <> ${t.toPath}`),
+    check('redirects_locale_check', LOCALE_CHECK(t.locale)),
+  ],
+);
+
+export type MediaRow = typeof media.$inferSelect;
+export type ProjectRow = typeof projects.$inferSelect;
+export type ProjectRevisionRow = typeof projectRevisions.$inferSelect;
+export type ProjectMediaRow = typeof projectMedia.$inferSelect;
+export type RedirectRow = typeof redirects.$inferSelect;
