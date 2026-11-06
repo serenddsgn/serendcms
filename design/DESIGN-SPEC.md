@@ -75,6 +75,7 @@ Alle Werte stehen in `tokens.css` und werden als CSS-Variablen (oder Tailwind-Th
   1. **Sprachumschalter** DE | EN: Segment-Pill mit gleitendem Thumb (0.45 s, leichter Überschwinger). Mono 11 px.
   2. **Thema-Knopf:** runder Ring-Button mit Halbmond-Kreis-Icon. Das Icon dreht sich beim Wechsel um 180°.
   3. **CTA „Projekt anfragen“ / „Start a project“:** Pill in `--fg` auf `--bg` (kehrt sich mit dem Thema um), davor ein grüner, pulsierender Punkt (4 s, Ring 0 → 6 px). Hover: Liquid-Verlauf schiebt sich von unten in den Button (0.5 s), Text wird weiß.
+     - **Klick:** öffnet ein Vollbild-Modal (`<dialog>`) mit dem Anfrageformular. Der Hintergrund wächst als Kreis aus der Mitte des Buttons auf (`clip-path`, 0.85 s, `--ease-curtain`), der Inhalt blendet gestaffelt ein (70 ms Versatz). Schließen per ✕ oder Esc läuft rückwärts (0.6 s). `prefers-reduced-motion`: nur Opacity. Ohne JS bleibt der Button ein Link zum Kontaktbereich.
 - **Phone:** Mittelnavigation ausblenden (Menü-Overlay nach eigenem Ermessen, ruhig, Vollbild, gleiche Kurven). CTA nur als Punkt-Button mit `aria-label`.
 
 ### 3.2 Seitenübergang (Vorhang)

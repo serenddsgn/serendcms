@@ -1,4 +1,4 @@
-/** Minimales Client-Script (kein Framework): Theme, Sprache, Seitenübergang, Menü, Projektfilter, Kapitel-Navigation. */
+/** Minimales Client-Script (kein Framework): Theme, Sprache, Seitenübergang, Menü, Anfrage-Modal, Projektfilter, Kapitel-Navigation. */
 const root = document.documentElement;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = <T extends Element>(sel: string, ctx: ParentNode = document) => ctx.querySelector<T>(sel);
@@ -76,6 +76,126 @@ addEventListener('keydown', (e) => {
 menu?.addEventListener('click', (e) => {
   if ((e.target as Element).closest('a[href^="#"]')) setMenu(false);
 });
+
+// ── Anfrage-Modal: Vollbild-Dialog, öffnet als Kreis vom Button aus ──
+const inquiry = $<HTMLDialogElement>('#inquiry');
+if (inquiry && typeof inquiry.showModal === 'function') {
+  const form = $<HTMLFormElement>('[data-inquiry-form]', inquiry)!;
+  const status = $<HTMLElement>('[data-inquiry-status]', inquiry)!;
+  const submit = $<HTMLButtonElement>('[data-inquiry-submit]', inquiry)!;
+  const submitLabel = $<HTMLElement>('.lbl', submit)!;
+  const done = $<HTMLElement>('[data-inquiry-done]', inquiry)!;
+  const idleLabel = submitLabel.textContent ?? '';
+  let origin: HTMLElement | null = null;
+  let closing = false;
+
+  function setOrigin() {
+    // Kreis wächst aus der Mitte des auslösenden Buttons (Tastatur: ebenfalls Button-Mitte)
+    const r = origin?.getBoundingClientRect();
+    const x = r ? r.left + r.width / 2 : innerWidth / 2;
+    const y = r ? r.top + r.height / 2 : 0;
+    const radius = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)));
+    inquiry!.style.setProperty('--ox', `${x}px`);
+    inquiry!.style.setProperty('--oy', `${y}px`);
+    inquiry!.style.setProperty('--or', `${radius}px`);
+  }
+  function openInquiry(trigger: HTMLElement | null) {
+    if (inquiry!.open) return;
+    origin = trigger;
+    closing = false;
+    setOrigin();
+    inquiry!.dataset.state = 'closed';
+    inquiry!.showModal();
+    document.body.style.overflow = 'hidden';
+    void inquiry!.offsetWidth; // Startzustand festschreiben, damit die Transition läuft
+    inquiry!.dataset.state = 'open';
+  }
+  function finishClose() {
+    inquiry!.close();
+    inquiry!.dataset.state = 'closed';
+    document.body.style.overflow = '';
+    closing = false;
+    if (!done.hidden) {
+      // Nach erfolgreichem Absenden das Formular für die nächste Anfrage zurücksetzen
+      done.hidden = true;
+      form.hidden = false;
+      form.reset();
+    }
+  }
+  function closeInquiry() {
+    if (!inquiry!.open || closing) return;
+    closing = true;
+    setOrigin();
+    inquiry!.dataset.state = 'closing';
+    let finished = false;
+    const end = () => {
+      if (finished) return;
+      finished = true;
+      finishClose();
+    };
+    inquiry!.addEventListener(
+      'transitionend',
+      (e) => {
+        if (e.target === inquiry) end();
+      },
+      { once: true },
+    );
+    setTimeout(end, 800); // Fallback, falls keine Transition läuft
+  }
+
+  $$<HTMLElement>('[data-inquiry-open]').forEach((el) =>
+    el.addEventListener('click', (e) => {
+      // Strg/Cmd/Shift-Klick und Mittelklick behalten das Link-Verhalten
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      openInquiry(el);
+    }),
+  );
+  $$<HTMLElement>('[data-inquiry-close]', inquiry).forEach((el) =>
+    el.addEventListener('click', closeInquiry),
+  );
+  // Esc: animiert schließen statt hart zu springen
+  inquiry.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    closeInquiry();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    const f = new FormData(form);
+    status.textContent = '';
+    submit.disabled = true;
+    submitLabel.textContent = form.dataset.sending ?? '';
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: String(f.get('name') ?? ''),
+          email: String(f.get('email') ?? ''),
+          message: String(f.get('message') ?? ''),
+          locale: inquiry.dataset.locale ?? 'de',
+          consent: f.get('consent') === 'on',
+          website: String(f.get('website') ?? ''),
+        }),
+      });
+      if (!res.ok) {
+        status.textContent =
+          (res.status === 429 ? form.dataset.errorRate : form.dataset.error) ?? '';
+        return;
+      }
+      form.hidden = true;
+      done.hidden = false;
+      done.focus({ preventScroll: true });
+    } catch {
+      status.textContent = form.dataset.error ?? '';
+    } finally {
+      submit.disabled = false;
+      submitLabel.textContent = idleLabel;
+    }
+  });
+}
 
 // ── Fallbacks für Browser ohne scroll-driven Animations ──────────────
 if (!CSS.supports('animation-timeline: scroll()')) {

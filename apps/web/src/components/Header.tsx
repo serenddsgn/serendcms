@@ -72,7 +72,14 @@ export function Header({ locale, ui, nav, currentPath, home, switchTo, cta }: Pr
               <path d="M12 3.5 A8.5 8.5 0 0 1 12 20.5 Z" fill="currentColor" />
             </svg>
           </button>
-          <a class="cta" href={cta.href} aria-label={cta.label}>
+          <a
+            class="cta"
+            href={cta.href}
+            aria-label={cta.label}
+            data-inquiry-open
+            aria-haspopup="dialog"
+            aria-controls="inquiry"
+          >
             <span class="dot" />
             <span class="lbl">{cta.label}</span>
           </a>
