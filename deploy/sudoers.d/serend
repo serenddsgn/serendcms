@@ -1,0 +1,2 @@
+# Der Dienstbenutzer darf genau diese Befehle ohne Passwort als root ausführen (Deployment und Redirect-/CSP-Reload).
+serend ALL=(root) NOPASSWD: /usr/bin/systemctl restart serend-api, /usr/bin/systemctl restart serend-worker, /usr/bin/systemctl restart serend-preview, /usr/bin/systemctl reload caddy, /usr/bin/systemctl stop serend-api, /usr/bin/systemctl stop serend-worker, /usr/bin/systemctl stop serend-preview, /usr/bin/systemctl start serend-api, /usr/bin/systemctl start serend-worker, /usr/bin/systemctl start serend-preview

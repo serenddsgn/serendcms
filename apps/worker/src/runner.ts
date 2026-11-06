@@ -15,12 +15,14 @@ import {
 import {
   currentReleaseId,
   pruneReleases,
+  readCaddySnippets,
   runChecks,
   storeRelease,
   switchCurrent,
   releasePath,
   type ChecksOptions,
   type ChecksResult,
+  writeCspSnippet,
 } from '@serend/builder';
 import type { WorkerConfig } from './config.js';
 import { LogBuffer } from './log-buffer.js';
@@ -44,7 +46,6 @@ export type RunResult =
   | { status: 'succeeded'; releaseId: string }
   | { status: 'failed'; error: string };
 
-const redirectsFile = (dir: string) => join(dir, 'build-meta', 'redirects.caddy');
 const readIfExists = (p: string) => readFile(p, 'utf8').catch(() => '');
 
 /** Seiten, an denen Lighthouse misst: Startseiten, Projektübersicht und ein Projekt. */
@@ -86,6 +87,8 @@ export async function runBuild(deps: RunnerDeps, buildId: string): Promise<RunRe
   try {
     await deps.buildSite({ outDir, log });
     log.line('Astro-Build abgeschlossen. Prüfungen laufen.');
+    const hashes = await writeCspSnippet(outDir);
+    log.line(`CSP: ${hashes.length} Inline-Skript-Hashes.`);
 
     manifest = JSON.parse(
       (await readIfExists(join(outDir, 'build-meta', 'build.json'))) || 'null',
@@ -105,10 +108,10 @@ export async function runBuild(deps: RunnerDeps, buildId: string): Promise<RunRe
     const release = await createRelease(db, buildId);
     releaseId = release.id;
     await storeRelease(config.releasesDir, release.id, outDir);
-    const oldRedirects = previousId
-      ? await readIfExists(redirectsFile(releasePath(config.releasesDir, previousId)))
+    const oldSnippets = previousId
+      ? await readCaddySnippets(releasePath(config.releasesDir, previousId))
       : '';
-    const newRedirects = await readIfExists(redirectsFile(outDir));
+    const newSnippets = await readCaddySnippets(outDir);
 
     await switchCurrent(config.releasesDir, release.id);
     switched = true;
@@ -125,7 +128,7 @@ export async function runBuild(deps: RunnerDeps, buildId: string): Promise<RunRe
 
     await cleanup(deps, log);
     await deps
-      .afterSwitch?.({ releaseId: release.id, redirectsChanged: oldRedirects !== newRedirects })
+      .afterSwitch?.({ releaseId: release.id, redirectsChanged: oldSnippets !== newSnippets })
       .catch((e) => log.line(`Nachbereitung fehlgeschlagen: ${String(e)}`));
     return { status: 'succeeded', releaseId: release.id };
   } catch (err) {
