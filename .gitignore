@@ -14,9 +14,9 @@ test-results/
 !.env.example
 
 # Uploads, Releases, lokale Daten
-uploads/
-storage/
-releases/
+/uploads/
+/storage/
+/releases/
 .data/
 *.pcraft
 

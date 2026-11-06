@@ -55,6 +55,7 @@ describe('Deploy-Dateien', () => {
     expect(d.indexOf('export NODE_ENV=production')).toBeGreaterThan(
       d.indexOf('pnpm install --frozen-lockfile'),
     );
+    expect(d).toMatch(/^main\(\) \{$/m); // Skript wird vor der Ausführung komplett gelesen (git pull ersetzt es mittendrin)
     expect(d).toContain('trap fail ERR');
     expect(d).toContain('flock');
   });
@@ -248,6 +249,28 @@ describe('Konfigurationsvorlagen', () => {
     expect(p).toMatch(/^API_HOST=127\.0\.0\.1$/m);
     expect(p).toMatch(/^SESSION_SECRET=__GENERATE__$/m);
     expect(read('.env.example')).toMatch(/^SESSION_SECRET=\s*(#.*)?$/m);
+  });
+
+  it('ignoriert keine Quelldateien (ein zu breites .gitignore-Muster hat einmal src/storage verschluckt)', () => {
+    // Ignorierte Dateien in Quellverzeichnissen sind immer ein Fehler (Build-Output liegt in dist/, nie in src/)
+    const ignored = execFileSync(
+      'git',
+      ['ls-files', '--others', '--ignored', '--exclude-standard', '--directory'],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+    )
+      .split('\n')
+      .filter(
+        (f) =>
+          /^(apps|packages)\/[^/]+\/(src|test|e2e|migrations)\//.test(f) ||
+          /^(deploy|scripts|docs)\//.test(f),
+      )
+      .filter((f) => !f.includes('node_modules'));
+    expect(ignored).toEqual([]);
+    for (const f of ['apps/api/src/storage/local.ts', 'apps/api/src/storage/storage.ts']) {
+      expect(execFileSync('git', ['ls-files', f], { cwd: ROOT, encoding: 'utf8' }).trim(), f).toBe(
+        f,
+      );
+    }
   });
 
   it('halten .env-Dateien aus dem Repository', () => {
