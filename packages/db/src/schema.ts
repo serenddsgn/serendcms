@@ -240,3 +240,158 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectRevisionRow = typeof projectRevisions.$inferSelect;
 export type ProjectMediaRow = typeof projectMedia.$inferSelect;
 export type RedirectRow = typeof redirects.$inferSelect;
+
+// ── Seiten (Revisionen wie bei Projekten) ─────────────────────────────
+export const pages = pgTable(
+  'pages',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    translationGroupId: uuid('translation_group_id')
+      .notNull()
+      .default(sql`uuidv7()`),
+    /** home | projects | NULL (freie Inhaltsseite) */
+    systemKey: text('system_key'),
+    status: text('status').notNull().default('draft'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    publishedRevisionId: uuid('published_revision_id').references(
+      (): AnyPgColumn => pageRevisions.id,
+      { onDelete: 'restrict' },
+    ),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('pages_locale_check', LOCALE_CHECK(t.locale)),
+    check('pages_status_check', STATUS_CHECK(t.status)),
+    check(
+      'pages_system_key_check',
+      sql`${t.systemKey} is null or ${t.systemKey} in ('home', 'projects')`,
+    ),
+    uniqueIndex('pages_group_locale_key').on(t.translationGroupId, t.locale),
+    uniqueIndex('pages_system_key_locale_key')
+      .on(t.locale, t.systemKey)
+      .where(sql`${t.systemKey} is not null`),
+  ],
+);
+
+export const pageRevisions = pgTable(
+  'page_revisions',
+  {
+    id: id(),
+    pageId: uuid('page_id')
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    revisionNo: integer('revision_no').notNull(),
+    slug: text('slug').notNull(),
+    title: text('title').notNull(),
+    content: jsonb('content').$type<unknown[]>().notNull().default([]),
+    schemaVersion: integer('schema_version').notNull(),
+    seoTitle: text('seo_title'),
+    seoDescription: text('seo_description'),
+    ogMediaId: uuid('og_media_id').references(() => media.id, { onDelete: 'restrict' }),
+    publishedAt: ts('published_at'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('page_revisions_page_no_key').on(t.pageId, t.revisionNo),
+    check('page_revisions_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
+    index('page_revisions_og_idx').on(t.ogMediaId),
+  ],
+);
+
+/** Medienbezüge einer Seitenrevision (abgeleitet aus Blöcken); FK RESTRICT schützt vor Löschen. */
+export const pageMedia = pgTable(
+  'page_media',
+  {
+    id: id(),
+    revisionId: uuid('revision_id')
+      .notNull()
+      .references(() => pageRevisions.id, { onDelete: 'cascade' }),
+    mediaId: uuid('media_id')
+      .notNull()
+      .references(() => media.id, { onDelete: 'restrict' }),
+    role: text('role').notNull().default('block'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    altOverride: text('alt_override'),
+  },
+  (t) => [
+    check('page_media_role_check', sql`${t.role} = 'block'`),
+    uniqueIndex('page_media_unique').on(t.revisionId, t.role, t.mediaId),
+    index('page_media_media_idx').on(t.mediaId),
+  ],
+);
+
+// ── Leistungen, Navigation, Einstellungen ─────────────────────────────
+export const services = pgTable(
+  'services',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    translationGroupId: uuid('translation_group_id')
+      .notNull()
+      .default(sql`uuidv7()`),
+    /** Entspricht der Projektkategorie (web | shop | brand | print). */
+    key: text('key').notNull(),
+    name: text('name').notNull(),
+    description: text('description').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    status: text('status').notNull().default('draft'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('services_locale_check', LOCALE_CHECK(t.locale)),
+    check('services_status_check', STATUS_CHECK(t.status)),
+    check('services_key_check', sql`${t.key} in ('web', 'shop', 'brand', 'print')`),
+    uniqueIndex('services_locale_key_key').on(t.locale, t.key),
+  ],
+);
+
+export const navigationItems = pgTable(
+  'navigation_items',
+  {
+    id: id(),
+    locale: text('locale').notNull().default('de'),
+    location: text('location').notNull(),
+    label: text('label').notNull(),
+    pageId: uuid('page_id').references(() => pages.id, { onDelete: 'restrict' }),
+    url: text('url'),
+    fragment: text('fragment'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    status: text('status').notNull().default('draft'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('navigation_locale_check', LOCALE_CHECK(t.locale)),
+    check('navigation_status_check', STATUS_CHECK(t.status)),
+    check('navigation_location_check', sql`${t.location} in ('header', 'footer', 'legal')`),
+    check('navigation_target_check', sql`(${t.pageId} is not null) <> (${t.url} is not null)`),
+    index('navigation_locale_location_idx').on(t.locale, t.location, t.sortOrder),
+  ],
+);
+
+export const siteSettings = pgTable(
+  'site_settings',
+  {
+    id: id(),
+    key: text('key').notNull(),
+    locale: text('locale').notNull().default('de'),
+    value: jsonb('value').$type<unknown>().notNull(),
+    mediaId: uuid('media_id').references(() => media.id, { onDelete: 'restrict' }),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('site_settings_locale_check', LOCALE_CHECK(t.locale)),
+    uniqueIndex('site_settings_key_locale_key').on(t.key, t.locale),
+  ],
+);
+
+export type PageRow = typeof pages.$inferSelect;
+export type PageRevisionRow = typeof pageRevisions.$inferSelect;
+export type ServiceRow = typeof services.$inferSelect;
+export type NavigationItemRow = typeof navigationItems.$inferSelect;
+export type SiteSettingRow = typeof siteSettings.$inferSelect;
