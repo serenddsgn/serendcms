@@ -1,6 +1,7 @@
 import type { Database } from '@serend/db';
 import type { Role, UserDto } from '@serend/schema';
 import { errors } from '../lib/errors.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
 import type { PasswordHasher } from '../lib/password.js';
 import { sessionsRepo } from '../repositories/sessions.repo.js';
 import { usersRepo } from '../repositories/users.repo.js';
@@ -9,16 +10,6 @@ import { toUserDto } from './dto.js';
 export interface UsersServiceDeps {
   db: Database;
   hasher: PasswordHasher;
-}
-
-const PG_UNIQUE_VIOLATION = '23505';
-/** Drizzle verpackt den pg-Fehler (`DrizzleQueryError.cause`), daher die ganze Ursachenkette prüfen. */
-function isUniqueViolation(err: unknown): boolean {
-  for (let e: unknown = err, depth = 0; e && typeof e === 'object' && depth < 5; depth++) {
-    if ((e as { code?: string }).code === PG_UNIQUE_VIOLATION) return true;
-    e = (e as { cause?: unknown }).cause;
-  }
-  return false;
 }
 
 export function createUsersService({ db, hasher }: UsersServiceDeps) {

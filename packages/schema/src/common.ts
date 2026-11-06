@@ -32,3 +32,25 @@ export const ERROR_CODES = [
   'internal_error',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+export const Slug = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Nur Kleinbuchstaben, Ziffern und Bindestriche')
+  .min(1)
+  .max(80);
+
+/** Routen-Segmente je Sprache (fest durch das Design: /de/projekte/…, /en/work/…). */
+export const ROUTE_SEGMENTS: Record<Locale, { projects: string }> = {
+  de: { projects: 'projekte' },
+  en: { projects: 'work' },
+};
+
+export function projectPath(locale: Locale, slug: string): string {
+  return `/${locale}/${ROUTE_SEGMENTS[locale].projects}/${slug}`;
+}
+export function projectIndexPath(locale: Locale): string {
+  return `/${locale}/${ROUTE_SEGMENTS[locale].projects}/`;
+}
+export function pagePath(locale: Locale, slug: string): string {
+  return `/${locale}/${slug}`;
+}
