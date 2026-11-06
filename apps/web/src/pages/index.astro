@@ -1,12 +1,25 @@
 ---
+// Sprachweiche für `/`: Caddy leitet per Cookie/Accept-Language weiter, diese Seite ist der Fallback.
 ---
 <html lang="de">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>serend.design</title>
+    <meta name="robots" content="noindex" />
+    <link rel="alternate" hreflang="de" href="/de/" />
+    <link rel="alternate" hreflang="en" href="/en/" />
+    <link rel="alternate" hreflang="x-default" href="/de/" />
+    <script is:inline>
+      (function () {
+        var m = document.cookie.match(/(?:^|; )lang=(de|en)/);
+        var l = m ? m[1] : /^de/i.test(navigator.language || 'de') ? 'de' : 'en';
+        location.replace('/' + l + '/');
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=/de/" /></noscript>
   </head>
-  <body>
-    <p>Frontend folgt in Phase 3.</p>
+  <body style="font-family:system-ui;background:#0a0a0a;color:#f5f5f4;padding:40px">
+    <p><a href="/de/" style="color:inherit">Deutsch</a> · <a href="/en/" style="color:inherit">English</a></p>
   </body>
 </html>

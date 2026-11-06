@@ -21,12 +21,14 @@ import { registerAuthContext } from './plugins/auth-context.js';
 import { registerErrorHandling } from './plugins/error-handler.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { internalRoutes } from './routes/internal.routes.js';
+import { buildRoutes } from './routes/build.routes.js';
 import { mediaRoutes } from './routes/media.routes.js';
 import { projectsRoutes } from './routes/projects.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
 import { createAuthService } from './services/auth.service.js';
 import { createLocalStorage } from './storage/local.js';
 import type { Storage } from './storage/storage.js';
+import { createBuildService } from './services/build.service.js';
 import { createMediaService } from './services/media.service.js';
 import { createProjectsService } from './services/projects.service.js';
 import { createUsersService } from './services/users.service.js';
@@ -97,10 +99,8 @@ export async function buildApp({
   const hasher = createPasswordHasher(config.argon2);
   const authService = createAuthService({ db, config, hasher });
   const usersService = createUsersService({ db, hasher });
-  const mediaService = createMediaService({
-    db,
-    storage: storage ?? createLocalStorage(config.media.storageDir),
-  });
+  const storageImpl = storage ?? createLocalStorage(config.media.storageDir);
+  const mediaService = createMediaService({ db, storage: storageImpl });
   const projectsService = createProjectsService({
     db,
     ...(onPublishedChange && { onPublishedChange }),
@@ -109,6 +109,10 @@ export async function buildApp({
   registerAuthContext(app, { config, authService });
 
   await app.register(internalRoutes, { db });
+  await app.register(buildRoutes, {
+    buildService: createBuildService({ db, storage: storageImpl }),
+    buildToken: config.buildToken,
+  });
   await app.register(
     async (api) => {
       await api.register(authRoutes, { authService, config });

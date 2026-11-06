@@ -25,3 +25,6 @@ releases/
 .idea/
 .vscode/
 *.log
+
+# Claude Code lokale Konfiguration
+.claude/

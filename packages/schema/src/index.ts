@@ -3,3 +3,7 @@ export * from './auth.js';
 export * from './blocks.js';
 export * from './media.js';
 export * from './projects.js';
+export * from './settings.js';
+export * from './build.js';
+export * from './markdown.js';
+export * from './pages.js';

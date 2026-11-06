@@ -1,0 +1,27 @@
+---
+import PickAndMix from './PickAndMix';
+import { intlLocale, t } from '../i18n';
+import type { Locale } from '@serend/schema';
+
+interface Props {
+  locale: Locale;
+  block: { id: string; anchor?: string; demo: { eyebrow: string; title: string; sizes: number[]; defaultSize: number; flavors: { key: string; name: string; priceCents: number; color: string }[]; initial?: Record<string, number> } };
+}
+const { locale, block } = Astro.props;
+const d = block.demo;
+const id = block.anchor ?? `demo-${block.id.slice(0, 8)}`;
+---
+<section id={id} class="section" style="padding-bottom:128px;scroll-margin-top:110px">
+  <PickAndMix
+    client:visible
+    intl={intlLocale(locale)}
+    strings={t(locale).demo}
+    eyebrow={d.eyebrow}
+    title={d.title}
+    sizes={d.sizes}
+    defaultSize={d.defaultSize}
+    flavors={d.flavors}
+    initial={d.initial ?? {}}
+    labelId={id}
+  />
+</section>

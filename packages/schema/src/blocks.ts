@@ -205,6 +205,27 @@ export function collectMediaIds(content: readonly unknown[]): string[] {
   return [...ids];
 }
 
+/** Alle Link-Ziele (page/project) aus Blöcken, für die Referenzprüfung beim Speichern. */
+export function collectLinkTargets(content: readonly unknown[]): {
+  pageIds: string[];
+  projectIds: string[];
+} {
+  const pageIds = new Set<string>();
+  const projectIds = new Set<string>();
+  const visit = (v: unknown): void => {
+    if (Array.isArray(v)) return void v.forEach(visit);
+    if (typeof v !== 'object' || v === null) return;
+    const o = v as Record<string, unknown>;
+    if (typeof o.kind === 'string' && o.kind === 'page' && typeof o.pageId === 'string')
+      pageIds.add(o.pageId);
+    if (typeof o.kind === 'string' && o.kind === 'project' && typeof o.projectId === 'string')
+      projectIds.add(o.projectId);
+    Object.values(o).forEach(visit);
+  };
+  visit(content);
+  return { pageIds: [...pageIds], projectIds: [...projectIds] };
+}
+
 // ── Schema-Migrationen ────────────────────────────────────────────────
 /**
  * Jede Schemaänderung bekommt hier eine Funktion `vN → vN+1`. Ein Skript schreibt

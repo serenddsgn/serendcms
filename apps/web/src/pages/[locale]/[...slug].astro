@@ -1,0 +1,92 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { ProjectsPageContent, ContentPageContent, type Locale } from '@serend/schema';
+import Base from '../../layouts/Base.astro';
+import DemoSection from '../../components/DemoSection.astro';
+import { PageBlocks, planProject } from '../../components/Blocks';
+import { Chapter, Quote } from '../../components/Sections';
+import { ChapterNav } from '../../components/Project';
+import { ImageStrip, NextProject, ProjectHero } from '../../components/Project';
+import { altOf, loadData, pageFor, projectsFor, setting } from '../../lib/data';
+import { allEntries, mdPath, ogPath, type Entry } from '../../lib/pages';
+import { breadcrumbJsonLd, creativeWorkJsonLd, plainText } from '../../lib/seo';
+import { data } from '../../lib/data';
+import { t } from '../../i18n';
+
+export const getStaticPaths = (async () => {
+  await loadData();
+  return allEntries()
+    .filter((e) => e.kind !== 'home')
+    .map((entry) => ({ params: { locale: entry.locale, slug: entry.slug }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+await loadData();
+const { entry } = Astro.props as { entry: Entry };
+const locale = entry.locale as Locale;
+const ui = t(locale);
+const seo = setting(locale, 'seo.defaults');
+const homeUrl = `/${locale}/`;
+const projectsPage = pageFor(locale, 'projects');
+const projectsUrl = allEntries().find((e) => e.kind === 'projects' && e.locale === locale)!.url;
+
+let title = '';
+let description: string | undefined;
+let jsonLd: object[] = [];
+let ogImage: string | undefined = ogPath(entry);
+let ogType: 'website' | 'article' = 'website';
+
+if (entry.kind === 'project') {
+  const r = entry.project.revision;
+  title = r.seoTitle ?? r.title;
+  description = r.seoDescription ?? (r.subtitle ? plainText(r.subtitle) : undefined);
+  ogType = 'article';
+  jsonLd = [
+    creativeWorkJsonLd(entry.project, entry.url, ogImage, data()),
+    breadcrumbJsonLd([
+      { name: ui.breadcrumbHome, path: homeUrl },
+      { name: projectsPage.revision.title, path: projectsUrl },
+      { name: r.title, path: entry.url },
+    ]),
+  ];
+} else {
+  title = entry.page.revision.seoTitle ?? entry.page.revision.title;
+  description = entry.page.revision.seoDescription ?? undefined;
+  jsonLd = [
+    breadcrumbJsonLd([
+      { name: ui.breadcrumbHome, path: homeUrl },
+      ...(entry.kind === 'projects' ? [] : [{ name: entry.page.revision.title, path: entry.url }]),
+      ...(entry.kind === 'projects' ? [{ name: entry.page.revision.title, path: entry.url }] : []),
+    ]),
+  ];
+}
+const plan = planProject(entry.kind === 'project' ? (entry.project.revision.content as never) : []);
+const blocks =
+  entry.kind === 'projects'
+    ? ProjectsPageContent.parse(entry.page.revision.content)
+    : entry.kind === 'content'
+      ? ContentPageContent.parse(entry.page.revision.content)
+      : [];
+---
+<Base locale={locale} title={title} description={description} path={entry.url} alternates={entry.alternates} ogImage={ogImage} ogType={ogType} jsonLd={jsonLd} mdPath={mdPath(entry)}>
+  {entry.kind === 'project' ? (
+    <>
+      <ProjectHero p={entry.project} locale={locale} />
+      <ImageStrip p={entry.project} locale={locale} />
+      {plan.segments.map((seg) =>
+        seg.type === 'chapters' ? (
+          <section class="section side split" style={`padding-top:${seg.first ? 128 : 0}px`}>
+            {seg.first && plan.entries.length > 0 ? <ChapterNav entries={plan.entries} label={ui.chapters} /> : <div class="hide-m" />}
+            <div style="max-width:760px">{seg.items.map((i) => <Chapter b={i.b as never} no={i.no} />)}</div>
+          </section>
+        ) : seg.type === 'quote' ? (
+          <Quote b={seg.b as never} />
+        ) : (
+          <DemoSection locale={locale} block={seg.b as never} />
+        ),
+      )}
+      <NextProject p={entry.project} locale={locale} />
+    </>
+  ) : (
+    <PageBlocks blocks={blocks as never} locale={locale} projectCount={projectsFor(locale).length} />
+  )}
+</Base>

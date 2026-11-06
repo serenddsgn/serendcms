@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+import type { Locale } from '@serend/schema';
+import { loadData, navFor, resolveTarget, setting } from '../lib/data';
+import { abs } from '../lib/seo';
+import { t } from '../i18n';
+import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string | undefined;
+  path: string;
+  alternates?: Partial<Record<Locale, string>>;
+  ogImage?: string | undefined;
+  ogType?: 'website' | 'article';
+  jsonLd?: object[];
+  noindex?: boolean;
+  mdPath?: string | undefined;
+}
+await loadData();
+const { locale, title, description, path, alternates = {}, ogImage, ogType = 'website', jsonLd = [], noindex = false, mdPath } = Astro.props;
+const ui = t(locale);
+const identity = setting(locale, 'site.identity');
+const seo = setting(locale, 'seo.defaults');
+const footer = setting(locale, 'site.footer');
+const cta = setting(locale, 'site.cta');
+const fullTitle = title === seo.siteName ? title : `${title} · ${seo.siteName}`;
+const desc = description ?? seo.description;
+const link = (n: { label: string; target: { kind: 'page'; pageId: string; fragment: string | null } | { kind: 'url'; url: string } }) => ({
+  label: n.label,
+  href: resolveTarget(n.target),
+});
+const nav = navFor(locale, 'header').map(link);
+const footerNav = navFor(locale, 'footer').map(link);
+const legal = navFor(locale, 'legal').map(link);
+const switchTo = { de: alternates.de ?? '/de/', en: alternates.en ?? '/en/' };
+const altEntries = Object.entries(alternates) as [Locale, string][];
+const canonical = abs(path);
+---
+<!doctype html>
+<html lang={locale} class="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        try {
+          var t = localStorage.getItem('theme');
+          if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          if (t === 'light') d.classList.add('light');
+        } catch (e) {}
+      })();
+    </script>
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    <link rel="canonical" href={canonical} />
+    {altEntries.map(([l, p]) => <link rel="alternate" hreflang={l} href={abs(p)} />)}
+    {altEntries.length > 0 && <link rel="alternate" hreflang="x-default" href={abs(alternates.de ?? altEntries[0]![1])} />}
+    {mdPath && <link rel="alternate" type="text/markdown" href={mdPath} />}
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
+    <meta property="og:site_name" content={seo.siteName} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={locale === 'de' ? 'de_DE' : 'en_US'} />
+    {ogImage && <meta property="og:image" content={abs(ogImage)} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <link rel="preload" href="/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {jsonLd.map((j) => <script type="application/ld+json" set:html={JSON.stringify(j).replace(/</g, '\\u003c')} />)}
+  </head>
+  <body>
+    <a class="skip" href="#main">{ui.skip}</a>
+    <div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="progress liquid-bg" aria-hidden="true"></div>
+    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={`/${locale}/`} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} />
+    <main id="main" key={locale}>
+      <slot />
+    </main>
+    <Footer ui={ui} name={identity.name} city={identity.city} email={identity.email} nav={footerNav} legal={legal} legalLabel={ui.legal} copyright={footer.copyright} madeWith={footer.madeWith} />
+    <script>
+      import '../scripts/site.ts';
+    </script>
+    <noscript><style>.pgrid[hidden],.plist[hidden]{display:revert !important}.pgrid{display:grid}.plist{display:none !important}.g,.lr,.fade,.reveal,.mask>span,.w>span{opacity:1 !important;transform:none !important;animation:none !important}</style></noscript>
+  </body>
+</html>
