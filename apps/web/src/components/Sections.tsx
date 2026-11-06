@@ -1,5 +1,5 @@
 import type { Locale } from '@serend/schema';
-import { ROUTE_SEGMENTS } from '@serend/schema';
+import { ROUTE_SEGMENTS, splitParagraphs } from '@serend/schema';
 import type { z } from 'zod';
 import type {
   ChapterBlock,
@@ -503,9 +503,14 @@ export function RichText({ b }: { b: B<typeof RichTextBlock> }) {
     <div class="ch" style="padding-bottom:24px">
       {b.nodes.map((n) =>
         n.kind === 'paragraph' ? (
-          <p>
-            <Runs runs={n.runs} />
-          </p>
+          // Leerzeilen im Textfeld des Admins werden eigene Absätze, einfache Zeilenumbrüche bleiben (pre-line)
+          <>
+            {splitParagraphs(n.runs).map((runs) => (
+              <p style="white-space:pre-line">
+                <Runs runs={runs} />
+              </p>
+            ))}
+          </>
         ) : n.ordered ? (
           <ol style="font-size:19px;line-height:1.7;color:var(--body)">
             {n.items.map((it) => (
