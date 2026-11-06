@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
@@ -77,7 +77,7 @@ const EnvSchema = z.object({
   CONTACT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(180),
   MAINTENANCE_DIR: z.string().min(1).default('.data/maintenance'),
   RELEASES_DIR: z.string().min(1).default('.data/releases'),
-  DEPLOY_DIR: z.string().min(1).default('.data/deploy'),
+  DEPLOY_DIR: z.string().min(1).optional(),
   DEPLOY_REPO_DIR: z.string().min(1).optional(),
   DEPLOY_BRANCH: z
     .string()
@@ -168,7 +168,9 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     },
     releasesDir: resolve(e.RELEASES_DIR),
     deploy: {
-      dir: resolve(e.DEPLOY_DIR),
+      // Ohne Angabe neben dem Releases-Ordner (Produktion: /var/lib/serendportfolio/deploy, dort wartet serend-deploy.path;
+      // lokal: .data/deploy). So braucht der Server keine zusätzliche Zeile in der Env-Datei.
+      dir: resolve(e.DEPLOY_DIR ?? join(dirname(resolve(e.RELEASES_DIR)), 'deploy')),
       // Standard: das Repository, in dem diese API liegt (apps/api/src/config.ts → drei Ebenen hoch)
       repoDir: resolve(e.DEPLOY_REPO_DIR ?? fileURLToPath(new URL('../../..', import.meta.url))),
       branch: e.DEPLOY_BRANCH,
