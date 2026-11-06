@@ -72,6 +72,7 @@ install -d -m 750 "$CONF_DIR"
 gen() { openssl rand -base64 48 | tr -d '\n'; }
 if [ ! -f "$CONF_DIR/serendportfolio.env" ]; then
   sed -e "s#https://admin.example.com#https://admin.$DOMAIN#" -e "s#https://preview.example.com#https://preview.$DOMAIN#" \
+      -e "s#^DOMAIN=example.com#DOMAIN=$DOMAIN#" -e "s#^ACME_EMAIL=admin@example.com#ACME_EMAIL=$ACME_EMAIL#" \
       -e "s#https://example.com#https://$DOMAIN#" -e "s#noreply@example.com#noreply@$DOMAIN#" "$SRC/env.production.example" > "$CONF_DIR/serendportfolio.env"
   for k in SESSION_SECRET BUILD_TOKEN PREVIEW_SIGNING_KEY; do
     sed -i "s#^$k=__GENERATE__#$k=$(gen)#" "$CONF_DIR/serendportfolio.env"

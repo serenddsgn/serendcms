@@ -68,7 +68,9 @@ main() {
   ln -sfn "$NEW_ADMIN" "$ADMIN_DIR/current.new"
   mv -Tf "$ADMIN_DIR/current.new" "$ADMIN_DIR/current"
   ls -1dt "$ADMIN_DIR"/*/ 2>/dev/null | tail -n +4 | xargs -r rm -rf
-  # Browser für die Lighthouse-Prüfung des Workers (nur beim ersten Mal nötig, sonst sofort fertig)
+  # Browser für die Lighthouse-Prüfung (derselbe Pfad wie im Worker-Dienst, sonst findet er ihn nicht)
+  export PLAYWRIGHT_BROWSERS_PATH="$DATA_DIR/browsers"
+  # (nur beim ersten Mal nötig, sonst sofort fertig)
   pnpm --filter @serend/builder exec playwright-core install chromium >/dev/null
   PREVIEW_MODE=1 pnpm --filter @serend/web build
 

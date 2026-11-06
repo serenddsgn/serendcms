@@ -122,7 +122,7 @@ beforeAll(async () => {
   mkdirSync(out, { recursive: true });
   const cache = mkdtempSync(join(tmpdir(), 'serend-cache-'));
   try {
-    await run('pnpm', ['--filter', '@serend/web', 'exec', 'astro', 'build'], {
+    await run('pnpm', ['--filter', '@serend/web', 'build'], {
       cwd: REPO,
       env: {
         ...process.env,

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node ../../scripts/check-no-secrets.mjs ${BUILD_OUT_DIR:-dist}",
+    "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

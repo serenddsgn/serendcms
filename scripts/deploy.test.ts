@@ -139,6 +139,17 @@ describe('Caddyfile', () => {
   });
 });
 
+describe('Web-Build', () => {
+  it('prüft auf Secrets im richtigen Ausgabeverzeichnis (statisch und Vorschau)', async () => {
+    // @ts-expect-error reines JS-Modul
+    const { outDirFor } = await import('../apps/web/scripts/build.mjs');
+    expect(outDirFor({})).toBe('dist');
+    expect(outDirFor({ PREVIEW_MODE: '1' })).toBe('dist-preview');
+    expect(outDirFor({ PREVIEW_MODE: '1', BUILD_OUT_DIR: '/tmp/x' })).toBe('/tmp/x');
+    expect(JSON.parse(read('apps/web/package.json')).scripts.build).toBe('node scripts/build.mjs');
+  });
+});
+
 describe('Wartungsmodus im Caddyfile', () => {
   const caddy = read('deploy/Caddyfile');
 
@@ -271,6 +282,27 @@ describe('Konfigurationsvorlagen', () => {
         f,
       );
     }
+  });
+
+  it('laden Caddy ohne sudo neu (die Dienste laufen mit NoNewPrivileges) und liefern DOMAIN/ACME_EMAIL dafür', () => {
+    const p = read('deploy/env.production.example');
+    expect(p).toMatch(
+      /^CADDY_RELOAD_COMMAND=\/usr\/bin\/caddy reload --config \/etc\/caddy\/Caddyfile/m,
+    );
+    expect(p).not.toMatch(/^CADDY_RELOAD_COMMAND=.*sudo/m);
+    expect(p).toMatch(/^DOMAIN=/m);
+    expect(p).toMatch(/^ACME_EMAIL=/m);
+    expect(read('deploy/systemd/serend-worker.service')).toContain('NoNewPrivileges=yes');
+    expect(read('deploy/server-setup.sh')).toContain('s#^DOMAIN=example.com#DOMAIN=$DOMAIN#');
+  });
+
+  it('nutzt für Playwright im Deploy denselben Browser-Pfad wie der Worker-Dienst', () => {
+    expect(read('deploy/deploy.sh')).toContain(
+      'export PLAYWRIGHT_BROWSERS_PATH="$DATA_DIR/browsers"',
+    );
+    expect(read('deploy/env.production.example')).toContain(
+      'PLAYWRIGHT_BROWSERS_PATH=/var/lib/serendportfolio/browsers',
+    );
   });
 
   it('halten .env-Dateien aus dem Repository', () => {
