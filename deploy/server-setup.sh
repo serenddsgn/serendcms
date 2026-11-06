@@ -22,7 +22,7 @@ say() { echo; echo "→ $*"; }
 
 say "Pakete"
 apt-get update -y
-apt-get install -y curl gnupg ca-certificates lsb-release git rsync zstd age ufw fail2ban unattended-upgrades sudo postgresql-common debian-keyring debian-archive-keyring apt-transport-https openssl
+apt-get install -y curl gnupg ca-certificates fontconfig fonts-dejavu-core lsb-release git rsync zstd age ufw fail2ban unattended-upgrades sudo postgresql-common debian-keyring debian-archive-keyring apt-transport-https openssl
 
 say "PostgreSQL 18 (PGDG)"
 if ! dpkg -s postgresql-18 >/dev/null 2>&1; then
@@ -42,6 +42,10 @@ if ! command -v node >/dev/null || ! node -v | grep -q "^v$NODE_MAJOR\."; then
 fi
 corepack enable
 corepack prepare pnpm@9.15.9 --activate
+
+say "Systembibliotheken für Chromium (Lighthouse-Prüfung im Worker)"
+apt-get install -y libnss3 libnspr4 libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 libxcomposite1 \
+  libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2t64 libpango-1.0-0 libcairo2 libx11-6 libxext6 fonts-liberation
 
 say "Caddy"
 if ! command -v caddy >/dev/null; then
@@ -141,6 +145,8 @@ systemctl daemon-reload
 systemctl enable serend-api serend-worker serend-preview serend-backup.timer
 systemctl enable --now caddy
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile || echo "  Hinweis: Caddy-Validierung schlug fehl (fehlen die Release-Dateien noch? das ist vor dem ersten Build normal)."
+# `caddy validate` läuft als root und legt dabei die Logdateien an: sie müssen dem Dienstbenutzer gehören, sonst startet Caddy nicht
+chown -R caddy:caddy /var/log/caddy
 systemctl restart caddy || true
 
 cat <<DONE

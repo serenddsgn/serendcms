@@ -193,6 +193,16 @@ describe('Server-Einrichtung', () => {
     expect(setup).toContain('Write access NICHT ankreuzen');
   });
 
+  it('übergibt die von `caddy validate` angelegten Logdateien an den Caddy-Benutzer, bevor Caddy startet', () => {
+    expect(setup.indexOf('caddy validate')).toBeLessThan(
+      setup.indexOf('chown -R caddy:caddy /var/log/caddy'),
+    );
+    expect(setup.indexOf('chown -R caddy:caddy /var/log/caddy')).toBeLessThan(
+      setup.indexOf('systemctl restart caddy'),
+    );
+    expect(setup).toContain('libnss3'); // Chromium-Bibliotheken für Lighthouse
+  });
+
   it('enthält keine echten Secrets, Schlüssel oder Passwörter', () => {
     for (const f of readdirSync(join(ROOT, 'deploy'), { recursive: true }).map(String)) {
       if (!/\.(sh|service|timer|example)$|Caddyfile|serend$/.test(f)) continue;
