@@ -11,7 +11,6 @@ BACKUP_DIR="$DATA_DIR/backups"
 ADMIN_DIR="$DATA_DIR/admin"
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:4000/internal/health}"
 export DATABASE_URL="${DATABASE_URL:-postgres:///serendportfolio?host=/var/run/postgresql}"
-export NODE_ENV=production
 STEP="Start"
 DUMP=""
 
@@ -43,7 +42,10 @@ echo "  Stand: $SHA"
 
 STEP="2/7 pnpm install --frozen-lockfile"
 echo "→ $STEP"
-pnpm install --frozen-lockfile
+# Mit Dev-Abhängigkeiten: tsx (API/Worker/Migrationen), vite und typescript (Admin-Build) liegen dort. NODE_ENV=production
+# würde sie weglassen; es wird deshalb erst nach der Installation gesetzt.
+NODE_ENV=development pnpm install --frozen-lockfile --prod=false
+export NODE_ENV=production
 
 STEP="3/7 Datenbank-Backup und Migrationen"
 echo "→ $STEP"

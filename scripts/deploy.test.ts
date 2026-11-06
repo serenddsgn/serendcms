@@ -50,6 +50,11 @@ describe('Deploy-Dateien', () => {
       expect(i, marker).toBeGreaterThan(at);
       at = i;
     }
+    // Dev-Abhängigkeiten (tsx, vite, typescript) werden gebraucht; NODE_ENV=production darf erst nach der Installation gelten
+    expect(d).toMatch(/NODE_ENV=development pnpm install --frozen-lockfile --prod=false/);
+    expect(d.indexOf('export NODE_ENV=production')).toBeGreaterThan(
+      d.indexOf('pnpm install --frozen-lockfile'),
+    );
     expect(d).toContain('trap fail ERR');
     expect(d).toContain('flock');
   });
