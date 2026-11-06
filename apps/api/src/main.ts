@@ -1,4 +1,5 @@
 import { createDb } from '@serend/db';
+import { PgBoss } from 'pg-boss';
 import { buildApp } from './app.js';
 import { ConfigError, loadConfig } from './config.js';
 
@@ -14,11 +15,25 @@ try {
 }
 
 const handle = createDb(config.databaseUrl);
-const app = await buildApp({ config, db: handle.db });
+// Die API reiht Build-Jobs nur ein (Client); der Worker verarbeitet sie.
+const boss = new PgBoss(config.databaseUrl);
+boss.on('error', (err) => console.error('pg-boss:', err.message));
+await boss.start();
+await boss.createQueue('site-build', { retryLimit: 0 });
+const app = await buildApp({
+  config,
+  db: handle.db,
+  queue: {
+    enqueue: async (buildId) => {
+      await boss.send('site-build', { buildId }, { singletonKey: buildId, retryLimit: 0 });
+    },
+  },
+});
 
 async function shutdown(signal: string) {
   app.log.info({ signal }, 'shutting down');
   await app.close();
+  await boss.stop({ graceful: true, timeout: 10_000 });
   await handle.close();
   process.exit(0);
 }

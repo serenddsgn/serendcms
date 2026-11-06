@@ -22,14 +22,17 @@ import { registerErrorHandling } from './plugins/error-handler.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { internalRoutes } from './routes/internal.routes.js';
 import { buildRoutes } from './routes/build.routes.js';
+import { buildsRoutes } from './routes/builds.routes.js';
 import { mediaRoutes } from './routes/media.routes.js';
 import { projectsRoutes } from './routes/projects.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
 import { createAuthService } from './services/auth.service.js';
 import { createLocalStorage } from './storage/local.js';
 import type { Storage } from './storage/storage.js';
+import { createBuildsService, type BuildQueue } from './services/builds.service.js';
 import { createBuildService } from './services/build.service.js';
 import { createMediaService } from './services/media.service.js';
+import { createPagesService } from './services/pages.service.js';
 import { createProjectsService } from './services/projects.service.js';
 import { createUsersService } from './services/users.service.js';
 
@@ -42,6 +45,8 @@ export interface BuildAppOptions {
   storage?: Storage;
   /** Wird nach Änderungen am veröffentlichten Stand aufgerufen (Phase 4: Build-Job). */
   onPublishedChange?: () => Promise<void>;
+  /** Warteschlange für Build-Jobs (pg-boss im Betrieb). Ohne Angabe wird nur der Build-Datensatz angelegt. */
+  queue?: BuildQueue;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -52,6 +57,7 @@ export async function buildApp({
   logStream,
   storage,
   onPublishedChange,
+  queue,
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: createLogger(config, logStream),
@@ -101,10 +107,20 @@ export async function buildApp({
   const usersService = createUsersService({ db, hasher });
   const storageImpl = storage ?? createLocalStorage(config.media.storageDir);
   const mediaService = createMediaService({ db, storage: storageImpl });
-  const projectsService = createProjectsService({
+  const buildsService = createBuildsService({
     db,
-    ...(onPublishedChange && { onPublishedChange }),
+    queue: queue ?? { enqueue: async () => {} },
+    config,
+    log: app.log,
   });
+  // Veröffentlichungsänderungen legen einen Build an; ein zusätzlicher Hook (Tests) wird mit aufgerufen.
+  const publishedChanged = async () => {
+    await buildsService.onPublishedChange();
+    await onPublishedChange?.();
+  };
+  const projectsService = createProjectsService({ db, onPublishedChange: publishedChanged });
+  const pagesService = createPagesService({ db, onPublishedChange: publishedChanged });
+  void pagesService;
 
   registerAuthContext(app, { config, authService });
 
@@ -119,6 +135,7 @@ export async function buildApp({
       await api.register(usersRoutes, { usersService });
       await api.register(mediaRoutes, { mediaService });
       await api.register(projectsRoutes, { projectsService });
+      await api.register(buildsRoutes, { buildsService });
     },
     { prefix: API_PREFIX },
   );
