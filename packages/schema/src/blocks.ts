@@ -5,9 +5,12 @@ import { Slug, Uuid } from './common.js';
 export const CONTENT_SCHEMA_VERSION = 1;
 
 // ── gemeinsame Bausteine ──────────────────────────────────────────────
-/** Inline-Lauf; `liquid` markiert Schlüsselwörter mit Liquid-Verlauf. */
+/**
+ * Inline-Lauf; `liquid` markiert Schlüsselwörter mit Liquid-Verlauf. Ein Absatz ohne Auszeichnung ist EIN Lauf, deshalb
+ * muss das Limit für ganze Absätze reichen (500 war zu knapp und lehnte normale Fließtexte ab).
+ */
 export const Run = z.object({
-  text: z.string().min(1).max(500),
+  text: z.string().min(1).max(5000),
   liquid: z.boolean().optional(),
   em: z.boolean().optional(),
   href: z

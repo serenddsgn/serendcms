@@ -113,6 +113,37 @@ describe('Seiten', () => {
     expectError(await as(t, ed, 'POST', '/api/v1/pages', badHref), 400, 'validation_error');
   });
 
+  it('akzeptiert lange Absätze (Fließtext) und nennt bei zu langen Texten Block und Grenze', async () => {
+    const richtext = (text: string) => [
+      {
+        id: randomUUID(),
+        type: 'richtext',
+        nodes: [{ kind: 'paragraph', runs: [{ text }] }],
+      },
+    ];
+    // Ein Absatz ohne Auszeichnung ist ein einziger Lauf: 1200 Zeichen sind normaler Fließtext
+    const ok = await as(
+      t,
+      ed,
+      'POST',
+      '/api/v1/pages',
+      body('lang-ok', { content: richtext('Ein langer Satz. '.repeat(75)) }),
+    );
+    expect(ok.statusCode).toBe(201);
+
+    const tooLong = await as(
+      t,
+      ed,
+      'POST',
+      '/api/v1/pages',
+      body('lang-zu-lang', { content: richtext('x'.repeat(5001)) }),
+    );
+    expectError(tooLong, 400, 'validation_error');
+    expect(tooLong.json().error.message).toBe(
+      'Ungültiger Seiteninhalt: Block 1: Text zu lang (max. 5000 Zeichen)',
+    );
+  });
+
   it('legt beim Veröffentlichen einer Slug-Änderung einen 301 an', async () => {
     const created = (await as(t, ed, 'POST', '/api/v1/pages', body('alt-slug'))).json();
     await as(t, ed, 'POST', `/api/v1/pages/${created.page.id}/publish`);
