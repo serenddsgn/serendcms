@@ -574,3 +574,19 @@ Bewusst **nicht** vorgesehen: Tailwind (Tokens als plain CSS), Framer Motion, Le
 - **Konfigurator-Logik** aus dem Prototyp (Verkleinern entfernt Stücke von hinten, Button erst bei voller Box aktiv, lokalisierte Preise, `aria-live`) wird 1:1 übernommen. Die Beispielkennzeichnung steht im Block (`eyebrow`).
 - **Admin-UI:** Im Design gibt es keinen Admin-Entwurf. Ich baue ihn schlicht und funktional mit den Tokens, ohne eigene Gestaltungsidee.
 - **Seeds:** Admin-User mit zufälligem Passwort (nur lokal, einmalig im Terminal ausgegeben, nie im Repo), 12 Projekte (DE und EN) mit Daten aus dem Prototyp, vollständiger D&F-Detailinhalt, 4 Leistungen, Navigation, Settings, Startseite, Projektseite. Bilder aus `design/images` werden als Medien importiert, Alt-Texte aus dem Prototyp (DE und EN).
+
+---
+
+## Nachtrag: Umsetzung und Abweichungen von dieser Analyse
+
+Stand nach Phase 6. Die freigegebenen Entscheidungen aus Abschnitt 0 wurden umgesetzt. Folgendes weicht von der Analyse ab oder wurde konkretisiert:
+
+- **Routen-Segmente** (`projekte`/`work`) stehen als Konstante in `packages/schema` (`ROUTE_SEGMENTS`), nicht im Slug der Systemseite. Der Slug der Systemseite „projects“ ist dadurch fest.
+- **Reihenfolge der Phasen:** Seiten, Leistungen, Navigation und Einstellungen (Tabellen, Build-Endpunkte, Seeds) kamen bereits in Phase 3, weil das Frontend sie zum Bauen braucht. Phase 5 ergänzte die Admin-Routen und die UI.
+- **Bilder:** Die Pipeline nutzt `sharp` direkt (AVIF/WebP, `width`, `height`, `srcset`, `sizes`, persistenter Cache), nicht `astro:assets`, weil Medien erst beim Build per API geladen werden und `astro:assets` lokale Dateien nur aus `src/` verarbeitet.
+- **Tabellen `builds`/`releases`:** höchstens ein wartender und ein laufender Build und genau ein aktives Release sind per Partial-Unique-Index in der Datenbank erzwungen; `releases.removed_at` markiert aufgeräumte Releases.
+- **CSP:** Skripte nur `'self'` plus Hashes der Inline-Skripte des jeweiligen Builds (`build-meta/csp.caddy`, vom Worker erzeugt). Styles erlauben `'unsafe-inline'`, weil das Design viele Inline-Werte nutzt.
+- **Datenbank-Zugriff:** In Produktion per Unix-Socket (Peer-Authentifizierung), daher gibt es kein Datenbank-Passwort, das geschützt werden müsste.
+- **URL-Felder** (Link-Ziele, Navigation, Live-URL) erlauben nur `http(s)`, `mailto` und `tel`, nie `javascript:`.
+- **Seiten-Übersetzungen:** Für Projekte gibt es „Sprachversion anlegen“. Freie Seiten und Systemseiten legt man je Sprache einzeln an (Link-Ziele sind sprachgebunden).
+- **Noch offen, weil im Design nicht vorgesehen:** das Kontaktformular im Frontend (der Endpunkt `POST /api/contact` ist fertig und getestet), eine Teamseite (Daten werden gepflegt, aber nicht ausgeliefert), die Texte von Impressum und Datenschutz (Entwürfe ohne Inhalt).

@@ -7,7 +7,7 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @serend/api --filter @serend/admin --filter @serend/web dev",
+    "dev": "pnpm --parallel --filter @serend/api --filter @serend/worker --filter @serend/admin --filter @serend/web dev",
     "setup:env": "node scripts/setup-env.mjs",
     "db:generate": "pnpm --filter @serend/db generate",
     "db:migrate": "pnpm --filter @serend/db migrate",
@@ -18,7 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
-    "check:secrets": "pnpm --filter @serend/admin build && pnpm --filter @serend/web build"
+    "check:secrets": "pnpm --filter @serend/admin build && pnpm --filter @serend/web build",
+    "deploy": "bash deploy/deploy.sh",
+    "deploy:remote": "bash deploy/deploy-remote.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

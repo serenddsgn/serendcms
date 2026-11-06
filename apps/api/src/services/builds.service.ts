@@ -1,6 +1,4 @@
 import { exec } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { promisify } from 'node:util';
 import {
   activateRelease,
@@ -10,7 +8,7 @@ import {
   type Database,
   type ReleaseRow,
 } from '@serend/db';
-import { currentReleaseId, releasePath, switchCurrent } from '@serend/builder';
+import { currentReleaseId, readCaddySnippets, releasePath, switchCurrent } from '@serend/builder';
 import type { BuildSummaryDto, ReleaseDto } from '@serend/schema';
 import type { AppConfig } from '../config.js';
 import { errors } from '../lib/errors.js';
@@ -131,11 +129,9 @@ export function createBuildsService({
         throw err;
       }
       if (config.caddyReloadCommand && previous && previous !== releaseId) {
-        const file = (id: string) =>
-          join(releasePath(config.releasesDir, id), 'build-meta', 'redirects.caddy');
         const [a, b] = await Promise.all([
-          readFile(file(previous), 'utf8').catch(() => ''),
-          readFile(file(releaseId), 'utf8').catch(() => ''),
+          readCaddySnippets(releasePath(config.releasesDir, previous)),
+          readCaddySnippets(releasePath(config.releasesDir, releaseId)),
         ]);
         if (a !== b)
           await run(config.caddyReloadCommand).catch((err) =>

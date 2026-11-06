@@ -1,0 +1,15 @@
+[Unit]
+Description=serendCMS Backup (pg_dump + Medien, verschlüsselt, außerhalb des Servers)
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=serend
+Group=serend
+EnvironmentFile=/etc/serendportfolio/backup.env
+ExecStart=/srv/serendportfolio/deploy/backup.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/serendportfolio

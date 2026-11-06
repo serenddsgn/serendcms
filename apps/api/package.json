@@ -8,7 +8,9 @@
     "start": "tsx --env-file-if-exists=../../.env src/main.ts",
     "seed": "tsx --env-file-if-exists=../../.env src/cli/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "create-admin": "tsx --env-file-if-exists=../../.env src/cli/create-admin.ts",
+    "request-build": "tsx --env-file-if-exists=../../.env src/cli/request-build.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

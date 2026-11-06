@@ -1,0 +1,126 @@
+# serendCMS · Caddy. Benötigt die Umgebungsvariablen DOMAIN (z. B. example.com) und ACME_EMAIL
+# (siehe /etc/default/caddy bzw. caddy.service.d/override.conf, von server-setup.sh angelegt).
+{
+	email {$ACME_EMAIL}
+}
+
+# ── Gemeinsame Security-Header ───────────────────────────────────────────
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+}
+
+# ── Öffentliche Website: reine statische Dateien aus dem aktiven Release ──────
+{$DOMAIN} {
+	import security_headers
+	encode zstd gzip
+
+	root * /var/lib/serendportfolio/releases/current
+
+	# Baseline-CSP ohne Inline-Skripte. Die Datei csp.caddy des Releases ergänzt genau die Hashes der Inline-Skripte
+	# dieses Builds (wird mit dem Release gebaut; Caddy lädt nach dem Wechsel neu).
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
+	import /var/lib/serendportfolio/releases/current/build-meta/*.caddy
+
+	# Nichts Internes ausliefern
+	@internal path /build-meta/* /internal/* /api/v1/*
+	respond @internal 404
+
+	# Kontaktformular: einziger Endpunkt, der das Backend braucht (Same-Origin, kein CORS)
+	handle /api/contact {
+		rewrite * /api/v1/public/contact
+		reverse_proxy 127.0.0.1:4000
+	}
+
+	# Sprachweiche für "/": Cookie `lang`, dann Accept-Language, sonst Deutsch
+	@root path /
+	handle @root {
+		@cookie_en header_regexp Cookie (^|;\s*)lang=en(;|$)
+		@cookie_de header_regexp Cookie (^|;\s*)lang=de(;|$)
+		@accept_en header_regexp Accept-Language ^\s*en
+		redir @cookie_en /en/ 302
+		redir @cookie_de /de/ 302
+		redir @accept_en /en/ 302
+		redir * /de/ 302
+	}
+
+	@immutable path /img/* /_assets/* /fonts/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	@pages not path /img/* /_assets/* /fonts/* /og/*
+	header @pages Cache-Control "public, max-age=0, must-revalidate"
+	@md path *.md
+	header @md Content-Type "text/markdown; charset=utf-8"
+
+	file_server
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+
+	log {
+		output file /var/log/caddy/site.log
+	}
+}
+
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+# ── Admin und API: gleiche Domain, daher keine CORS-Konfiguration ───────────────
+admin.{$DOMAIN} {
+	import security_headers
+	encode zstd gzip
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
+	header X-Robots-Tag "noindex, nofollow"
+
+	# Optional: Zugriff auf feste IP-Adressen beschränken (zusätzlich zum Login). Beispiel einkommentieren und anpassen:
+	# @fremd not remote_ip 203.0.113.10 198.51.100.0/24
+	# respond @fremd 403
+
+	# Interne Endpunkte (/internal/*) werden nie durchgereicht; die API lauscht ohnehin nur auf localhost.
+	@internal path /internal/*
+	respond @internal 404
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:4000
+	}
+
+	handle {
+		root * /var/lib/serendportfolio/admin/current
+		try_files {path} /index.html
+		header Cache-Control "no-store"
+		file_server
+	}
+
+	log {
+		output file /var/log/caddy/admin.log
+	}
+}
+
+# ── Vorschau: Astro im SSR-Modus, signierte Links (max. 15 Min.) ───────────────
+preview.{$DOMAIN} {
+	import security_headers
+	header Referrer-Policy "no-referrer"
+	header X-Robots-Tag "noindex, nofollow"
+	header Cache-Control "no-store"
+
+	# Das Vorschau-Token steht beim ersten Aufruf in der URL: nie in Logs schreiben.
+	log {
+		output file /var/log/caddy/preview.log
+		format filter {
+			wrap json
+			request>uri query {
+				delete preview
+			}
+		}
+	}
+
+	reverse_proxy 127.0.0.1:4323
+}

@@ -5,3 +5,4 @@ export * from './html.js';
 export * from './budget.js';
 export * from './lighthouse.js';
 export * from './run-checks.js';
+export * from './caddy.js';
