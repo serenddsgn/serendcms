@@ -7,7 +7,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import type { BuildMedia } from '@serend/schema';
-import { CACHE_DIR, data, readOriginal } from './data';
+import { CACHE_DIR, PREVIEW_MODE, data, readOriginal } from './data';
 
 export const WIDTHS = [480, 800, 1200, 1800, 2400];
 export const FORMATS = ['avif', 'webp'] as const;
@@ -20,8 +20,12 @@ export const widthsFor = (m: Pick<BuildMedia, 'width'>): number[] => {
 
 export const variantName = (m: Pick<BuildMedia, 'sha256'>, width: number, format: Format) =>
   `${m.sha256.slice(0, 12)}-${width}.${format}`;
+// Der Node-Adapter behandelt URLs mit Dateiendung als statische Dateien. Die SSR-Vorschau nutzt deshalb
+// endungslose Bild-URLs (/preview-img/<hash>-<breite>-<format>), der statische Build die üblichen /img/<datei>.
 const variantUrl = (m: BuildMedia, width: number, format: Format) =>
-  `/img/${variantName(m, width, format)}`;
+  PREVIEW_MODE
+    ? `/preview-img/${m.sha256.slice(0, 12)}-${width}-${format}`
+    : `/img/${variantName(m, width, format)}`;
 
 export interface PictureData {
   width: number;
@@ -75,4 +79,16 @@ export async function renderVariant(m: BuildMedia, width: number, format: Format
   await mkdir(join(CACHE_DIR, 'variants'), { recursive: true });
   await writeFile(cached, buf);
   return buf;
+}
+
+/** Löst `<sha12>-<breite>.<format>` zu einer Variante auf (für den dynamischen Bild-Endpunkt der Vorschau). */
+export function findVariant(
+  file: string,
+): { media: BuildMedia; width: number; format: Format } | undefined {
+  const m = /^([0-9a-f]{12})-(\d+)[.-](avif|webp)$/.exec(file);
+  if (!m) return undefined;
+  const media = data().media.find((x) => x.sha256.startsWith(m[1]!));
+  const width = Number(m[2]);
+  if (!media || !widthsFor(media).includes(width)) return undefined;
+  return { media, width, format: m[3] as Format };
 }

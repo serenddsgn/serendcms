@@ -3,6 +3,7 @@
  * validiert sie mit den Zod-Schemas aus packages/schema und baut Indizes.
  * Nach dem Deployment gibt es keine Abhängigkeit mehr von der API.
  */
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -43,6 +44,10 @@ export interface SiteData {
 
 let loading: Promise<SiteData> | undefined;
 let loaded: SiteData | undefined;
+/** Vorschau (SSR): Daten gelten je Anfrage, nicht global. */
+const requestData = new AsyncLocalStorage<SiteData>();
+export const runWithData = <T>(d: SiteData, fn: () => T): T => requestData.run(d, fn);
+export const PREVIEW_MODE = process.env.PREVIEW_MODE === '1';
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -70,6 +75,8 @@ async function fetchJson<S extends z.ZodType>(
 }
 
 export function loadData(): Promise<SiteData> {
+  const scoped = requestData.getStore();
+  if (scoped) return Promise.resolve(scoped);
   loading ??= (async () => {
     const base = process.env.API_URL ?? 'http://127.0.0.1:4000';
     const token = requireEnv('BUILD_TOKEN');
@@ -106,7 +113,7 @@ export function loadData(): Promise<SiteData> {
       }),
     );
 
-    loaded = {
+    loaded = indexData({
       manifest,
       projects,
       pages,
@@ -115,17 +122,92 @@ export function loadData(): Promise<SiteData> {
       media,
       redirects,
       settings,
-      mediaById: new Map(media.map((m) => [m.id, m])),
-      projectById: new Map(projects.map((p) => [p.id, p])),
-      pageById: new Map(pages.map((p) => [p.id, p])),
-    };
+    });
     validate(loaded);
     return loaded;
   })();
   return loading;
 }
 
+type RawData = Pick<
+  SiteData,
+  'manifest' | 'projects' | 'pages' | 'services' | 'navigation' | 'media' | 'redirects' | 'settings'
+>;
+function indexData(raw: RawData): SiteData {
+  return {
+    ...raw,
+    mediaById: new Map(raw.media.map((m) => [m.id, m])),
+    projectById: new Map(raw.projects.map((p) => [p.id, p])),
+    pageById: new Map(raw.pages.map((p) => [p.id, p])),
+  };
+}
+
+// ── Vorschau: Datenpaket mit der neuesten Revision des betrachteten Inhalts ──────────────
+const PreviewBundle = z.object({
+  target: z.object({ kind: z.enum(['project', 'page']), id: z.string() }),
+  projects: z.array(BuildProject),
+  pages: z.array(BuildPage),
+  services: z.array(BuildService),
+  navigation: z.array(BuildNavItem),
+  settings: z.array(BuildSetting),
+  media: z.array(BuildMedia),
+  redirects: z.array(BuildRedirect),
+});
+const previewCache = new Map<string, { until: number; data: Promise<SiteData> }>();
+
+/** Wird geworfen, wenn die API das Token ablehnt (ungültig oder abgelaufen). */
+export class PreviewDeniedError extends Error {}
+
+export function loadPreviewData(token: string): Promise<SiteData> {
+  const now = Date.now();
+  for (const [k, v] of previewCache) if (v.until < now) previewCache.delete(k);
+  const hit = previewCache.get(token);
+  if (hit) return hit.data;
+  const result = (async () => {
+    const base = process.env.API_URL ?? 'http://127.0.0.1:4000';
+    const headers = { authorization: `Bearer ${token}` };
+    const res = await fetch(`${base}/internal/preview/bundle`, { headers });
+    if (res.status === 401 || res.status === 403 || res.status === 404)
+      throw new PreviewDeniedError();
+    if (!res.ok) throw new Error(`Vorschau-Paket: API antwortet mit ${res.status}`);
+    const b = PreviewBundle.parse(await res.json());
+    await Promise.all(
+      b.media.map(async (m) => {
+        const file = originalPath(m);
+        if (existsSync(file)) return;
+        const r = await fetch(`${base}/internal/preview/media/${m.id}/file`, { headers });
+        if (!r.ok) throw new Error(`Vorschau-Medium ${m.id}: ${r.status}`);
+        await mkdir(dirname(file), { recursive: true });
+        await writeFile(file, Buffer.from(await r.arrayBuffer()));
+      }),
+    );
+    const d = indexData({
+      ...b,
+      manifest: {
+        counts: {
+          projects: b.projects.length,
+          pages: b.pages.length,
+          services: b.services.length,
+          navigation: b.navigation.length,
+          settings: b.settings.length,
+          media: b.media.length,
+          redirects: b.redirects.length,
+        },
+        projectRevisionIds: [],
+        pageRevisionIds: [],
+      },
+    });
+    validate(d);
+    return d;
+  })();
+  previewCache.set(token, { until: now + 60_000, data: result });
+  result.catch(() => previewCache.delete(token));
+  return result;
+}
+
 export function data(): SiteData {
+  const scoped = requestData.getStore();
+  if (scoped) return scoped;
   if (!loaded) throw new Error('Daten nicht geladen: zuerst `await loadData()` aufrufen.');
   return loaded;
 }

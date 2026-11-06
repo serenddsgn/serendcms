@@ -67,3 +67,10 @@ export function allEntries(): Entry[] {
 export const mdPath = (e: Pick<Entry, 'locale' | 'slug'>) =>
   `/${e.locale}/${e.slug ? `${e.slug}.md` : 'index.md'}`;
 export const ogPath = (e: Pick<Entry, 'locale' | 'key'>) => `/og/${e.locale}/${e.key}.png`;
+
+/** Für SSR (Vorschau): Eintrag zu einer URL finden. */
+export function findEntry(locale: string, slug: string | undefined): Entry | undefined {
+  return allEntries().find(
+    (e) => e.locale === locale && e.slug === (slug ?? '').replace(/\/$/, ''),
+  );
+}

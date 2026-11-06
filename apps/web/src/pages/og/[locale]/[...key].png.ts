@@ -12,7 +12,8 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 export const GET: APIRoute = async ({ props }) => {
-  const { entry } = props as { entry: ReturnType<typeof allEntries>[number] };
+  const entry = (props as { entry?: ReturnType<typeof allEntries>[number] }).entry;
+  if (!entry) return new Response('not found', { status: 404 });
   const siteName = setting(entry.locale, 'seo.defaults').siteName;
   const project = entry.kind === 'project' ? entry.project : undefined;
   const cover = project?.revision.coverMediaId
