@@ -139,6 +139,21 @@ describe('Caddyfile', () => {
   });
 });
 
+describe('CLI-Aufrufe in der Doku', () => {
+  it('nutzen pnpm-Skripte ohne das trennende `--` (es würde die Optionen verschlucken)', () => {
+    for (const f of [
+      'deploy/README.md',
+      'deploy/server-setup.sh',
+      'docs/01-entwicklung.md',
+      'docs/02-deployment.md',
+    ]) {
+      expect(read(f), f).not.toMatch(/create-admin\s+--\s/);
+      expect(read(f), f).not.toMatch(/seed-content\s+--\s/);
+    }
+    expect(read('deploy/README.md')).toContain('seed-content --admin');
+  });
+});
+
 describe('Web-Build', () => {
   it('prüft auf Secrets im richtigen Ausgabeverzeichnis (statisch und Vorschau)', async () => {
     // @ts-expect-error reines JS-Modul

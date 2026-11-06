@@ -1,5 +1,5 @@
 /**
- * Legt einen Benutzer an (auch in Produktion): `pnpm --filter @serend/api create-admin -- --email a@b.de --name "Name" [--role admin|editor]`
+ * Legt einen Benutzer an (auch in Produktion): `pnpm --filter @serend/api create-admin --email a@b.de --name "Name" [--role admin|editor]`
  * Das Passwort kommt aus ADMIN_PASSWORD oder wird zufällig erzeugt und einmalig ausgegeben.
  */
 import { randomBytes } from 'node:crypto';

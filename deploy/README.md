@@ -55,11 +55,20 @@ Danach:
    ssh deploy@example.com
    sudo -u serend -H bash -lc 'cd /srv/serendportfolio && pnpm run deploy main'
    sudo -u serend -H bash -lc 'cd /srv/serendportfolio && DATABASE_URL=postgres:///serendportfolio?host=/var/run/postgresql \
-     pnpm --filter @serend/api create-admin -- --email du@example.com --name "Dein Name"'
+     pnpm --filter @serend/api create-admin --email du@example.com --name "Dein Name"'
    ```
    Das Passwort wird einmalig ausgegeben; nach dem ersten Login ändern.
-3. Warten, bis der erste Seiten-Build durch ist (Admin → *Veröffentlichung*), dann `https://example.com` prüfen.
-4. Backups einrichten (`docs/03-backup-restore.md`) und eine Wiederherstellung testen.
+3. **Startinhalte** aus dem Design anlegen (12 Projekte in DE und EN, Seiten, Leistungen, Navigation, Einstellungen, Bilder). Ohne Inhalte schlägt
+   der erste Seiten-Build fehl („Pflichtseite home fehlt“), denn eine leere Datenbank hat noch keine Startseite:
+   ```bash
+   sudo -u serend -H bash -lc 'cd /srv/serendportfolio && DATABASE_URL=postgres:///serendportfolio?host=/var/run/postgresql \
+     STORAGE_DIR=/var/lib/serendportfolio/media pnpm --filter @serend/api seed-content --admin du@example.com'
+   sudo -u serend -H bash -lc 'cd /srv/serendportfolio && DATABASE_URL=postgres:///serendportfolio?host=/var/run/postgresql \
+     pnpm --filter @serend/api request-build'
+   ```
+   Der Befehl ändert nichts, wenn es schon Projekte gibt.
+4. Warten, bis der erste Seiten-Build durch ist (Admin → *Veröffentlichung*), dann `https://example.com` prüfen.
+5. Backups einrichten (`docs/03-backup-restore.md`) und eine Wiederherstellung testen.
 
 ## 3. Laufender Betrieb
 

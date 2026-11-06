@@ -45,7 +45,8 @@ danach `pnpm --filter @serend/web exec astro preview`. Wie in Produktion läuft 
 | `pnpm db:seed` | Admin + Beispielinhalte (nicht in Produktion) |
 | `pnpm test` | alle Tests inkl. `pnpm audit` (hoch) |
 | `pnpm lint`, `pnpm typecheck`, `pnpm format` | Qualitätssicherung |
-| `pnpm --filter @serend/api create-admin -- --email … --name …` | Benutzer anlegen (auch Produktion) |
+| `pnpm --filter @serend/api create-admin --email … --name …` | Benutzer anlegen (auch Produktion; ohne `--` vor den Optionen) |
+| `pnpm --filter @serend/api seed-content --admin <e-mail>` | Startinhalte aus dem Design anlegen (auch Produktion, nur wenn es noch keine Projekte gibt) |
 
 ## Tests
 
