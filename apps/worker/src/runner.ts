@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -33,7 +33,9 @@ export interface RunnerDeps {
   config: Pick<
     WorkerConfig,
     'releasesDir' | 'keepReleases' | 'siteUrl' | 'buildToken' | 'lighthouse'
-  >;
+  > & {
+    buildTmpDir?: string;
+  };
   buildSite: SiteBuilder;
   /** Austauschbar für Tests; Standard sind die Prüfungen aus @serend/builder. */
   runChecks?: (dir: string, opts: ChecksOptions) => Promise<ChecksResult>;
@@ -76,7 +78,10 @@ export async function runBuild(deps: RunnerDeps, buildId: string): Promise<RunRe
 
   const log = new LogBuffer([config.buildToken]);
   log.line(`Build ${buildId} gestartet (Auslöser: ${claimed.trigger}).`);
-  const tmp = await mkdtemp(join(tmpdir(), 'serend-build-'));
+  // Nicht /tmp: Astro verschiebt Dateien per rename aus apps/web/.astro, das scheitert über Dateisystemgrenzen (EXDEV).
+  const tmpBase = config.buildTmpDir ?? tmpdir();
+  await mkdir(tmpBase, { recursive: true });
+  const tmp = await mkdtemp(join(tmpBase, 'serend-build-'));
   const outDir = join(tmp, 'dist');
   let releaseId: string | undefined;
   let switched = false;

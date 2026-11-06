@@ -19,6 +19,7 @@ test-results/
 /releases/
 .data/
 *.pcraft
+apps/web/.build-tmp/
 
 # System / Editor
 .DS_Store
