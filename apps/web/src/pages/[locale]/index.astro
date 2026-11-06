@@ -1,0 +1,34 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { HomeContent, type Locale } from '@serend/schema';
+import Base from '../../layouts/Base.astro';
+import { PageBlocks } from '../../components/Blocks';
+import { loadData, pageFor, projectsFor, setting, translationOf } from '../../lib/data';
+import { allEntries, mdPath, ogPath } from '../../lib/pages';
+import { organizationJsonLd } from '../../lib/seo';
+import { LOCALES } from '../../i18n';
+
+export const getStaticPaths = (async () => {
+  await loadData();
+  return LOCALES.map((locale) => ({ params: { locale } }));
+}) satisfies GetStaticPaths;
+
+await loadData();
+const locale = Astro.params.locale as Locale;
+const page = pageFor(locale, 'home');
+const blocks = HomeContent.parse(page.revision.content);
+const entry = allEntries().find((e) => e.kind === 'home' && e.locale === locale)!;
+const seo = setting(locale, 'seo.defaults');
+---
+<Base
+  locale={locale}
+  title={page.revision.seoTitle ?? seo.siteName}
+  description={page.revision.seoDescription ?? undefined}
+  path={entry.url}
+  alternates={translationOf(page, 'page')}
+  ogImage={ogPath(entry)}
+  mdPath={mdPath(entry)}
+  jsonLd={[organizationJsonLd(locale)]}
+>
+  <PageBlocks blocks={blocks} locale={locale} projectCount={projectsFor(locale).length} />
+</Base>

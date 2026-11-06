@@ -1,0 +1,24 @@
+---
+import '../styles/global.css';
+import { de } from '../i18n/de';
+import { en } from '../i18n/en';
+---
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>404 · serend.design</title>
+    <script is:inline>
+      try { var t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'); if (t === 'light') document.documentElement.classList.add('light'); } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main class="wrap" style="padding-top:160px;padding-bottom:160px">
+      <p class="eyebrow">404</p>
+      <h1 class="display" style="font-size:clamp(48px,8vw,120px);line-height:.95;letter-spacing:-.055em;margin:16px 0 40px">{de.notFoundTitle}<br /><span lang="en" style="color:var(--mute)">{en.notFoundTitle}</span></h1>
+      <p style="color:var(--mute);font-size:18px">{de.notFoundText} <span lang="en">{en.notFoundText}</span></p>
+      <p style="margin-top:32px;display:flex;gap:32px"><a href="/de/" class="biglink">{de.notFoundLink}</a> <a href="/en/" class="biglink">{en.notFoundLink}</a></p>
+    </main>
+  </body>
+</html>
