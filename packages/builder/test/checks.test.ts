@@ -62,6 +62,23 @@ describe('Link-Prüfung', () => {
     );
   });
 
+  it('nennt bei einem kaputten Link den sichtbaren Linktext, damit er im Admin zu finden ist', () => {
+    const dir = site({
+      'de/index.html': page(
+        '<a class="biglink" href="/de/praeambel/#praeambel"><span class="ring">→</span>Unsere Design-Philosophie</a>',
+      ),
+      'de/praeambel/index.html': page('<h1>Präambel</h1>'),
+    });
+    expect(checkLinks(dir).broken).toEqual([
+      {
+        page: '/de/',
+        url: '/de/praeambel/#praeambel',
+        reason: 'Anker #praeambel fehlt',
+        label: '→ Unsere Design-Philosophie',
+      },
+    ]);
+  });
+
   it('ignoriert externe Links, mailto und reine Anker auf derselben Seite', () => {
     const dir = site({
       'index.html': page(

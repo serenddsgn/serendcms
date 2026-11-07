@@ -30,8 +30,14 @@ export async function runChecks(dir: string, opts: ChecksOptions = {}): Promise<
     : ({ skipped: true } as const);
 
   const problems: string[] = [];
-  for (const b of links.broken.slice(0, 20))
-    problems.push(`Kaputter Link auf ${b.page}: ${b.url} (${b.reason})`);
+  for (const b of links.broken.slice(0, 20)) {
+    const hint = b.reason.startsWith('Anker')
+      ? ' Die Zielseite hat kein Element mit dieser ID: im Admin beim Link das Feld „Anker“ leeren oder den Anker am Ziel-Block eintragen.'
+      : '';
+    problems.push(
+      `Kaputter Link auf ${b.page}${b.label ? ` („${b.label}“)` : ''}: ${b.url} (${b.reason}).${hint}`,
+    );
+  }
   for (const e of html.errors.slice(0, 20))
     problems.push(`HTML ${e.page}:${e.line} ${e.rule}: ${e.message}`);
   for (const o of budget.over)
