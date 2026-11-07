@@ -124,6 +124,106 @@ export function ServicesPage() {
   );
 }
 
+/** Bestehenden Navigationseintrag ändern: Beschriftung, Bereich, Zielseite (Auswahl), Anker oder URL. */
+function NavEditForm({
+  item,
+  pages,
+  saving,
+  onSave,
+  onCancel,
+}: {
+  item: any;
+  pages: { id: string; title: string }[];
+  saving: boolean;
+  onSave: (patch: any) => void;
+  onCancel: () => void;
+}) {
+  const [label, setLabel] = useState<string>(item.label);
+  const [location, setLocation] = useState<string>(item.location);
+  const [kind, setKind] = useState<'page' | 'url'>(item.target.kind);
+  const [pageId, setPageId] = useState<string>(item.target.pageId ?? '');
+  const [fragment, setFragment] = useState<string>(item.target.fragment ?? '');
+  const [url, setUrl] = useState<string>(item.target.url ?? '');
+  const valid = label.trim() !== '' && (kind === 'page' ? pageId !== '' : url.trim() !== '');
+  return (
+    <form
+      className="card"
+      style={{ margin: '4px 0 12px' }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!valid) return;
+        onSave({
+          label: label.trim(),
+          location,
+          target:
+            kind === 'page'
+              ? { kind: 'page', pageId, fragment: fragment.trim() || null }
+              : { kind: 'url', url: url.trim() },
+        });
+      }}
+    >
+      <div className="grid3">
+        <Field label="Beschriftung">
+          <input value={label} onChange={(e) => setLabel(e.target.value)} />
+        </Field>
+        <Field label="Bereich">
+          <select value={location} onChange={(e) => setLocation(e.target.value)}>
+            <option value="header">Kopfzeile</option>
+            <option value="footer">Footer</option>
+            <option value="legal">Rechtliches</option>
+          </select>
+        </Field>
+        <Field label="Ziel">
+          <select value={kind} onChange={(e) => setKind(e.target.value as 'page' | 'url')}>
+            <option value="page">Seite</option>
+            <option value="url">URL</option>
+          </select>
+        </Field>
+      </div>
+      {kind === 'page' ? (
+        <div className="grid2">
+          <Field label="Seite">
+            <select
+              value={pageId}
+              // Anker gehören zu einer Seite: beim Wechsel der Zielseite nicht mitnehmen
+              onChange={(e) => {
+                setPageId(e.target.value);
+                setFragment('');
+              }}
+            >
+              <option value="">– wählen –</option>
+              {pages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Anker (nur wenn die Zielseite einen Block mit diesem Anker hat, z. B. leistungen)">
+            <input
+              value={fragment}
+              onChange={(e) => setFragment(e.target.value)}
+              placeholder="leistungen"
+            />
+          </Field>
+        </div>
+      ) : (
+        <Field label="URL">
+          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
+        </Field>
+      )}
+      <div className="row">
+        <button className="btn primary small" disabled={!valid || saving}>
+          Speichern
+        </button>
+        <button type="button" className="btn small" onClick={onCancel}>
+          Abbrechen
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function NavigationPage() {
   const [locale, setLocale] = useLocale();
   const q = useQuery({
@@ -136,12 +236,16 @@ export function NavigationPage() {
   });
   const keys = [['navigation', locale]];
   const order = useAction((ids: string[]) => api.put('/navigation/order', { ids }), keys);
+  const [editing, setEditing] = useState<string | null>(null);
   const update = useAction(
     (v: { id: string; patch: any }) => api.patch(`/navigation/${v.id}`, v.patch),
     keys,
+    () => setEditing(null),
   );
   const remove = useAction((id: string) => api.del(`/navigation/${id}`), keys);
   const create = useAction((v: any) => api.post('/navigation', { locale, ...v }), keys);
+  const pageTitle = (id: string) =>
+    pages.data?.pages.find((p) => p.id === id)?.title ?? '(unbekannte Seite)';
   const { register, handleSubmit, reset, watch } = useForm({
     defaultValues: {
       location: 'header',
@@ -177,31 +281,48 @@ export function NavigationPage() {
         getId={(n) => n.id}
         onReorder={(n) => order.mutate(n.map((x) => x.id))}
         render={(n, _i, handle) => (
-          <div className="sortable row between">
-            <div className="row">
-              {handle}
-              <strong>{n.label}</strong>
-              <span className="pill">{n.location}</span>
-              <span className="muted small">
-                {n.target.kind === 'page'
-                  ? `Seite${n.target.fragment ? `#${n.target.fragment}` : ''}`
-                  : n.target.url}
-              </span>
+          <div className="sortable">
+            <div className="row between">
+              <div className="row">
+                {handle}
+                <strong>{n.label}</strong>
+                <span className="pill">{n.location}</span>
+                <span className="muted small">
+                  {n.target.kind === 'page'
+                    ? `→ ${pageTitle(n.target.pageId)}${n.target.fragment ? `#${n.target.fragment}` : ''}`
+                    : n.target.url}
+                </span>
+              </div>
+              <div className="row">
+                <select
+                  aria-label="Status"
+                  value={n.status}
+                  onChange={(e) => update.mutate({ id: n.id, patch: { status: e.target.value } })}
+                >
+                  {STATUS.map((x) => (
+                    <option key={x}>{x}</option>
+                  ))}
+                </select>
+                <button
+                  className="btn small"
+                  onClick={() => setEditing(editing === n.id ? null : n.id)}
+                >
+                  {editing === n.id ? 'Schließen' : 'Bearbeiten'}
+                </button>
+                <button className="btn small danger" onClick={() => remove.mutate(n.id)}>
+                  Löschen
+                </button>
+              </div>
             </div>
-            <div className="row">
-              <select
-                aria-label="Status"
-                value={n.status}
-                onChange={(e) => update.mutate({ id: n.id, patch: { status: e.target.value } })}
-              >
-                {STATUS.map((x) => (
-                  <option key={x}>{x}</option>
-                ))}
-              </select>
-              <button className="btn small danger" onClick={() => remove.mutate(n.id)}>
-                Löschen
-              </button>
-            </div>
+            {editing === n.id && (
+              <NavEditForm
+                item={n}
+                pages={pages.data?.pages ?? []}
+                saving={update.isPending}
+                onSave={(patch) => update.mutate({ id: n.id, patch })}
+                onCancel={() => setEditing(null)}
+              />
+            )}
           </div>
         )}
       />
