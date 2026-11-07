@@ -57,7 +57,7 @@ install -d -o caddy -g caddy /var/log/caddy
 
 say "Benutzer, Verzeichnisse"
 id "$APP_USER" >/dev/null 2>&1 || useradd --system --create-home --home-dir "$DATA_DIR/home" --shell /usr/sbin/nologin "$APP_USER"
-install -d -o "$APP_USER" -g "$APP_USER" -m 750 "$DATA_DIR" "$DATA_DIR"/{media,releases,cache,cache-preview,backups,admin,maintenance,browsers,home}
+install -d -o "$APP_USER" -g "$APP_USER" -m 750 "$DATA_DIR" "$DATA_DIR"/{media,releases,cache,cache-preview,backups,admin,maintenance,browsers,home,deploy}
 install -d -o "$APP_USER" -g "$APP_USER" "$APP_DIR"
 # Caddy muss die Releases und das Admin-Verzeichnis lesen können
 usermod -aG "$APP_USER" caddy
@@ -140,11 +140,12 @@ if [ ! -d "$APP_DIR/.git" ]; then
 fi
 
 say "systemd-Units und Caddy-Konfiguration"
-install -m 644 "$SRC"/systemd/*.service "$SRC"/systemd/*.timer /etc/systemd/system/
+install -m 644 "$SRC"/systemd/*.service "$SRC"/systemd/*.timer "$SRC"/systemd/*.path /etc/systemd/system/
 install -m 644 "$SRC/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
-systemctl enable serend-api serend-worker serend-preview serend-backup.timer
+systemctl enable serend-api serend-worker serend-preview serend-backup.timer serend-deploy.path
 systemctl enable --now caddy
+systemctl enable --now serend-deploy.path
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile || echo "  Hinweis: Caddy-Validierung schlug fehl (fehlen die Release-Dateien noch? das ist vor dem ersten Build normal)."
 # `caddy validate` läuft als root und legt dabei die Logdateien an: sie müssen dem Dienstbenutzer gehören, sonst startet Caddy nicht
 chown -R caddy:caddy /var/log/caddy

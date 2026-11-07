@@ -6,6 +6,8 @@ export interface BrokenLink {
   page: string;
   url: string;
   reason: string;
+  /** Sichtbarer Text des Links (`<a>…</a>`), damit er sich im Admin wiederfinden lässt. */
+  label?: string;
 }
 export interface LinkCheckResult {
   pages: number;
@@ -50,10 +52,22 @@ export function checkLinks(dir: string, opts: { siteUrl?: string } = {}): LinkCh
     const page = urlOf(dir, file);
     const html = readFileSync(file, 'utf8');
     const found: string[] = [];
+    // Sichtbarer Text je Link-Ziel, nur für verständliche Fehlermeldungen
+    const labels = new Map<string, string>();
+    for (const m of html.matchAll(/<a\b[^>]*?\shref="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g)) {
+      const text = decode(m[2]!.replace(/<[^>]*>/g, ' '))
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (text && !labels.has(decode(m[1]!))) labels.set(decode(m[1]!), text);
+    }
     for (const m of html.matchAll(/\s(?:href|src|poster)="([^"]*)"/g)) found.push(decode(m[1]!));
     for (const m of html.matchAll(/\ssrcset="([^"]*)"/g)) {
       for (const part of decode(m[1]!).split(',')) found.push(part.trim().split(/\s+/)[0]!);
     }
+    const labelOf = (raw: string) => {
+      const label = labels.get(raw);
+      return label ? { label } : {};
+    };
     for (const raw of found) {
       let url = raw;
       if (site && url.startsWith(`${site}/`)) url = url.slice(site.length);
@@ -66,11 +80,11 @@ export function checkLinks(dir: string, opts: { siteUrl?: string } = {}): LinkCh
       if (path === '') abs = page;
       const target = resolveFile(abs);
       if (!target) {
-        broken.push({ page, url: raw, reason: 'Ziel existiert nicht' });
+        broken.push({ page, url: raw, reason: 'Ziel existiert nicht', ...labelOf(raw) });
         continue;
       }
       if (fragment && target.endsWith('.html') && !ids(target).has(decodeURIComponent(fragment))) {
-        broken.push({ page, url: raw, reason: `Anker #${fragment} fehlt` });
+        broken.push({ page, url: raw, reason: `Anker #${fragment} fehlt`, ...labelOf(raw) });
       }
     }
     for (const m of html.matchAll(/\s(?:href|src)="(https?:\/\/[^"]+)"/g)) void m; // externe Links werden nicht geprüft

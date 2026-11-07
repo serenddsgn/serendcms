@@ -81,6 +81,30 @@ describe('Block-Schemas', () => {
     expect(ProjectContent.safeParse([demo(13)]).success).toBe(false);
   });
 
+  it('akzeptiert Bildblöcke auf Inhaltsseiten mit Größe und Bildunterschrift', () => {
+    const m = id();
+    for (const size of ['small', 'medium', 'large', 'full'] as const) {
+      expect(
+        ContentPageContent.safeParse([{ id: id(), type: 'image', mediaId: m, size }]).success,
+      ).toBe(true);
+    }
+    // Größe ist optional (Standard: mittel), ohne Bild oder mit unbekannter Größe ist der Block ungültig
+    const parsed = ContentPageContent.parse([{ id: id(), type: 'image', mediaId: m }]);
+    expect(parsed[0]).toMatchObject({ size: 'medium' });
+    expect(ContentPageContent.safeParse([{ id: id(), type: 'image', mediaId: '' }]).success).toBe(
+      false,
+    );
+    expect(
+      ContentPageContent.safeParse([{ id: id(), type: 'image', mediaId: m, size: 'riesig' }])
+        .success,
+    ).toBe(false);
+    expect(
+      ContentPageContent.safeParse([
+        { id: id(), type: 'image', mediaId: m, caption: 'x'.repeat(201) },
+      ]).success,
+    ).toBe(false);
+  });
+
   it('erzwingt die feste Struktur der Startseite', () => {
     const hero = {
       id: id(),

@@ -457,6 +457,12 @@ img {
     color 0.4s,
     background-color 0.6s;
 }
+/* Radius der Hover-Füllung: als <percentage> registriert, damit nur er animiert (der Mittelpunkt springt bei 0 unsichtbar). */
+@property --r {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
 .cta::before {
   content: '';
   position: absolute;
@@ -464,14 +470,21 @@ img {
   z-index: -1;
   border-radius: inherit;
   background-image: linear-gradient(90deg, #b06bb4, #8d4557, #5d6b93);
-  transform: translateY(101%);
-  transition: transform 0.5s var(--ease-inout);
+  /* Kreis um die Stelle, an der die Maus den Button betritt (--mx/--my setzt scripts/site.ts). 150 % reicht von jedem
+     Punkt bis in die fernste Ecke. Verlässt die Maus den Button früher, schrumpft der Kreis zur Eintrittsstelle zurück. */
+  clip-path: circle(var(--r) at var(--mx, 50%) var(--my, 50%));
+  transition: --r 0.45s var(--ease-inout);
 }
 .cta:hover::before {
-  transform: none;
+  --r: 150%;
+  transition-duration: 0.65s;
 }
 .cta:hover {
   color: #fff;
+  /* Text erst weiß, wenn der Verlauf ihn erreicht hat (sonst wäre er auf dem hellen Button kurz unlesbar) */
+  transition:
+    color 0.25s 0.22s,
+    background-color 0.6s;
 }
 .lang {
   position: relative;
@@ -758,6 +771,18 @@ img {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
   gap: 24px;
+}
+/* Hero-Überschrift: Einspaltig (schmal) darf sie umbrechen. Zweispaltig (ab 901 px) richtet sich die Größe nach der Breite
+   der Überschrift-Spalte und der längsten Zeile (--hl = Zeichen, setzt die Hero-Komponente), damit keine feste Zeile
+   umbricht und ein Rest wie „nur,“ allein steht. Spalte = min(100vw, 1360px) − 80 px Rand − 224 px (Eyebrow-Spalte +
+   Abstand); 0,46 em je Zeichen ist ein vorsichtiger Mittelwert dieser Schrift mit −0,055 em Laufweite. */
+.hero-h1 {
+  font-size: clamp(48px, 7.4vw, 112px);
+}
+@media (min-width: 901px) {
+  .hero-h1 {
+    font-size: clamp(48px, calc((min(100vw, 1360px) - 304px) / (var(--hl, 24) * 0.46)), 112px);
+  }
 }
 .hero-grid {
   display: grid;
@@ -1129,6 +1154,44 @@ img {
   padding-bottom: 96px;
   scroll-margin-top: 110px;
 }
+/* Bild auf Inhaltsseiten: Größen als Anteil der Textspalte, „full“ liegt in eigener Zeile über die ganze Seitenbreite */
+.pimg {
+  margin: 8px 0 40px;
+}
+.pimg picture,
+.pimg img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pimg img {
+  border-radius: var(--r-section);
+  background: var(--chip, rgba(127, 127, 127, 0.12));
+}
+.pimg-small {
+  width: 34%;
+}
+.pimg-medium {
+  width: 66%;
+}
+.pimg-large,
+.pimg-full {
+  width: 100%;
+}
+.pimg figcaption {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+@media (max-width: 900px) {
+  .pimg-small {
+    width: 60%;
+  }
+  .pimg-medium {
+    width: 100%;
+  }
+}
 .ch p {
   margin: 0 0 18px;
   font-size: 19px;
@@ -1422,4 +1485,254 @@ img {
   background: #b06bb4;
   color: #fff;
   pointer-events: none;
+}
+
+/* Anfrage-Modal: Vollbild-Dialog, öffnet als Kreis vom CTA-Button aus */
+.inquiry {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  clip-path: circle(0px at var(--ox, 50%) var(--oy, 0px));
+  transition: clip-path 0.85s var(--ease-curtain);
+}
+.inquiry[data-state='open'] {
+  clip-path: circle(var(--or, 150vmax) at var(--ox, 50%) var(--oy, 0px));
+}
+.inquiry[data-state='closing'] {
+  transition-duration: 0.6s;
+}
+.inquiry::backdrop {
+  background: transparent;
+}
+.iq-inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.iq-bar {
+  height: var(--nav-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.iq-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 72px;
+  align-items: center;
+  padding: 32px 0 64px;
+}
+.iq-lead h2 {
+  margin: 24px 0 28px;
+  font-size: clamp(44px, 6.4vw, 104px);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+.iq-lead h2 span {
+  color: var(--mute);
+  font-style: italic;
+}
+.iq-intro {
+  margin: 0 0 32px;
+  max-width: 440px;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--mute);
+}
+.iq-mail {
+  display: inline-block;
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 700;
+}
+.iq-form {
+  display: grid;
+  gap: 24px;
+}
+.iq-field {
+  display: grid;
+  gap: 8px;
+}
+.iq-field input,
+.iq-field textarea {
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg);
+  font: 500 18px var(--font-body);
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+.iq-field input:hover,
+.iq-field textarea:hover,
+.iq-field input:focus,
+.iq-field textarea:focus {
+  border-color: var(--fg);
+  outline: none;
+}
+.iq-field input:focus-visible,
+.iq-field textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+.iq-field ::placeholder {
+  color: var(--mute);
+  opacity: 0.7;
+}
+.iq-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.iq-consent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.iq-consent input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--fg);
+}
+.iq-consent a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.iq-status {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 14px;
+  color: #e5484d;
+}
+.iq-submit {
+  position: relative;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--fg);
+  color: var(--bg);
+  font: 500 15px var(--font-body);
+  cursor: pointer;
+  transition:
+    color 0.4s,
+    opacity 0.3s;
+}
+.iq-submit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: linear-gradient(90deg, #b06bb4, #8d4557, #5d6b93);
+  transform: translateY(101%);
+  transition: transform 0.5s var(--ease-inout);
+}
+.iq-submit:hover:not(:disabled)::before {
+  transform: none;
+}
+.iq-submit:hover:not(:disabled) {
+  color: #fff;
+}
+.iq-submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.iq-submit .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1aa179;
+}
+.iq-done {
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+}
+.iq-done h3 {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+.iq-done p {
+  margin: 0;
+  max-width: 420px;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--mute);
+}
+.iq-done[hidden],
+.iq-form[hidden] {
+  display: none;
+}
+.iq-done:not([hidden]) {
+  animation: fadeup 0.7s var(--ease-out) both;
+}
+/* Inhalt blendet gestaffelt ein, sobald der Kreis aufgeht */
+.iq-a {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.inquiry[data-state='open'] .iq-a {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s var(--ease-out) var(--d, 0.4s),
+    transform 0.9s var(--ease-out) var(--d, 0.4s);
+}
+@media (max-width: 960px) {
+  .iq-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    align-items: start;
+    padding-top: 16px;
+  }
+  .iq-submit {
+    justify-self: stretch;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inquiry {
+    clip-path: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .inquiry[data-state='open'] {
+    clip-path: none;
+    opacity: 1;
+  }
+  .iq-a {
+    opacity: 1;
+    transform: none;
+  }
 }

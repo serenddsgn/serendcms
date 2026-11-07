@@ -6,6 +6,7 @@ import { abs } from '../lib/seo';
 import { t } from '../i18n';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { InquiryModal } from '../components/InquiryModal';
 
 interface Props {
   locale: Locale;
@@ -86,6 +87,7 @@ const canonical = abs(path);
     <div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="progress liquid-bg" aria-hidden="true"></div>
     <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={homePath(locale)} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} />
+    <InquiryModal ui={ui} locale={locale} email={identity.email} privacyHref={legal.at(-1)?.href} />
     <main id="main" key={locale}>
       <slot />
     </main>

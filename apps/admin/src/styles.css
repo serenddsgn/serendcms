@@ -8,6 +8,7 @@
   --accent: #703b58;
   --danger: #b3261e;
   --ok: #1a7f5a;
+  --warn: #9a6700;
   --focus: #b06bb4;
   font-family:
     Inter,
@@ -27,6 +28,7 @@
     --accent: #d8a7dc;
     --danger: #ff8a80;
     --ok: #4cd1a1;
+    --warn: #f0c36d;
     color-scheme: dark;
   }
 }
@@ -247,6 +249,9 @@ th {
 .pill.archived {
   color: var(--danger);
 }
+.pill.warn {
+  color: var(--warn);
+}
 .pill.running,
 .pill.queued {
   color: var(--accent);
@@ -321,6 +326,22 @@ th {
   width: min(900px, 100%);
   max-height: 90vh;
   overflow: auto;
+}
+/* Software-Stand (Code-Deployment) */
+.code-update {
+  border-left: 3px solid var(--accent);
+}
+.code-update p {
+  margin: 10px 0;
+}
+.code-update .notice {
+  margin: 10px 0;
+}
+.commits {
+  margin: 8px 0 14px;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
 }
 pre.log {
   background: var(--chip);

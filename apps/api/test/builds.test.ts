@@ -168,6 +168,56 @@ describe('Status und Verlauf', () => {
   });
 });
 
+describe('Warnungen der Prüfungen', () => {
+  const warning = {
+    code: 'lighthouse',
+    path: '/de/projekte/dolce-falcone/',
+    message: 'Performance 91 (Ziel 95) auf /de/projekte/dolce-falcone/',
+  };
+
+  it('zeigt die Warnungen des Live-Builds im Status und die Anzahl je Build; ältere Builds haben keine', async () => {
+    const app = await createTestApp();
+    try {
+      const s = await editorSession(app);
+      const db = app.handle.db;
+      // Älterer Build ohne Warnungen-Feld (vor dieser Funktion gespeichert)
+      const old = await requestBuild(db, { trigger: 'manual' });
+      await finishBuild(db, old.build.id, { status: 'succeeded', checks: { passed: true } });
+      const { build } = await requestBuild(db, { trigger: 'publish' });
+      await finishBuild(db, build.id, {
+        status: 'succeeded',
+        checks: { passed: true, warnings: [warning] },
+      });
+      await activateRelease(db, (await createRelease(db, build.id)).id);
+
+      const status = (await as(app, s, 'GET', '/api/v1/status')).json();
+      expect(status.warnings).toEqual([warning]);
+      expect(status.lastBuild).toMatchObject({ id: build.id, status: 'succeeded', warnings: 1 });
+
+      const list = (await as(app, s, 'GET', '/api/v1/builds')).json().builds as {
+        id: string;
+        warnings: number;
+      }[];
+      expect(list.find((b) => b.id === build.id)!.warnings).toBe(1);
+      expect(list.find((b) => b.id === old.build.id)!.warnings).toBe(0);
+      const detail = (await as(app, s, 'GET', `/api/v1/builds/${build.id}`)).json().build;
+      expect(detail.checks.warnings).toEqual([warning]);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('ohne aktives Release gibt es keine Warnungen', async () => {
+    const app = await createTestApp();
+    try {
+      const s = await editorSession(app);
+      expect((await as(app, s, 'GET', '/api/v1/status')).json().warnings).toEqual([]);
+    } finally {
+      await app.close();
+    }
+  });
+});
+
 describe('Rollback', () => {
   let releasesDir: string;
   let ids: string[];

@@ -5,9 +5,12 @@ import { Slug, Uuid } from './common.js';
 export const CONTENT_SCHEMA_VERSION = 1;
 
 // ── gemeinsame Bausteine ──────────────────────────────────────────────
-/** Inline-Lauf; `liquid` markiert Schlüsselwörter mit Liquid-Verlauf. */
+/**
+ * Inline-Lauf; `liquid` markiert Schlüsselwörter mit Liquid-Verlauf. Ein Absatz ohne Auszeichnung ist EIN Lauf, deshalb
+ * muss das Limit für ganze Absätze reichen (500 war zu knapp und lehnte normale Fließtexte ab).
+ */
 export const Run = z.object({
-  text: z.string().min(1).max(500),
+  text: z.string().min(1).max(5000),
   liquid: z.boolean().optional(),
   em: z.boolean().optional(),
   href: z
@@ -137,6 +140,18 @@ export const HeadingBlock = z.object({
   level: z.union([z.literal(2), z.literal(3)]),
   text: z.string().min(1).max(120),
 });
+/** Größen eines Bildes auf Inhaltsseiten: Anteile der Textspalte, „full“ bricht auf die volle Seitenbreite aus. */
+export const IMAGE_SIZES = ['small', 'medium', 'large', 'full'] as const;
+export const ImageSize = z.enum(IMAGE_SIZES);
+export type ImageSize = z.infer<typeof ImageSize>;
+export const ImageBlock = z.object({
+  ...Base,
+  type: z.literal('image'),
+  /** Alt-Text kommt aus der Medienbibliothek (je Sprache). */
+  mediaId: Uuid,
+  size: ImageSize.default('medium'),
+  caption: z.string().max(200).optional(),
+});
 export const RichTextBlock = z.object({
   ...Base,
   type: z.literal('richtext'),
@@ -167,7 +182,7 @@ export const ProjectContent = z
 export type ProjectContent = z.infer<typeof ProjectContent>;
 
 export const ContentPageContent = z
-  .array(z.discriminatedUnion('type', [PageTitleBlock, HeadingBlock, RichTextBlock]))
+  .array(z.discriminatedUnion('type', [PageTitleBlock, HeadingBlock, RichTextBlock, ImageBlock]))
   .max(80)
   .refine(unique, uniqueIds);
 

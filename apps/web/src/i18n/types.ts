@@ -32,6 +32,27 @@ export interface UiStrings {
   notFoundTitle: string;
   notFoundText: string;
   notFoundLink: string;
+  inquiry: {
+    eyebrow: string;
+    line1: string;
+    line2: string;
+    intro: string;
+    close: string;
+    name: string;
+    email: string;
+    message: string;
+    messagePlaceholder: string;
+    consentBefore: string;
+    consentLink: string;
+    consentAfter: string;
+    submit: string;
+    sending: string;
+    errorGeneric: string;
+    errorRate: string;
+    doneTitle: string;
+    doneText: string;
+    doneClose: string;
+  };
   demo: {
     step1: string;
     step2: string;

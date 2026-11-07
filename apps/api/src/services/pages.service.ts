@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import type { ZodError } from 'zod';
 import { pages, type Database, type PageRevisionRow, type PageRow } from '@serend/db';
 import {
   CONTENT_SCHEMA_VERSION,
@@ -71,6 +72,26 @@ function expectedSystemSlug(systemKey: PageSystemKey | null, locale: Locale): st
   return null;
 }
 
+/** Verständliche Kurzfassung der Schema-Fehler: „Block 3: Text zu lang (max. 5000 Zeichen)“ statt Pfaden wie 2.nodes.0.runs.0.text. */
+function describeIssues(error: ZodError): string {
+  const lines = error.issues.map((i) => {
+    const [first] = i.path;
+    const where = typeof first === 'number' ? `Block ${first + 1}` : 'Inhalt';
+    if (i.path.at(-1) === 'mediaId') return `${where}: Bitte ein Bild wählen`;
+    let why = i.message;
+    if (i.code === 'too_big')
+      why =
+        i.origin === 'string'
+          ? `Text zu lang (max. ${i.maximum} Zeichen)`
+          : `zu viele Einträge (max. ${i.maximum})`;
+    else if (i.code === 'too_small')
+      why =
+        i.origin === 'string' ? 'darf nicht leer sein' : `zu wenige Einträge (min. ${i.minimum})`;
+    return `${where}: ${why}`;
+  });
+  return [...new Set(lines)].slice(0, 5).join('; ');
+}
+
 export function createPagesService({
   db,
   onPublishedChange,
@@ -113,9 +134,7 @@ export function createPagesService({
       throw validation(`Der Slug „${input.slug}“ ist reserviert (Sprachpräfix oder technische Route).`);
     const parsed = pageContentSchema(page.systemKey).safeParse(input.content);
     if (!parsed.success) {
-      throw validation(
-        `Ungültiger Seiteninhalt: ${[...new Set(parsed.error.issues.map((i) => i.path.join('.') || 'content'))].slice(0, 5).join(', ')}`,
-      );
+      throw validation(`Ungültiger Seiteninhalt: ${describeIssues(parsed.error)}`);
     }
     const mediaIds = [
       ...collectMediaIds(input.content),

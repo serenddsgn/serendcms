@@ -1,5 +1,5 @@
 import type { Locale } from '@serend/schema';
-import { projectIndexPath } from '@serend/schema';
+import { projectIndexPath, splitParagraphs } from '@serend/schema';
 import type { z } from 'zod';
 import type {
   ChapterBlock,
@@ -12,6 +12,7 @@ import type {
   QuoteBlock,
   ServicesOverviewBlock,
   HeadingBlock,
+  ImageBlock,
   RichTextBlock,
 } from '@serend/schema';
 import {
@@ -32,6 +33,10 @@ const idAttr = (b: { anchor?: string | undefined }) => b.anchor;
 
 export function Hero({ b }: { b: B<typeof HeroBlock> }) {
   const delays = ['.75s', '.85s', '.95s', '1.05s'];
+  // Zeichenzahl der längsten Zeile: daraus leitet das CSS die Schriftgröße ab, damit keine Zeile in der Mitte umbricht
+  const longest = Math.max(
+    ...b.headline.map((line) => line.reduce((n, r) => n + r.text.length, 0)),
+  );
   return (
     <section class="section side" style="padding-top:120px;padding-bottom:96px" id={idAttr(b)}>
       <p class="eyebrow fade" style="margin:18px 0 0;animation-delay:.9s">
@@ -39,8 +44,8 @@ export function Hero({ b }: { b: B<typeof HeroBlock> }) {
       </p>
       <div>
         <h1
-          class="display"
-          style="margin:0;font-size:clamp(48px,7.4vw,112px);line-height:.98;letter-spacing:-.055em"
+          class="display hero-h1"
+          style={`margin:0;line-height:.98;letter-spacing:-.055em;--hl:${longest}`}
         >
           {b.headline.map((line, i) => (
             <span class="mask">
@@ -498,14 +503,40 @@ export function Heading({ b }: { b: B<typeof HeadingBlock> }) {
   );
 }
 
+const IMAGE_SIZES_ATTR: Record<string, string> = {
+  small: '(max-width: 900px) 60vw, 260px',
+  medium: '(max-width: 900px) 100vw, 520px',
+  large: '(max-width: 900px) 100vw, 760px',
+  full: '(max-width: 1400px) 100vw, 1360px',
+};
+
+/** Bild auf einer Inhaltsseite. Größe als Anteil der Textspalte; „full“ steht außerhalb der Spalte (siehe PageBlocks). */
+export function ImageFigure({ b, locale }: { b: B<typeof ImageBlock>; locale: Locale }) {
+  return (
+    <figure class={`pimg pimg-${b.size}`} id={b.anchor}>
+      <Picture
+        mediaId={b.mediaId}
+        alt={altOf(b.mediaId, locale)}
+        sizes={IMAGE_SIZES_ATTR[b.size] ?? IMAGE_SIZES_ATTR.medium!}
+      />
+      {b.caption && <figcaption>{b.caption}</figcaption>}
+    </figure>
+  );
+}
+
 export function RichText({ b }: { b: B<typeof RichTextBlock> }) {
   return (
     <div class="ch" style="padding-bottom:24px">
       {b.nodes.map((n) =>
         n.kind === 'paragraph' ? (
-          <p>
-            <Runs runs={n.runs} />
-          </p>
+          // Leerzeilen im Textfeld des Admins werden eigene Absätze, einfache Zeilenumbrüche bleiben (pre-line)
+          <>
+            {splitParagraphs(n.runs).map((runs) => (
+              <p style="white-space:pre-line">
+                <Runs runs={runs} />
+              </p>
+            ))}
+          </>
         ) : n.ordered ? (
           <ol style="font-size:19px;line-height:1.7;color:var(--body)">
             {n.items.map((it) => (
