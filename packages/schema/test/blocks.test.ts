@@ -8,6 +8,10 @@ import {
   ProjectRevisionInput,
   collectMediaIds,
   pageContentSchema,
+  RESERVED_ROOT_SEGMENTS,
+  homePath,
+  pagePath,
+  projectIndexPath,
   projectPath,
   upgradeContent,
 } from '../src/index.js';
@@ -132,8 +136,17 @@ describe('Schema-Migration und Routen', () => {
     expect(() => upgradeContent(c, CONTENT_SCHEMA_VERSION + 1)).toThrow();
     expect(() => upgradeContent(c, 0)).toThrow();
   });
+  it('liegt Deutsch ohne Präfix im Wurzelverzeichnis, Englisch unter /en', () => {
+    expect(homePath('de')).toBe('/');
+    expect(homePath('en')).toBe('/en/');
+    expect(pagePath('de', 'impressum')).toBe('/impressum');
+    expect(pagePath('en', 'imprint')).toBe('/en/imprint');
+    expect(projectIndexPath('de')).toBe('/projekte/');
+    expect(projectIndexPath('en')).toBe('/en/work/');
+    expect(RESERVED_ROOT_SEGMENTS).toEqual(expect.arrayContaining(['de', 'en', 'index', 'img']));
+  });
   it('baut die sprachabhängigen Projektpfade', () => {
-    expect(projectPath('de', 'dolce-falcone')).toBe('/de/projekte/dolce-falcone');
+    expect(projectPath('de', 'dolce-falcone')).toBe('/projekte/dolce-falcone');
     expect(projectPath('en', 'dolce-falcone')).toBe('/en/work/dolce-falcone');
   });
 });

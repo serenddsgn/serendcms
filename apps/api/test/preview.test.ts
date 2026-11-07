@@ -97,7 +97,7 @@ describe('Vorschau über die API', () => {
     const res = await as(t, ed, 'POST', `/api/v1/projects/${liveId}/preview-link`);
     expect(res.statusCode).toBe(200);
     const { url, expiresAt } = res.json();
-    expect(url).toMatch(/^https:\/\/preview\.example\.com\/de\/projekte\/[a-z0-9-]+\/\?preview=/);
+    expect(url).toMatch(/^https:\/\/preview\.example\.com\/projekte\/[a-z0-9-]+\/\?preview=/);
     expect(new Date(expiresAt).getTime() - Date.now()).toBeLessThanOrEqual(15 * 60 * 1000);
     expect(verifyPreviewToken(t.config.previewSigningKey, tokenFrom(url))).toMatchObject({
       k: 'project',
@@ -208,7 +208,7 @@ describe('Vorschau über die API', () => {
     const link = (await as(t, ed, 'POST', `/api/v1/projects/${liveId}/preview-link`)).json()
       .url as string;
     const token = tokenFrom(link);
-    await t.app.inject({ method: 'GET', url: `/de/projekte/x/?preview=${token}` });
+    await t.app.inject({ method: 'GET', url: `/projekte/x/?preview=${token}` });
     await bundle(token);
     expect(t.logs.join('')).not.toContain(token);
   });
@@ -226,7 +226,7 @@ describe('Vorschau über die API', () => {
       ogMediaId: null,
     });
     const res = await as(t, ed, 'POST', `/api/v1/pages/${page.page.id}/preview-link`);
-    expect(res.json().url).toContain('/de/vorschau-seite/?preview=');
+    expect(res.json().url).toContain('/vorschau-seite/?preview=');
     const b = (await bundle(tokenFrom(res.json().url))).json();
     expect(b.pages.find((p: { id: string }) => p.id === page.page.id).revision.title).toBe(SECRET);
   });

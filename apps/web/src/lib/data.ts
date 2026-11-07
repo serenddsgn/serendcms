@@ -17,8 +17,11 @@ import {
   BuildRedirect,
   BuildService,
   BuildSetting,
-  ROUTE_SEGMENTS,
+  homePath,
+  pagePath,
   parseSetting,
+  projectIndexPath,
+  projectPath,
   pageContentSchema,
   type Locale,
   type SettingKey,
@@ -287,12 +290,11 @@ export const pageFor = (locale: Locale, key: 'home' | 'projects') => {
 const slash = (p: string) => (p.endsWith('/') ? p : `${p}/`);
 
 export function pageUrl(p: BuildPage): string {
-  if (p.systemKey === 'home') return `/${p.locale}/`;
-  if (p.systemKey === 'projects') return `/${p.locale}/${ROUTE_SEGMENTS[p.locale].projects}/`;
-  return `/${p.locale}/${p.revision.slug}/`;
+  if (p.systemKey === 'home') return homePath(p.locale);
+  if (p.systemKey === 'projects') return projectIndexPath(p.locale);
+  return `${pagePath(p.locale, p.revision.slug)}/`;
 }
-export const projectUrl = (p: BuildProject) =>
-  `/${p.locale}/${ROUTE_SEGMENTS[p.locale].projects}/${p.revision.slug}/`;
+export const projectUrl = (p: BuildProject) => `${projectPath(p.locale, p.revision.slug)}/`;
 export const withSlash = slash;
 
 export type Target =

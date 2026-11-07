@@ -12,7 +12,7 @@ Zu jedem Punkt steht mein Vorschlag. Antwortest du „freigegeben“, gelten die
 
 | # | Befund | Vorschlag |
 |---|---|---|
-| 1 | **Zweisprachigkeit.** Der Brief sagt „zunächst einsprachig“. Das Design verlangt DE und EN von Anfang an (`/de/…`, `/en/…`, Umschalter, alle Texte in beiden Sprachen). | Eine Sprachversion ist ein eigener Datensatz (stabile Zeile plus Revisionen, `locale` in der Zeile). Die Sprachversionen sind über `translation_group_id` verknüpft. Daraus entstehen Sprachumschalter und `hreflang`. Seeds enthalten DE und EN. Sprachneutrale Felder (Jahr, Farbe, Kategorien, Bilder) stehen in beiden Revisionen. Der Admin hat dafür die Aktion „Sprachversion anlegen (kopiert)“. Das Risiko ist Auseinanderlaufen. Alternative wäre eine zusätzliche Gruppentabelle mit den neutralen Feldern. Das wäre sauberer, aber komplexer und weicht vom Brief ab. |
+| 1 | **Zweisprachigkeit.** Der Brief sagt „zunächst einsprachig“. Das Design verlangt DE und EN von Anfang an (Deutsch ohne Präfix, Englisch unter `/en/…`, Umschalter, alle Texte in beiden Sprachen). | Eine Sprachversion ist ein eigener Datensatz (stabile Zeile plus Revisionen, `locale` in der Zeile). Die Sprachversionen sind über `translation_group_id` verknüpft. Daraus entstehen Sprachumschalter und `hreflang`. Seeds enthalten DE und EN. Sprachneutrale Felder (Jahr, Farbe, Kategorien, Bilder) stehen in beiden Revisionen. Der Admin hat dafür die Aktion „Sprachversion anlegen (kopiert)“. Das Risiko ist Auseinanderlaufen. Alternative wäre eine zusätzliche Gruppentabelle mit den neutralen Feldern. Das wäre sauberer, aber komplexer und weicht vom Brief ab. |
 | 2 | **Kein Kontaktformular im Design.** Es gibt nur `mailto:hallo@serend.design` und den CTA „Projekt anfragen“ (Anker `#kontakt`). Im Brief stehen aber Kontaktformular, `contact_messages`, Honeypot und Rate-Limit. | Ich baue Endpunkt, Tabelle, Spam-Schutz und Tests (Phase 5). Das Formular selbst rendere ich erst, wenn du mir Texte (Labels, Einwilligung, Bestätigung) und eine Gestaltungsfreigabe gibst. Sonst müsste ich Texte erfinden, und das verbietet die Spec. Bis dahin bleibt es bei der E-Mail-Adresse. |
 | 3 | **Kein Team im Design.** Der Brief nennt `team_members`, im Design gibt es aber nur das Studio-Porträt. | Die Tabelle und der Admin-CRUD kommen in Phase 5. Im Frontend wird nichts gerendert, bis es ein Design gibt. |
 | 4 | **JS-Budget (50 KB pro Seite) gegen die Design-Empfehlungen.** Die Spec empfiehlt Framer Motion und Lenis. Der Brief verbietet weitere Libraries und setzt ein Budget. Ein React-Island für den Konfigurator liefert `react-dom` mit (ca. 45–60 KB gzip) und sprengt das Budget. | **Kein** Framer Motion und **kein** Lenis. Alles läuft mit CSS (Vorhang, Masken-Reveal, scroll-driven Animations wie im Prototyp). Dazu kommt Vanilla-JS (~2 KB) für Filter, Raster/Liste, Theme und Vorhang beim Verlassen der Seite. Der Konfigurator wird ein Island mit `client:visible`. Für das Budget brauche ich deine Wahl: **(a)** Preact über `@astrojs/preact` für Islands (ca. 4 KB, Komponenten bleiben TSX; neue Pakete, brauchen deine Freigabe), **(b)** React belassen und das Budget nur für den initialen Load messen, Islands separat mit Limit, **(c)** Konfigurator in Vanilla-TS. Meine Empfehlung ist (a). Außerdem: gzip oder roh? Ich nehme gzip. |
@@ -31,15 +31,15 @@ Hinweis zur Seed-Basis: Nur **Dolce & Falcone** hat im Design Detailinhalte (Kap
 
 | Typ | Route DE / EN | Inhalt | Daten |
 |---|---|---|---|
-| **Startseite** (`home`) | `/de/` · `/en/` | 5 Sektionen, siehe 2.2 | Seite mit Blöcken plus berechnete Daten |
-| **Projektübersicht** (`project_index`) | `/de/projekte/` · `/en/work/` | Titel, Filterleiste, Raster/Liste | Seite plus alle veröffentlichten Projekte |
-| **Projektdetail** (`project`) | `/de/projekte/<slug>` · `/en/work/<slug>` | Hero, Bildstrecke, Kapitel, Zitat, Demo, Nächstes Projekt | Projekt-Revision |
-| **Inhaltsseite** (`content`) | `/de/<slug>` · `/en/<slug>` | Impressum, Datenschutz, später Philosophie/Studio | Seite mit Blöcken |
-| Technisch | `/` (Sprachweiche), `/404.html`, Preview-Subdomain | Weiche per Caddy (Accept-Language, Cookie) | Konfiguration |
+| **Startseite** (`home`) | `/` · `/en/` | 5 Sektionen, siehe 2.2 | Seite mit Blöcken plus berechnete Daten |
+| **Projektübersicht** (`project_index`) | `/projekte/` · `/en/work/` | Titel, Filterleiste, Raster/Liste | Seite plus alle veröffentlichten Projekte |
+| **Projektdetail** (`project`) | `/projekte/<slug>` · `/en/work/<slug>` | Hero, Bildstrecke, Kapitel, Zitat, Demo, Nächstes Projekt | Projekt-Revision |
+| **Inhaltsseite** (`content`) | `/<slug>` · `/en/<slug>` | Impressum, Datenschutz, später Philosophie/Studio | Seite mit Blöcken |
+| Technisch | `/de/…` (301 auf die Variante ohne Präfix), `/404.html`, Preview-Subdomain | 301 per Caddy | Konfiguration |
 
 Der Routen-Segmentname („projekte“ vs. „work“) kommt aus dem Slug der Seite mit `system_key = 'projects'` je Sprache. Die Projekt-URL ist `/<locale>/<slug-der-Projektübersicht>/<projekt-slug>`.
 
-**Nicht im Design, aber nötig** (ich baue sie minimal aus vorhandenen Bausteinen, bitte bestätigen): Inhaltsseiten (Impressum/Datenschutz verlinken im Prototyp nur auf `#kontakt`), 404-Seite, Sprachweiche.
+**Nicht im Design, aber nötig** (ich baue sie minimal aus vorhandenen Bausteinen, bitte bestätigen): Inhaltsseiten (Impressum/Datenschutz verlinken im Prototyp nur auf `#kontakt`), 404-Seite.
 
 ---
 
@@ -569,7 +569,7 @@ Bewusst **nicht** vorgesehen: Tailwind (Tokens als plain CSS), Framer Motion, Le
 
 ## 9. Mehrsprachige Auslieferung und weitere Festlegungen
 
-- **Sprachweiche `/`:** Caddy prüft zuerst das Cookie `lang`, dann `Accept-Language`, und leitet per 302 auf `/de/` oder `/en/`. Der Umschalter setzt das Cookie (Vanilla-JS) und verlinkt auf das Gegenstück über `translation_group_id`. Fehlt es oder ist es nicht veröffentlicht, geht der Link auf die Startseite der Zielsprache. `hreflang` nur für vorhandene Gegenstücke, `x-default` zeigt auf `/de/`.
+- **URL-Schema (geändert 2026-11-07):** Deutsch (Standardsprache) liegt ohne Präfix (`/`, `/projekte/x/`), Englisch unter `/en/…`. Es gibt keine automatische Sprachweiche (Cookie/`Accept-Language`) mehr, jede URL liefert immer dieselbe Sprache. Alte Adressen `/de/…` leiten per 301 (Caddy, `deploy/Caddyfile`) auf die Variante ohne Präfix um, ebenso gespeicherte Redirects (`redirects.caddy`). Der Umschalter verlinkt auf das Gegenstück über `translation_group_id`; fehlt es oder ist es nicht veröffentlicht, geht der Link auf die Startseite der Zielsprache. `hreflang` nur für vorhandene Gegenstücke, `x-default` zeigt auf die deutsche Seite (ohne Präfix). Seiten-Slugs der Standardsprache dürfen nicht `de`, `en`, `index` oder eine technische Route sein (`RESERVED_ROOT_SEGMENTS`).
 - **Seitenübergang:** Der Vorhang öffnet beim Laden (CSS wie im Prototyp). Beim Verlassen fängt ein kleines Script interne Link-Klicks ab, schließt den Vorhang (0,9 s) und navigiert. Es respektiert `prefers-reduced-motion` und Modifier-Tasten. Das ist unabhängig von Astro-Routing-Libraries.
 - **Konfigurator-Logik** aus dem Prototyp (Verkleinern entfernt Stücke von hinten, Button erst bei voller Box aktiv, lokalisierte Preise, `aria-live`) wird 1:1 übernommen. Die Beispielkennzeichnung steht im Block (`eyebrow`).
 - **Admin-UI:** Im Design gibt es keinen Admin-Entwurf. Ich baue ihn schlicht und funktional mit den Tokens, ohne eigene Gestaltungsidee.

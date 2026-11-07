@@ -1,13 +1,11 @@
 import type { APIRoute, GetStaticPaths } from 'astro';
-import { loadData } from '../../lib/data';
-import { markdownFor } from '../../lib/markdown';
-import { allEntries } from '../../lib/pages';
+import { loadData } from '../lib/data';
+import { markdownFor } from '../lib/markdown';
+import { allEntries, mdParam } from '../lib/pages';
 
 export const getStaticPaths = (async () => {
   await loadData();
-  return allEntries()
-    .filter((e) => e.kind === 'home')
-    .map((entry) => ({ params: { locale: entry.locale }, props: { entry } }));
+  return allEntries().map((entry) => ({ params: { path: mdParam(entry) }, props: { entry } }));
 }) satisfies GetStaticPaths;
 
 export const GET: APIRoute = ({ props }) =>

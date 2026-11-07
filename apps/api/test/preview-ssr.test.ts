@@ -182,14 +182,14 @@ describe('Vorschau-Server (SSR)', () => {
     const other = await previewUrl(cistaId);
     const otherCookie = cookieOf(await get(`${other.path}?preview=${other.token}`));
     expect((await get(path, { cookie: otherCookie })).status).toBe(404);
-    const home = await (await get('/de/', { cookie: otherCookie })).text();
+    const home = await (await get('/', { cookie: otherCookie })).text();
     expect(home).not.toContain(`${DRAFT} 2`);
   });
 
   it('liefert die übrige Seite im veröffentlichten Stand (Navigation, Startseite, Bilder)', async () => {
     const { path, token } = await previewUrl(cistaId);
     const cookie = cookieOf(await get(`${path}?preview=${token}`));
-    const home = await get('/de/', { cookie });
+    const home = await get('/', { cookie });
     expect(home.status).toBe(200);
     const html = await home.text();
     expect(html).toContain('Wir gestalten nicht nur,');
@@ -201,7 +201,7 @@ describe('Vorschau-Server (SSR)', () => {
   });
 
   it('lehnt fehlende, ungültige, fremd signierte und abgelaufene Token ab', async () => {
-    expect((await get('/de/projekte/cista/')).status).toBe(403);
+    expect((await get('/projekte/cista/')).status).toBe(403);
     const { path } = await previewUrl(cistaId);
     const forged = [
       'murks',

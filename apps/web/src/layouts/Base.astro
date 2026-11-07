@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import type { Locale } from '@serend/schema';
+import { homePath, type Locale } from '@serend/schema';
 import { loadData, navFor, resolveTarget, setting } from '../lib/data';
 import { abs } from '../lib/seo';
 import { t } from '../i18n';
@@ -38,7 +38,7 @@ const link = (n: { label: string; target: { kind: 'page'; pageId: string; fragme
 const nav = navFor(locale, 'header').map(link);
 const footerNav = navFor(locale, 'footer').map(link);
 const legal = navFor(locale, 'legal').map(link);
-const switchTo = { de: alternates.de ?? '/de/', en: alternates.en ?? '/en/' };
+const switchTo = { de: alternates.de ?? homePath('de'), en: alternates.en ?? homePath('en') };
 const altEntries = Object.entries(alternates) as [Locale, string][];
 const canonical = abs(path);
 ---
@@ -85,7 +85,7 @@ const canonical = abs(path);
     <a class="skip" href="#main">{ui.skip}</a>
     <div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="progress liquid-bg" aria-hidden="true"></div>
-    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={`/${locale}/`} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} />
+    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={homePath(locale)} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} />
     <main id="main" key={locale}>
       <slot />
     </main>

@@ -1,5 +1,5 @@
 import type { Locale } from '@serend/schema';
-import { ROUTE_SEGMENTS } from '@serend/schema';
+import { projectIndexPath } from '@serend/schema';
 import type { z } from 'zod';
 import type {
   ChapterBlock,
@@ -141,7 +141,7 @@ export function ServicesOverview({
   b: B<typeof ServicesOverviewBlock>;
   locale: Locale;
 }) {
-  const link = `/${locale}/${ROUTE_SEGMENTS[locale].projects}/`;
+  const link = projectIndexPath(locale);
   return (
     <section class="section side" id={idAttr(b)} style="padding-top:140px;padding-bottom:60px">
       <p class="eyebrow" style="margin:14px 0 0">

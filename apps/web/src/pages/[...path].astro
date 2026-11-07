@@ -1,32 +1,38 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { ContentPageContent, HomeContent, ProjectsPageContent, type Locale } from '@serend/schema';
-import Base from '../../layouts/Base.astro';
-import DemoSection from '../../components/DemoSection.astro';
-import { PageBlocks, planProject } from '../../components/Blocks';
-import { Chapter, Quote } from '../../components/Sections';
-import { ChapterNav } from '../../components/Project';
-import { ImageStrip, NextProject, ProjectHero } from '../../components/Project';
-import { altOf, loadData, pageFor, projectsFor, setting } from '../../lib/data';
-import { allEntries, findEntry, mdPath, ogPath, type Entry } from '../../lib/pages';
-import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText } from '../../lib/seo';
-import { data } from '../../lib/data';
-import { t } from '../../i18n';
+import {
+  ContentPageContent,
+  HomeContent,
+  ProjectsPageContent,
+  homePath,
+  type Locale,
+} from '@serend/schema';
+import Base from '../layouts/Base.astro';
+import DemoSection from '../components/DemoSection.astro';
+import { PageBlocks, planProject } from '../components/Blocks';
+import { Chapter, Quote } from '../components/Sections';
+import { ChapterNav } from '../components/Project';
+import { ImageStrip, NextProject, ProjectHero } from '../components/Project';
+import { altOf, loadData, pageFor, projectsFor, setting } from '../lib/data';
+import { allEntries, findEntry, mdPath, ogPath, routeParam, type Entry } from '../lib/pages';
+import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText } from '../lib/seo';
+import { data } from '../lib/data';
+import { t } from '../i18n';
 
 export const getStaticPaths = (async () => {
   await loadData();
-  // Startseite = leerer Slug (`/de/`), alles andere über den Pfad
-  return allEntries().map((entry) => ({ params: { locale: entry.locale, slug: entry.slug || undefined }, props: { entry } }));
+  // Deutsch liegt ohne Präfix im Wurzelverzeichnis (Startseite = leerer Pfad), Englisch unter `/en/…`
+  return allEntries().map((entry) => ({ params: { path: routeParam(entry) }, props: { entry } }));
 }) satisfies GetStaticPaths;
 
 await loadData();
 // Statischer Build: Eintrag kommt aus getStaticPaths; Vorschau (SSR): aus der URL.
-const entry = (Astro.props as { entry?: Entry }).entry ?? findEntry(Astro.params.locale!, Astro.params.slug);
+const entry = (Astro.props as { entry?: Entry }).entry ?? findEntry(Astro.params.path);
 if (!entry) return new Response(null, { status: 404 });
 const locale = entry.locale as Locale;
 const ui = t(locale);
 const seo = setting(locale, 'seo.defaults');
-const homeUrl = `/${locale}/`;
+const homeUrl = homePath(locale);
 const projectsPage = pageFor(locale, 'projects');
 const projectsUrl = allEntries().find((e) => e.kind === 'projects' && e.locale === locale)!.url;
 

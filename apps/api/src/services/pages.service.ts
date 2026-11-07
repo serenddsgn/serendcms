@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 import { pages, type Database, type PageRevisionRow, type PageRow } from '@serend/db';
 import {
   CONTENT_SCHEMA_VERSION,
+  DEFAULT_LOCALE,
+  RESERVED_ROOT_SEGMENTS,
   ROUTE_SEGMENTS,
   collectLinkTargets,
   collectMediaIds,
@@ -103,6 +105,12 @@ export function createPagesService({
     const slug = expectedSystemSlug(page.systemKey, page.locale as Locale);
     if (slug !== null && input.slug !== slug)
       throw validation(`Der Slug dieser Systemseite ist fest: „${slug}“.`);
+    if (
+      page.systemKey === null &&
+      page.locale === DEFAULT_LOCALE &&
+      RESERVED_ROOT_SEGMENTS.includes(input.slug)
+    )
+      throw validation(`Der Slug „${input.slug}“ ist reserviert (Sprachpräfix oder technische Route).`);
     const parsed = pageContentSchema(page.systemKey).safeParse(input.content);
     if (!parsed.success) {
       throw validation(

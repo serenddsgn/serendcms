@@ -1,5 +1,5 @@
 import type { Locale } from '@serend/schema';
-import { inlineToMarkdown, type Inline } from '@serend/schema';
+import { homePath, inlineToMarkdown, type Inline } from '@serend/schema';
 import { categoryName, setting, type SiteData } from './data';
 import type { BuildProject } from '@serend/schema';
 
@@ -22,7 +22,7 @@ export function organizationJsonLd(locale: Locale) {
     '@type': 'Organization',
     '@id': abs('/#organization'),
     name: org.legalName,
-    url: abs(`/${locale}/`),
+    url: abs(homePath(locale)),
     email: identity.email,
     ...(org.description && { description: org.description }),
     address: { '@type': 'PostalAddress', addressLocality: identity.city.split(',')[0] },
