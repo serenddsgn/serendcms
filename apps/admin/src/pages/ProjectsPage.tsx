@@ -2,11 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
+import { projectPath } from '@serend/schema';
 import { api } from '../api';
 import { BlockEditor, type Block } from '../components/BlockEditor';
 import { InlineField } from '../components/InlineField';
 import { MediaField, MediaThumb } from '../components/MediaPicker';
 import { Sortable } from '../components/Sortable';
+import { WarnBadge, useLiveWarnings } from '../warnings';
 import {
   Field,
   LocaleSwitch,
@@ -40,6 +42,7 @@ const CATS = [
 
 export function ProjectsPage() {
   const [locale, setLocale] = useLocale();
+  const warningsFor = useLiveWarnings();
   const [creating, setCreating] = useState(false);
   const q = useQuery({
     queryKey: ['projects', locale],
@@ -88,6 +91,7 @@ export function ProjectsPage() {
               {p.hasUnpublishedChanges && p.status === 'published' && (
                 <span className="pill">Änderungen offen</span>
               )}
+              <WarnBadge warnings={warningsFor([projectPath(locale, p.slug)])} />
             </div>
           </div>
         )}

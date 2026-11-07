@@ -14,6 +14,7 @@ interface Build {
   finishedAt: string | null;
   errorSummary: string | null;
   releaseId: string | null;
+  warnings?: number;
 }
 interface Release {
   id: string;
@@ -28,6 +29,7 @@ interface Status {
   lastBuild: Build | null;
   buildQueued: boolean;
   buildRunning: boolean;
+  warnings?: { code: string; path: string | null; message: string }[];
   pending: { projects: number; pages: number };
 }
 
@@ -108,6 +110,21 @@ export function BuildsPage() {
               )}
             </div>
           </div>
+          {!!s.warnings?.length && (
+            <div style={{ marginTop: 14 }}>
+              <h3 style={{ margin: '0 0 6px' }}>
+                <span className="pill warn">⚠ {s.warnings.length}</span> Hinweise zum Live-Build
+              </h3>
+              <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+                {s.warnings.map((w, i) => (
+                  <li key={i}>{w.message}</li>
+                ))}
+              </ul>
+              <p className="muted small" style={{ margin: '6px 0 0' }}>
+                Hinweise verhindern keinen Build: die Seite wurde trotzdem veröffentlicht.
+              </p>
+            </div>
+          )}
         </div>
       )}
       <h2>Builds</h2>
@@ -129,6 +146,11 @@ export function BuildsPage() {
                 <td>{b.trigger}</td>
                 <td>
                   <Pill value={b.status} />
+                  {!!b.warnings && (
+                    <span className="pill warn" title="Hinweise der Prüfungen, siehe Details">
+                      ⚠ {b.warnings}
+                    </span>
+                  )}
                 </td>
                 <td>
                   {b.startedAt && b.finishedAt
@@ -207,7 +229,11 @@ function BuildDetail({ id, onClose }: { id: string; onClose: () => void }) {
       api.get<{
         build: Build & {
           log: string | null;
-          checks: { problems?: string[]; passed?: boolean } | null;
+          checks: {
+            problems?: string[];
+            passed?: boolean;
+            warnings?: { message: string }[];
+          } | null;
         };
       }>(`/builds/${id}`),
   });
@@ -225,6 +251,17 @@ function BuildDetail({ id, onClose }: { id: string; onClose: () => void }) {
             <>
               <h3>Prüfungen</h3>
               <p>{b.checks.passed ? 'Alle bestanden.' : (b.checks.problems ?? []).join(' · ')}</p>
+            </>
+          )}
+          {!!b.checks?.warnings?.length && (
+            <>
+              <h3>Warnungen</h3>
+              <ul style={{ margin: '0 0 12px', paddingLeft: 18 }}>
+                {b.checks.warnings.map((w, i) => (
+                  <li key={i}>{w.message}</li>
+                ))}
+              </ul>
+              <p className="muted small">Warnungen verhindern keinen Build.</p>
             </>
           )}
           <h3>Log</h3>

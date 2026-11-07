@@ -20,7 +20,7 @@ import {
   type DbHandle,
 } from '@serend/db';
 import { createTestDatabase, type TestDatabase } from '@serend/db/testing';
-import { currentReleaseId, type ChecksResult } from '@serend/builder';
+import { currentReleaseId, runChecks, type ChecksResult } from '@serend/builder';
 import { runBuild, type RunnerDeps } from '../src/runner.js';
 import { BUILD_QUEUE, pgBossQueue, startBoss } from '../src/queue.js';
 import type { SiteBuilder } from '../src/site-builder.js';
@@ -101,6 +101,29 @@ describe('Erfolgreicher Build', () => {
     const active = await activeRows();
     expect(active.map((a) => a.id)).toEqual([r.releaseId]);
     expect(active[0]!.buildId).toBe(id);
+  });
+
+  it('Warnungen (z. B. Lighthouse unter dem Ziel) verhindern den Build nie, sie stehen im Ergebnis und im Log', async () => {
+    const warning = {
+      code: 'lighthouse' as const,
+      path: '/de/projekte/dolce-falcone/',
+      message: 'Performance 91 (Ziel 95) auf /de/projekte/dolce-falcone/',
+    };
+    const id = await queued();
+    const r = await runBuild(
+      deps(goodSite('mit-warnung'), {
+        runChecks: async (dir, opts) => ({ ...(await runChecks(dir, opts)), warnings: [warning] }),
+      }),
+      id,
+    );
+    expect(r.status).toBe('succeeded');
+    if (r.status !== 'succeeded') return;
+    expect(await currentReleaseId(releasesDir)).toBe(r.releaseId);
+    const [b] = await h.db.select().from(builds).where(eq(builds.id, id));
+    expect(b).toMatchObject({ status: 'succeeded', errorSummary: null });
+    expect((b!.checks as ChecksResult).warnings).toEqual([warning]);
+    expect(b!.log).toContain('Warnungen (1), der Build läuft weiter');
+    expect(b!.log).toContain('Warnung: Performance 91 (Ziel 95)');
   });
 
   it('schwärzt das Build-Token im gespeicherten Log', async () => {
