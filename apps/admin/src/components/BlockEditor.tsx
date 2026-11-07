@@ -1,4 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
+import { createContext, useContext } from 'react';
 import type { Inline } from '@serend/schema';
+import { api } from '../api';
 import { Field } from '../ui';
 import { InlineField } from './InlineField';
 import { MediaField } from './MediaPicker';
@@ -63,14 +66,19 @@ export function newBlock(type: string): Block {
   }
 }
 
+/** Sprache der bearbeiteten Seite: Links dürfen nur auf Seiten derselben Sprache zeigen. */
+const LocaleContext = createContext<string | undefined>(undefined);
+
 interface Props {
+  /** Sprache des Inhalts (für die Seitenauswahl in Links). */
+  locale?: string;
   blocks: Block[];
   onChange: (b: Block[]) => void;
   /** Blocktypen, die hinzugefügt werden dürfen. Leer = feste Struktur (Systemseite): nur Felder bearbeiten. */
   allowed: string[];
 }
 
-export function BlockEditor({ blocks, onChange, allowed }: Props) {
+export function BlockEditor({ locale, blocks, onChange, allowed }: Props) {
   const fixed = allowed.length === 0;
   const set = (i: number, b: Block) => onChange(blocks.map((x, j) => (j === i ? b : x)));
   const row = (b: Block, i: number, handle: React.ReactNode) => (
@@ -94,7 +102,7 @@ export function BlockEditor({ blocks, onChange, allowed }: Props) {
     </div>
   );
   return (
-    <div>
+    <LocaleContext.Provider value={locale}>
       {fixed ? (
         blocks.map((b, i) => <div key={b.id}>{row(b, i, null)}</div>)
       ) : (
@@ -114,7 +122,7 @@ export function BlockEditor({ blocks, onChange, allowed }: Props) {
           ))}
         </div>
       )}
-    </div>
+    </LocaleContext.Provider>
   );
 }
 
@@ -138,7 +146,7 @@ const Text = ({
   </Field>
 );
 
-/** Link mit festem Ziel (Seite per ID, Projekt per ID oder URL); die Auswahl der ID übernimmt ein Textfeld. */
+/** Link mit festem Ziel: Seite (Auswahl), Projekt (ID) oder URL. */
 function LinkForm({
   label,
   value,
@@ -149,6 +157,15 @@ function LinkForm({
   onChange: (v: any) => void;
 }) {
   const t = value?.target ?? { kind: 'url', url: '' };
+  const locale = useContext(LocaleContext);
+  const pages = useQuery({
+    queryKey: ['pages', locale ?? 'all'],
+    queryFn: () =>
+      api.get<{ pages: { id: string; title: string; locale: string }[] }>(
+        `/pages${locale ? `?locale=${locale}` : ''}`,
+      ),
+    enabled: t.kind === 'page',
+  });
   return (
     <fieldset style={{ border: '1px solid var(--line)', borderRadius: 8, margin: '8px 0' }}>
       <legend className="small muted">{label}</legend>
@@ -174,7 +191,7 @@ function LinkForm({
             }
           >
             <option value="url">URL</option>
-            <option value="page">Seite (ID)</option>
+            <option value="page">Seite</option>
             <option value="project">Projekt (ID)</option>
           </select>
         </Field>
@@ -186,11 +203,26 @@ function LinkForm({
           />
         )}
         {t.kind === 'page' && (
-          <Text
-            label="Seiten-ID"
-            value={t.pageId}
-            onChange={(p) => onChange({ ...value, target: { ...t, pageId: p } })}
-          />
+          <Field label="Seite">
+            <select
+              value={t.pageId}
+              // Anker gehören zu einer Seite: beim Wechsel der Zielseite nicht mitnehmen
+              onChange={(e) =>
+                onChange({ ...value, target: { kind: 'page', pageId: e.target.value } })
+              }
+            >
+              <option value="">– wählen –</option>
+              {t.pageId && !pages.data?.pages.some((p) => p.id === t.pageId) && (
+                <option value={t.pageId}>(unbekannte Seite)</option>
+              )}
+              {pages.data?.pages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                  {locale ? '' : ` (${p.locale.toUpperCase()})`}
+                </option>
+              ))}
+            </select>
+          </Field>
         )}
         {t.kind === 'project' && (
           <Text
@@ -202,7 +234,7 @@ function LinkForm({
       </div>
       {t.kind === 'page' && (
         <Text
-          label="Anker (z. B. leistungen)"
+          label="Anker (nur wenn die Zielseite einen Block mit diesem Anker hat, z. B. leistungen)"
           value={t.fragment ?? ''}
           onChange={(f) => onChange({ ...value, target: { ...t, fragment: f || undefined } })}
         />
