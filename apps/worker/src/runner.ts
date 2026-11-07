@@ -109,6 +109,11 @@ export async function runBuild(deps: RunnerDeps, buildId: string): Promise<RunRe
       throw new Error(`Prüfungen fehlgeschlagen:\n${checks.problems.slice(0, 10).join('\n')}`);
     }
     log.line('Alle Prüfungen bestanden.');
+    if (checks.warnings?.length) {
+      // Hinweise verhindern den Build nie, sie stehen nur im Log und als Badge im Admin
+      log.line(`Warnungen (${checks.warnings.length}), der Build läuft weiter:`);
+      for (const w of checks.warnings) log.line(`  Warnung: ${w.message}`);
+    }
 
     const release = await createRelease(db, buildId);
     releaseId = release.id;

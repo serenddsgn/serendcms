@@ -9,7 +9,7 @@ import {
   type ReleaseRow,
 } from '@serend/db';
 import { currentReleaseId, readCaddySnippets, releasePath, switchCurrent } from '@serend/builder';
-import type { BuildSummaryDto, ReleaseDto } from '@serend/schema';
+import type { BuildSummaryDto, BuildWarningDto, ReleaseDto } from '@serend/schema';
 import type { AppConfig } from '../config.js';
 import { errors } from '../lib/errors.js';
 import { buildsRepo } from '../repositories/builds.repo.js';
@@ -21,6 +21,24 @@ export interface BuildQueue {
   enqueue(buildId: string): Promise<void>;
 }
 
+/** Warnungen aus dem gespeicherten Prüfergebnis (ältere Builds haben keine). */
+const warningsOf = (checks: unknown): BuildWarningDto[] => {
+  const w = (checks as { warnings?: unknown } | null)?.warnings;
+  if (!Array.isArray(w)) return [];
+  return w.flatMap((x): BuildWarningDto[] => {
+    const o = x as { code?: unknown; path?: unknown; message?: unknown };
+    return typeof o?.message === 'string'
+      ? [
+          {
+            code: typeof o.code === 'string' ? o.code : 'warning',
+            path: typeof o.path === 'string' ? o.path : null,
+            message: o.message,
+          },
+        ]
+      : [];
+  });
+};
+
 const toSummary = (b: BuildRow & { releaseId: string | null }): BuildSummaryDto => ({
   id: b.id,
   status: b.status as BuildSummaryDto['status'],
@@ -30,6 +48,7 @@ const toSummary = (b: BuildRow & { releaseId: string | null }): BuildSummaryDto 
   finishedAt: b.finishedAt ? b.finishedAt.toISOString() : null,
   errorSummary: b.errorSummary,
   releaseId: b.releaseId,
+  warnings: warningsOf(b.checks).length,
 });
 const toRelease = (r: ReleaseRow): ReleaseDto => ({
   id: r.id,
@@ -82,11 +101,13 @@ export function createBuildsService({
         repo.hasStatus('running'),
         repo.pendingCounts(),
       ]);
+      const liveBuild = active ? await repo.find(active.buildId) : undefined;
       return {
         activeRelease: active ? toRelease(active) : null,
         lastBuild: builds[0] ? toSummary(builds[0]) : null,
         buildQueued: queued,
         buildRunning: running,
+        warnings: warningsOf(liveBuild?.checks),
         pending,
       };
     },

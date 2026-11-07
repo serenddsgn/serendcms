@@ -8,6 +8,7 @@
   --accent: #703b58;
   --danger: #b3261e;
   --ok: #1a7f5a;
+  --warn: #9a6700;
   --focus: #b06bb4;
   font-family:
     Inter,
@@ -27,6 +28,7 @@
     --accent: #d8a7dc;
     --danger: #ff8a80;
     --ok: #4cd1a1;
+    --warn: #f0c36d;
     color-scheme: dark;
   }
 }
@@ -246,6 +248,9 @@ th {
 .pill.failed,
 .pill.archived {
   color: var(--danger);
+}
+.pill.warn {
+  color: var(--warn);
 }
 .pill.running,
 .pill.queued {

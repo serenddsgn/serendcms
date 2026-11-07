@@ -4,6 +4,15 @@ import { Uuid } from './common.js';
 export const BUILD_STATUSES = ['queued', 'running', 'succeeded', 'failed'] as const;
 export const BuildStatus = z.enum(BUILD_STATUSES);
 
+/** Hinweis einer Build-Prüfung, der den Build nicht verhindert (z. B. Lighthouse-Wert unter dem Ziel). */
+export const BuildWarningDto = z.object({
+  code: z.string(),
+  /** URL-Pfad der betroffenen Seite, falls es eine bestimmte ist. */
+  path: z.string().nullable(),
+  message: z.string(),
+});
+export type BuildWarningDto = z.infer<typeof BuildWarningDto>;
+
 export const BuildSummaryDto = z.object({
   id: Uuid,
   status: BuildStatus,
@@ -13,6 +22,8 @@ export const BuildSummaryDto = z.object({
   finishedAt: z.iso.datetime().nullable(),
   errorSummary: z.string().nullable(),
   releaseId: Uuid.nullable(),
+  /** Anzahl Warnungen der Prüfungen (Details im Build). */
+  warnings: z.number().int().default(0),
 });
 export type BuildSummaryDto = z.infer<typeof BuildSummaryDto>;
 
@@ -39,6 +50,8 @@ export const StatusResponse = z.object({
   lastBuild: BuildSummaryDto.nullable(),
   buildQueued: z.boolean(),
   buildRunning: z.boolean(),
+  /** Warnungen des Builds, der gerade live ist (z. B. Performance unter dem Ziel). */
+  warnings: z.array(BuildWarningDto).default([]),
   /** Veröffentlichte Inhalte mit neueren, noch nicht freigegebenen Revisionen. */
   pending: z.object({ projects: z.number().int(), pages: z.number().int() }),
 });

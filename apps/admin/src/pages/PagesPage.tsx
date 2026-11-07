@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
+import { pagePath, projectIndexPath } from '@serend/schema';
 import { api } from '../api';
 import { BlockEditor, newBlock, type Block } from '../components/BlockEditor';
+import { WarnBadge, useLiveWarnings } from '../warnings';
 import {
   Field,
   LocaleSwitch,
@@ -29,6 +31,7 @@ interface Item {
 
 export function PagesPage() {
   const [locale, setLocale] = useLocale();
+  const warningsFor = useLiveWarnings();
   const [creating, setCreating] = useState(false);
   const q = useQuery({
     queryKey: ['pages', locale],
@@ -77,6 +80,15 @@ export function PagesPage() {
                   {p.hasUnpublishedChanges && p.status === 'published' && (
                     <span className="pill">Änderungen offen</span>
                   )}
+                  <WarnBadge
+                    warnings={warningsFor([
+                      p.systemKey === 'home'
+                        ? `/${locale}/`
+                        : p.systemKey === 'projects'
+                          ? projectIndexPath(locale)
+                          : pagePath(locale, p.slug),
+                    ])}
+                  />
                 </td>
               </tr>
             ))}
