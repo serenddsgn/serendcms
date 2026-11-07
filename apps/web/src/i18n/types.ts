@@ -1,5 +1,8 @@
 export interface UiStrings {
   navLabel: string;
+  location: string;
+  locationAlt: string;
+  locationLabel: string;
   langLabel: string;
   lightOn: string;
   lightOff: string;
