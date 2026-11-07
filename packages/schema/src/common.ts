@@ -39,18 +39,51 @@ export const Slug = z
   .min(1)
   .max(80);
 
-/** Routen-Segmente je Sprache (fest durch das Design: /de/projekte/…, /en/work/…). */
+/** Routen-Segmente je Sprache (fest durch das Design: /projekte/…, /en/work/…). */
 export const ROUTE_SEGMENTS: Record<Locale, { projects: string }> = {
   de: { projects: 'projekte' },
   en: { projects: 'work' },
 };
 
+/**
+ * URL-Präfix je Sprache: Die Standardsprache (Deutsch) liegt ohne Präfix im Wurzelverzeichnis,
+ * alle anderen unter `/<locale>`. Ergebnis ohne abschließenden Slash (`''` bzw. `/en`).
+ */
+export function localePrefix(locale: Locale): string {
+  return locale === DEFAULT_LOCALE ? '' : `/${locale}`;
+}
+
+/**
+ * Erste Pfadsegmente, die kein Seiten-Slug der Standardsprache sein dürfen, weil sie sonst mit Sprachpräfixen,
+ * technischen Routen oder alten `/de/…`-Adressen kollidieren.
+ */
+export const RESERVED_ROOT_SEGMENTS: readonly string[] = [
+  ...LOCALES,
+  'index',
+  'api',
+  'img',
+  'og',
+  'fonts',
+  'build-meta',
+  'internal',
+  'preview-img',
+  'maintenance-assets',
+  '_assets',
+  'sitemap.xml',
+  'robots.txt',
+  'llms.txt',
+  '404',
+];
+
+export function homePath(locale: Locale): string {
+  return `${localePrefix(locale)}/`;
+}
 export function projectPath(locale: Locale, slug: string): string {
-  return `/${locale}/${ROUTE_SEGMENTS[locale].projects}/${slug}`;
+  return `${localePrefix(locale)}/${ROUTE_SEGMENTS[locale].projects}/${slug}`;
 }
 export function projectIndexPath(locale: Locale): string {
-  return `/${locale}/${ROUTE_SEGMENTS[locale].projects}/`;
+  return `${localePrefix(locale)}/${ROUTE_SEGMENTS[locale].projects}/`;
 }
 export function pagePath(locale: Locale, slug: string): string {
-  return `/${locale}/${slug}`;
+  return `${localePrefix(locale)}/${slug}`;
 }

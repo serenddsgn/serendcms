@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { pageMedia, type Database } from '@serend/db';
 import {
-  ROUTE_SEGMENTS,
+  homePath,
   pagePath,
+  projectIndexPath,
   projectPath,
   type BuildMedia,
   type BuildPage,
@@ -42,9 +43,9 @@ export function createPreviewService({
       const locale = page.locale as Locale;
       path =
         page.systemKey === 'home'
-          ? `/${locale}/`
+          ? homePath(locale)
           : page.systemKey === 'projects'
-            ? `/${locale}/${ROUTE_SEGMENTS[locale].projects}/`
+            ? projectIndexPath(locale)
             : `${pagePath(locale, latest.slug)}/`;
     }
     const { token, expiresAt } = signPreviewToken(config.previewSigningKey, target);

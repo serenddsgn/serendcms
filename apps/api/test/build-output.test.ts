@@ -159,10 +159,10 @@ describe('Build-Output', () => {
 
   it('erzeugt keine Seiten für Entwürfe', () => {
     for (const p of [
-      'de/projekte/nur-entwurf',
-      'de/projekte/cista-entwurf-slug',
-      'de/geheime-seite',
-      'de/projekte/nur-entwurf.md',
+      'projekte/nur-entwurf',
+      'projekte/cista-entwurf-slug',
+      'geheime-seite',
+      'projekte/nur-entwurf.md',
       'og/de/projekte/nur-entwurf.png',
     ]) {
       expect(existsSync(join(out, p)), p).toBe(false);
@@ -170,33 +170,34 @@ describe('Build-Output', () => {
   });
 
   it('baut die veröffentlichte Revision (alter Titel, alter Slug)', () => {
-    const html = text(join(out, 'de/projekte/cista/index.html'));
+    const html = text(join(out, 'projekte/cista/index.html'));
     expect(html).toContain('<title>Cista · serend.design</title>');
   });
 
   it('erzeugt alle Seiten beider Sprachen', () => {
     for (const p of [
-      'de/index.html',
-      'en/index.html',
-      'de/projekte/index.html',
-      'en/work/index.html',
-      'de/projekte/dolce-falcone/index.html',
-      'en/work/dolce-falcone/index.html',
       'index.html',
+      'en/index.html',
+      'projekte/index.html',
+      'en/work/index.html',
+      'projekte/dolce-falcone/index.html',
+      'en/work/dolce-falcone/index.html',
       '404.html',
     ]) {
       expect(existsSync(join(out, p)), p).toBe(true);
     }
+    expect(existsSync(join(out, 'de')), 'kein /de-Verzeichnis mehr').toBe(false);
+    expect(existsSync(join(out, 'en/index.md'))).toBe(true);
     expect(
-      readdirSync(join(out, 'de/projekte')).filter((n) => !n.endsWith('.md') && n !== 'index.html'),
+      readdirSync(join(out, 'projekte')).filter((n) => !n.endsWith('.md') && n !== 'index.html'),
     ).toHaveLength(12);
   });
 
   it('liefert das SEO-Paket: Canonical, hreflang, JSON-LD, OG-Bild, robots, Sitemap, llms.txt, Markdown', () => {
-    const html = text(join(out, 'de/projekte/dolce-falcone/index.html'));
+    const html = text(join(out, 'projekte/dolce-falcone/index.html'));
     expect(html).toContain('<html lang="de"');
     expect(html).toContain(
-      'rel="canonical" href="https://www.example.com/de/projekte/dolce-falcone/"',
+      'rel="canonical" href="https://www.example.com/projekte/dolce-falcone/"',
     );
     expect(html).toContain('hreflang="en" href="https://www.example.com/en/work/dolce-falcone/"');
     expect(html).toContain('hreflang="x-default"');
@@ -205,21 +206,21 @@ describe('Build-Output', () => {
     );
     expect(html).toContain('"@type":"CreativeWork"');
     expect(html).toContain('"@type":"BreadcrumbList"');
-    expect(text(join(out, 'de/index.html'))).toContain('"@type":"Organization"');
+    expect(text(join(out, 'index.html'))).toContain('"@type":"Organization"');
     expect(existsSync(join(out, 'og/de/projekte/dolce-falcone.png'))).toBe(true);
     expect(text(join(out, 'robots.txt'))).toContain('Sitemap: https://www.example.com/sitemap.xml');
     const sitemap = text(join(out, 'sitemap.xml'));
-    expect(sitemap).toContain('<loc>https://www.example.com/de/projekte/dolce-falcone/</loc>');
+    expect(sitemap).toContain('<loc>https://www.example.com/projekte/dolce-falcone/</loc>');
     expect(sitemap).toContain('hreflang="en"');
-    expect(text(join(out, 'llms.txt'))).toContain('/de/projekte/dolce-falcone.md');
-    const md = text(join(out, 'de/projekte/dolce-falcone.md'));
+    expect(text(join(out, 'llms.txt'))).toContain('/projekte/dolce-falcone.md');
+    const md = text(join(out, 'projekte/dolce-falcone.md'));
     expect(md).toContain('# Dolce & Falcone');
     expect(md).toContain('## 01 · Um wen es geht');
-    expect(existsSync(join(out, 'de/index.md'))).toBe(true);
+    expect(existsSync(join(out, 'index.md'))).toBe(true);
   });
 
   it('liefert Bilder als AVIF/WebP mit width, height, srcset und sizes', () => {
-    const html = text(join(out, 'de/index.html'));
+    const html = text(join(out, 'index.html'));
     expect(html).toMatch(/<source type="?image\/avif"? srcset="[^"]+" sizes="[^"]+"/);
     expect(html).toMatch(
       /<img src="\/img\/[0-9a-f]{12}-\d+\.webp" width="\d+" height="\d+" alt="[^"]+"/,

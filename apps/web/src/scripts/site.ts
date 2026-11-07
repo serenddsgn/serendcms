@@ -48,9 +48,6 @@ document.addEventListener('click', (e) => {
   if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
   const url = new URL(a.href, location.href);
   if (url.origin !== location.origin) return;
-  if (a.dataset.lang) {
-    document.cookie = `lang=${a.dataset.lang}; path=/; max-age=31536000; samesite=lax`;
-  }
   const samePage = url.pathname === location.pathname && url.search === location.search;
   if (samePage && url.hash) return; // Anker auf derselben Seite
   if (/\.(md|png|txt|xml)$/.test(url.pathname)) return;
@@ -76,6 +73,80 @@ addEventListener('keydown', (e) => {
 menu?.addEventListener('click', (e) => {
   if ((e.target as Element).closest('a[href^="#"]')) setMenu(false);
 });
+
+// ── Standort im Header: Scramble zu Koordinaten beim Scrollen / Hover ─
+const loc = $<HTMLElement>('[data-location]');
+const locText = $<HTMLElement>('[data-location-text]');
+if (loc && locText) {
+  const textA = loc.dataset.textA ?? '';
+  const textB = loc.dataset.textB ?? '';
+  const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const KEEP = new Set([' ', ',', '.', '°']);
+  const SCRAMBLE = 550; // ms, die Zeichen flackern
+  const STAGGER = 38; // ms Versatz pro Zeichen
+  let state: 'A' | 'B' = 'B';
+  let hovering = false;
+  let raf = 0;
+  let stopTimer = 0;
+
+  locText.classList.add('is-intro');
+
+  function scrambleTo(target: string) {
+    cancelAnimationFrame(raf);
+    if (reduced) {
+      locText!.textContent = target;
+      return;
+    }
+    const total = SCRAMBLE + (target.length - 1) * STAGGER;
+    const start = performance.now();
+    const step = (now: number) => {
+      const elapsed = now - start;
+      let out = '';
+      for (let i = 0; i < target.length; i++) {
+        const ch = target[i]!;
+        out +=
+          elapsed >= i * STAGGER + SCRAMBLE || KEEP.has(ch)
+            ? ch
+            : CHARSET[Math.floor(Math.random() * CHARSET.length)];
+      }
+      locText!.textContent = out;
+      if (elapsed < total) raf = requestAnimationFrame(step);
+      else locText!.textContent = target;
+    };
+    raf = requestAnimationFrame(step);
+  }
+  function setState(next: 'A' | 'B') {
+    if (next === state) return;
+    state = next;
+    scrambleTo(next === 'A' ? textA : textB);
+  }
+  function activate() {
+    locText!.classList.remove('is-intro');
+  }
+  addEventListener(
+    'scroll',
+    () => {
+      if (hovering) return;
+      activate();
+      setState('A');
+      clearTimeout(stopTimer);
+      stopTimer = window.setTimeout(() => {
+        if (!hovering) setState('B');
+      }, 220);
+    },
+    { passive: true },
+  );
+  loc.addEventListener('mouseenter', () => {
+    hovering = true;
+    clearTimeout(stopTimer);
+    activate();
+    setState('A');
+  });
+  loc.addEventListener('mouseleave', () => {
+    hovering = false;
+    setState('B');
+  });
+}
 
 // ── Fallbacks für Browser ohne scroll-driven Animations ──────────────
 if (!CSS.supports('animation-timeline: scroll()')) {

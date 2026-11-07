@@ -24,17 +24,11 @@
 		reverse_proxy 127.0.0.1:4000
 	}
 
-	# Sprachweiche für "/": Cookie `lang`, dann Accept-Language, sonst Deutsch
-	@root path /
-	handle @root {
-		@cookie_en header_regexp Cookie (^|;\s*)lang=en(;|$)
-		@cookie_de header_regexp Cookie (^|;\s*)lang=de(;|$)
-		@accept_en header_regexp Accept-Language ^\s*en
-		redir @cookie_en /en/ 302
-		redir @cookie_de /de/ 302
-		redir @accept_en /en/ 302
-		redir * /de/ 302
-	}
+	# Deutsch (Standardsprache) liegt ohne Präfix im Wurzelverzeichnis, Englisch unter /en/.
+	# Alte Adressen mit Präfix (/de/…) leiten dauerhaft auf die Variante ohne Präfix um. Es gibt keine
+	# automatische Sprachweiche (Cookie/Accept-Language) auf "/": Jede URL liefert immer dieselbe Sprache.
+	@legacy_de path_regexp legacy_de ^/de(?:/(.*))?$
+	redir @legacy_de /{re.legacy_de.1} 301
 
 	@immutable path /img/* /_assets/* /fonts/*
 	header @immutable Cache-Control "public, max-age=31536000, immutable"

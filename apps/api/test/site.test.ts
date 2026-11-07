@@ -120,9 +120,9 @@ describe('Seiten', () => {
     await as(t, ed, 'POST', `/api/v1/pages/${created.page.id}/publish`);
     const { rows } = await t.handle.pool.query(
       'select to_path from redirects where from_path = $1',
-      ['/de/alt-slug'],
+      ['/alt-slug'],
     );
-    expect(rows[0].to_path).toBe('/de/neu-slug');
+    expect(rows[0].to_path).toBe('/neu-slug');
   });
 
   it('schützt Systemseiten (fester Slug, nicht löschbar) und veröffentlichte Seiten vor dem Löschen', async () => {

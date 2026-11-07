@@ -246,11 +246,11 @@ describe('Slugs', () => {
     await save(ed, p.project.id, draftBody(p as never, { slug: newSlug }));
     await publish(ed, p.project.id);
     const { rows } = await t.handle.pool.query('select * from redirects where from_path = $1', [
-      `/de/projekte/${p.latest.slug}`,
+      `/projekte/${p.latest.slug}`,
     ]);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
-      to_path: `/de/projekte/${newSlug}`,
+      to_path: `/projekte/${newSlug}`,
       status_code: 301,
       source: 'auto',
       locale: 'de',
@@ -266,7 +266,7 @@ describe('Slugs', () => {
       [`%${third}`],
     );
     expect(all.rows.map((r) => r.from_path).sort()).toEqual(
-      [`/de/projekte/${newSlug}`, `/de/projekte/${p.latest.slug}`].sort(),
+      [`/projekte/${newSlug}`, `/projekte/${p.latest.slug}`].sort(),
     );
   });
 
@@ -276,7 +276,7 @@ describe('Slugs', () => {
     await save(ed, p.project.id, draftBody(p as never, { title: 'Anderer Titel' }));
     await publish(ed, p.project.id);
     const { rows } = await t.handle.pool.query('select 1 from redirects where from_path = $1', [
-      `/de/projekte/${p.latest.slug}`,
+      `/projekte/${p.latest.slug}`,
     ]);
     expect(rows).toHaveLength(0);
   });
@@ -292,10 +292,10 @@ describe('Slugs', () => {
     expect((await publish(ed, p.project.id)).statusCode).toBe(200);
     const { rows } = await t.handle.pool.query(
       'select from_path, to_path from redirects where from_path = $1 or to_path = $1',
-      [`/de/projekte/${p.latest.slug}`],
+      [`/projekte/${p.latest.slug}`],
     );
     expect(rows.every((r) => r.from_path !== r.to_path)).toBe(true);
-    expect(rows.find((r) => r.from_path === `/de/projekte/${p.latest.slug}`)).toBeUndefined(); // aktiver Pfad leitet nicht weiter
+    expect(rows.find((r) => r.from_path === `/projekte/${p.latest.slug}`)).toBeUndefined(); // aktiver Pfad leitet nicht weiter
   });
 });
 

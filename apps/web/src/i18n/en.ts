@@ -2,6 +2,9 @@ import type { UiStrings } from './types';
 
 export const en: UiStrings = {
   navLabel: 'Main navigation',
+  location: 'Made in Wuppertal',
+  locationAlt: '51.2500° N, 7.1500° E',
+  locationLabel: 'Location: Made in Wuppertal',
   langLabel: 'Choose language',
   lightOn: 'Lights on',
   lightOff: 'Lights off',

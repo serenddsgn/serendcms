@@ -23,9 +23,32 @@ export function Header({ locale, ui, nav, currentPath, home, switchTo, cta }: Pr
   return (
     <header class="nav">
       <div class="wrap">
-        <a href={home} class="mark" aria-label="serend.design">
-          serend.design<sup>®</sup>
-        </a>
+        <div class="brand">
+          <a href={home} class="mark" aria-label="serend.design">
+            <svg
+              class="logo"
+              viewBox="0 0 841.9 463.5"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                fill="currentColor"
+                d="M0.8,0v463.5h840.4V0H0.8z M555.2,353.1c0,7.1-5.8,12.9-12.9,12.9h-53.7c-3.4,0-6.7-1.4-9.1-3.8l-49.3-49.3c-5-5-13.2-5-18.3,0l-49.3,49.3c-2.4,2.4-5.7,3.8-9.1,3.8h-53.7c-7.1,0-12.9-5.8-12.9-12.9v-53.7c0-3.4,1.4-6.7,3.8-9.1L340,241c5-5,5-13.2,0-18.3l-49.3-49.3c-2.4-2.4-3.8-5.7-3.8-9.1v-53.7c0-7.1,5.8-12.9,12.9-12.9h53.7c3.4,0,6.7,1.4,9.1,3.8l58.5,58.5l72,72l58.5,58.5c2.4,2.4,3.8,5.7,3.8,9.1v53.5H555.2z M555.2,192.1c0,11.5-13.9,17.3-22,9.1l-81.6-81.6c-8.1-8.1-2.4-22,9.1-22h81.6c7.1,0,12.9,5.8,12.9,12.9V192.1z"
+              />
+            </svg>
+          </a>
+          <span
+            class="loc"
+            data-location
+            data-text-a={ui.locationAlt}
+            data-text-b={ui.location}
+            aria-label={ui.locationLabel}
+          >
+            <span class="loc-text" data-location-text aria-live="polite">
+              {ui.location}
+            </span>
+          </span>
+        </div>
         <nav class="mainnav" aria-label={ui.navLabel}>
           {nav.map((n) => (
             <a class="nl" href={n.href} aria-current={current(n.href)}>

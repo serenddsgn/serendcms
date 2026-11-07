@@ -3,6 +3,9 @@ import type { UiStrings } from './types';
 // Wörterbuch aus dem Prototyp (design/prototype/*.html), 1:1 übernommen.
 export const de: UiStrings = {
   navLabel: 'Hauptnavigation',
+  location: 'Made in Wuppertal',
+  locationAlt: '51.2500° N, 7.1500° E',
+  locationLabel: 'Standort: Made in Wuppertal',
   langLabel: 'Sprache wählen',
   lightOn: 'Licht an',
   lightOff: 'Licht aus',
