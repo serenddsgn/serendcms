@@ -606,6 +606,27 @@ describe('Einstellungen', () => {
       'validation_error',
     );
   });
+
+  it('speichert den Link zu „Made in Wuppertal“ (Seite, URL oder gar keiner) und prüft ihn', async () => {
+    const put = (value: unknown) =>
+      as(t, admin, 'PUT', '/api/v1/settings/site.location?locale=de', { value });
+    const page = await newPage('standort-ziel');
+    expect((await put({ target: { kind: 'page', pageId: page.page.id } })).statusCode).toBe(200);
+    expect(
+      (await put({ target: { kind: 'url', url: 'https://www.wuppertal.de' } })).statusCode,
+    ).toBe(200);
+    expect((await put({})).statusCode).toBe(200);
+    expectError(
+      await put({ target: { kind: 'page', pageId: randomUUID() } }),
+      400,
+      'validation_error',
+    );
+    expectError(
+      await put({ target: { kind: 'url', url: 'javascript:alert(1)' } }),
+      400,
+      'validation_error',
+    );
+  });
 });
 
 describe('Team', () => {

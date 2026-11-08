@@ -260,6 +260,15 @@ export function setting<K extends SettingKey>(locale: Locale, key: K): SettingVa
   return parseSetting(key, s.value);
 }
 
+/** Wie `setting`, aber für optionale Einstellungen: fehlt der Eintrag, kommt `undefined`. */
+export function optionalSetting<K extends SettingKey>(
+  locale: Locale,
+  key: K,
+): SettingValue<K> | undefined {
+  const s = data().settings.find((x) => x.locale === locale && x.key === key);
+  return s ? parseSetting(key, s.value) : undefined;
+}
+
 export const projectsFor = (locale: Locale) =>
   data()
     .projects.filter((p) => p.locale === locale)

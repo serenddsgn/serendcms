@@ -15,9 +15,23 @@ interface Props {
   home: string;
   switchTo: Record<Locale, string>;
   cta: NavLink;
+  /** Ziel für „Made in Wuppertal“ (Einstellung site.location); ohne Wert bleibt es Text. */
+  locationHref?: string | undefined;
 }
 
-export function Header({ locale, ui, nav, currentPath, home, switchTo, cta }: Props) {
+export function Header({ locale, ui, nav, currentPath, home, switchTo, cta, locationHref }: Props) {
+  const locAttrs = {
+    class: 'loc',
+    'data-location': true,
+    'data-text-a': ui.locationAlt,
+    'data-text-b': ui.location,
+    'aria-label': ui.locationLabel,
+  };
+  const locText = (
+    <span class="loc-text" data-location-text aria-live="polite">
+      {ui.location}
+    </span>
+  );
   const current = (href: string) =>
     href.split('#')[0] === currentPath && !href.includes('#') ? 'page' : undefined;
   return (
@@ -37,18 +51,15 @@ export function Header({ locale, ui, nav, currentPath, home, switchTo, cta }: Pr
               />
             </svg>
           </a>
-          <span
-            class="loc"
-            role="group"
-            data-location
-            data-text-a={ui.locationAlt}
-            data-text-b={ui.location}
-            aria-label={ui.locationLabel}
-          >
-            <span class="loc-text" data-location-text aria-live="polite">
-              {ui.location}
+          {locationHref ? (
+            <a {...locAttrs} href={locationHref}>
+              {locText}
+            </a>
+          ) : (
+            <span {...locAttrs} role="group">
+              {locText}
             </span>
-          </span>
+          )}
         </div>
         <nav class="mainnav" aria-label={ui.navLabel}>
           {nav.map((n) => (

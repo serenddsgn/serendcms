@@ -9,6 +9,10 @@ export const SETTING_SCHEMAS = {
     email: z.email(),
   }),
   'site.cta': z.object({ label: z.string().min(1).max(60), target: LinkTarget }),
+  /** „Made in Wuppertal“ neben dem Logo; ohne Ziel bleibt es reiner Text. Optional, daher nicht im Seed. */
+  'site.location': z.object({
+    target: z.discriminatedUnion('kind', [LinkTarget.options[0], LinkTarget.options[2]]).optional(),
+  }),
   'site.footer': z.object({
     madeWith: z.string().min(1).max(120),
     copyright: z.string().min(1).max(120),

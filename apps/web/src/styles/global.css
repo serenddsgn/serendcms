@@ -385,6 +385,9 @@ img {
   align-items: center;
   cursor: default;
 }
+a.loc {
+  cursor: pointer;
+}
 .loc-text {
   display: inline-block;
   min-width: calc(21 * (1ch + 0.12em));

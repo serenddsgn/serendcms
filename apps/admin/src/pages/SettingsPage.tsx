@@ -13,6 +13,7 @@ const FIELDS: Record<string, [string, string][]> = {
     ['city', 'Stadt'],
     ['email', 'E-Mail'],
   ],
+  'site.location': [],
   'site.footer': [
     ['madeWith', 'Fußzeile: „Gemacht mit …“'],
     ['copyright', 'Copyright'],
@@ -221,6 +222,63 @@ function SettingCard({
           </Field>
         ))}
       </div>
+      {name === 'site.location' && (
+        <>
+          <p className="muted small">
+            Der Hinweis „Made in Wuppertal“ neben dem Logo wird zum Link. Ohne Ziel bleibt er reiner
+            Text.
+          </p>
+          <div className="grid2">
+            <Field label="Link-Art">
+              <select
+                disabled={disabled}
+                value={v.target?.kind ?? ''}
+                onChange={(e) => {
+                  const kind = e.target.value;
+                  setV(
+                    kind === 'page'
+                      ? { target: { kind, pageId: '' } }
+                      : kind === 'url'
+                        ? { target: { kind, url: '' } }
+                        : {},
+                  );
+                }}
+              >
+                <option value="">Kein Link</option>
+                <option value="page">Seite dieser Website</option>
+                <option value="url">Externe Adresse</option>
+              </select>
+            </Field>
+            {v.target?.kind === 'page' && (
+              <Field label="Zielseite">
+                <select
+                  disabled={disabled}
+                  value={v.target.pageId}
+                  onChange={(e) => setV({ target: { kind: 'page', pageId: e.target.value } })}
+                >
+                  <option value="">– wählen –</option>
+                  {pages.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            {v.target?.kind === 'url' && (
+              <Field label="Adresse">
+                <input
+                  type="url"
+                  placeholder="https://…"
+                  disabled={disabled}
+                  value={v.target.url}
+                  onChange={(e) => setV({ target: { kind: 'url', url: e.target.value } })}
+                />
+              </Field>
+            )}
+          </div>
+        </>
+      )}
       {name === 'site.cta' && (
         <div className="grid2">
           <Field label="Zielseite">

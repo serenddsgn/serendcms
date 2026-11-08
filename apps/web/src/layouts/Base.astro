@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import { homePath, type Locale } from '@serend/schema';
-import { loadData, navFor, resolveTarget, setting } from '../lib/data';
+import { loadData, navFor, optionalSetting, resolveTarget, setting } from '../lib/data';
 import { abs } from '../lib/seo';
 import { t } from '../i18n';
 import { Header } from '../components/Header';
@@ -30,6 +30,7 @@ const identity = setting(locale, 'site.identity');
 const seo = setting(locale, 'seo.defaults');
 const footer = setting(locale, 'site.footer');
 const cta = setting(locale, 'site.cta');
+const locationTarget = optionalSetting(locale, 'site.location')?.target;
 const fullTitle = title === seo.siteName ? title : `${title} · ${seo.siteName}`;
 const desc = description ?? seo.description;
 const link = (n: { label: string; target: { kind: 'page'; pageId: string; fragment: string | null } | { kind: 'url'; url: string } }) => ({
@@ -86,7 +87,7 @@ const canonical = abs(path);
     <a class="skip" href="#main">{ui.skip}</a>
     <div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="progress liquid-bg" aria-hidden="true"></div>
-    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={homePath(locale)} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} />
+    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={homePath(locale)} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} locationHref={locationTarget ? resolveTarget(locationTarget) : undefined} />
     <InquiryModal ui={ui} locale={locale} email={identity.email} privacyHref={legal.at(-1)?.href} />
     <main id="main" key={locale}>
       <slot />
