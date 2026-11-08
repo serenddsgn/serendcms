@@ -60,6 +60,69 @@ const canonical = abs(path);
         } catch (e) {}
       })();
     </script>
+    <script is:inline>
+      /* Seitenübergang „Welle“: Projektkachel wird zum ersten Bild der Projektseite (View Transition über Dokumente).
+         Muss im Head stehen, weil pageswap/pagereveal vor dem ersten Rendern feuern. Ohne Unterstützung
+         oder bei reduzierter Bewegung läuft der Vorhang wie bisher. */
+      (function () {
+        if (!('onpageswap' in window)) return;
+        var KEY = 'serend:vt';
+        var NAME = 'project-cover';
+        var root = document.documentElement;
+        var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        function media(el) {
+          return el && el.querySelector('picture, video, img');
+        }
+        function tileFor(url) {
+          var path = new URL(url, location.href).pathname;
+          var links = document.querySelectorAll('.tile[href], .g[href]');
+          for (var i = 0; i < links.length; i++) {
+            if (new URL(links[i].href).pathname === path) return media(links[i]);
+          }
+          return null;
+        }
+        function mark(el) {
+          if (el) el.style.viewTransitionName = NAME;
+          return !!el;
+        }
+        addEventListener('pageswap', function (e) {
+          var vt = e.viewTransition;
+          if (!vt) return;
+          var ok = false;
+          if (!reduce && e.activation) {
+            var figure = document.querySelector('.strip figure');
+            // Vorwärts: Kachel der Zielseite. Zurück per Browser-Button: erstes Bild der Projektseite.
+            ok = mark(tileFor(e.activation.entry.url)) || (e.activation.navigationType === 'traverse' && mark(figure));
+          }
+          if (ok) {
+            try {
+              sessionStorage.setItem(KEY, String(Date.now()));
+            } catch (x) {}
+          } else vt.skipTransition();
+        });
+        addEventListener('pagereveal', function (e) {
+          var vt = e.viewTransition;
+          if (!vt) return;
+          var at = 0;
+          try {
+            at = +sessionStorage.getItem(KEY) || 0;
+            sessionStorage.removeItem(KEY);
+          } catch (x) {}
+          var from = navigation.activation && navigation.activation.from;
+          var ok = !reduce && at > 0 && Date.now() - at < 8000 && (mark(document.querySelector('.strip figure')) || (from && mark(tileFor(from.url))));
+          if (ok) root.classList.add('vt-in');
+          else vt.skipTransition();
+        });
+        addEventListener('pageshow', function (e) {
+          if (!e.persisted) return;
+          try {
+            sessionStorage.removeItem(KEY);
+          } catch (x) {}
+          var named = document.querySelectorAll('[style*="view-transition-name"]');
+          for (var i = 0; i < named.length; i++) named[i].style.viewTransitionName = '';
+        });
+      })();
+    </script>
     <title>{fullTitle}</title>
     <meta name="description" content={desc} />
     <link rel="canonical" href={canonical} />

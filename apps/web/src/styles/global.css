@@ -237,6 +237,48 @@ video {
   }
 }
 
+/* Seitenübergang „Welle“: Kachel → erstes Bild der Projektseite (Namen setzt der Head-Script in Base.astro).
+   Ohne Unterstützung oder bei reduzierter Bewegung bleibt der Vorhang. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+::view-transition-group(project-cover) {
+  animation-duration: 0.9s;
+  animation-timing-function: var(--ease-curtain);
+  border-radius: var(--r-card);
+  overflow: clip;
+}
+::view-transition-old(project-cover),
+::view-transition-new(project-cover) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+}
+.vt-in .curtain {
+  display: none;
+}
+/* Die Galerie blendet auf der Zielseite sofort ein, das erste Bild kommt per Morph; die übrigen folgen */
+.vt-in .strip.fade {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+.vt-in .strip figure + figure {
+  animation: vtin 0.8s var(--ease-out) 0.6s backwards;
+}
+@keyframes vtin {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
 /* Masken-Reveal und Einblenden */
 .mask {
   display: block;

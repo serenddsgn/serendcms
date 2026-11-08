@@ -38,8 +38,46 @@ function leave(href: string) {
     location.href = href;
   }, 900);
 }
+// Welle: Klick auf eine Projektkachel → die Nachbarn räumen das Feld (nächste zuerst), danach morpht die
+// Kachel zur Projektseite (View Transition, Namen setzt der Head-Script in Base.astro).
+const canWave = !reduced && 'onpageswap' in window;
+let waving: Animation[] = [];
+let leaving = false;
+function wave(from: HTMLElement): Promise<void> {
+  const scope: ParentNode = from.closest('.bento, .pgrid') ?? document;
+  const o = from.getBoundingClientRect();
+  const ox = o.left + o.width / 2;
+  const oy = o.top + o.height / 2;
+  const peers = $$<HTMLElement>('.tile, .g', scope)
+    .filter((el) => el !== from)
+    .map((el) => {
+      const r = el.getBoundingClientRect();
+      return { el, r, d: Math.hypot(r.left + r.width / 2 - ox, r.top + r.height / 2 - oy) };
+    })
+    .filter(({ r }) => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth);
+  const max = Math.max(1, ...peers.map((p) => p.d));
+  waving = peers.map(({ el, d }) =>
+    el.animate(
+      [
+        { opacity: 1, transform: 'scale(1)' },
+        { opacity: 0, transform: 'scale(.6)' },
+      ],
+      {
+        duration: 380,
+        delay: (d / max) * 300,
+        easing: 'cubic-bezier(.65,0,.35,1)',
+        fill: 'forwards',
+      },
+    ),
+  );
+  return Promise.all(waving.map((a) => a.finished.catch(() => undefined))).then(() => undefined);
+}
 addEventListener('pageshow', (e) => {
-  if (e.persisted) curtain?.classList.remove('leaving');
+  if (!e.persisted) return;
+  curtain?.classList.remove('leaving');
+  for (const a of waving) a.cancel();
+  waving = [];
+  leaving = false;
 });
 document.addEventListener('click', (e) => {
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
@@ -52,6 +90,14 @@ document.addEventListener('click', (e) => {
   if (samePage && url.hash) return; // Anker auf derselben Seite
   if (/\.(md|png|txt|xml)$/.test(url.pathname)) return;
   e.preventDefault();
+  if (leaving) return;
+  if (canWave && !samePage && a.matches('.tile, .g')) {
+    leaving = true;
+    void wave(a).then(() => {
+      location.href = url.href;
+    });
+    return;
+  }
   leave(url.href);
 });
 

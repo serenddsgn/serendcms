@@ -81,6 +81,7 @@ Alle Werte stehen in `tokens.css` und werden als CSS-Variablen (oder Tailwind-Th
 ### 3.2 Seitenübergang (Vorhang)
 - Beim Betreten jeder Seite: fünf vertikale Streifen in `--curtain` (Gegenfarbe zum Thema) fahren gestaffelt nach oben weg. Dauer 0.9 s, Versatz 50 ms pro Streifen.
 - Beim Verlassen läuft dieselbe Animation umgekehrt, dann Routenwechsel. Umsetzung mit Framer Motion `AnimatePresence` oder View Transitions API.
+- **Ausnahme „Welle“:** Klick auf eine Projektkachel (Startseite, Projektübersicht) löst statt des Vorhangs aus: Die Nachbarkacheln schrumpfen auf 0,6 und blenden aus, die nächsten zuerst (0,38 s, bis 0,3 s Versatz nach Abstand zum Klick). Danach morpht die Kachel per Cross-document View Transition (`view-transition-name: project-cover`, 0,9 s, `--ease-curtain`) ins erste Galeriebild der Projektseite. Zurück per Browser-Button läuft der Morph umgekehrt. Ohne View-Transition-Unterstützung, ohne Galeriebild und bei `prefers-reduced-motion` bleibt der Vorhang.
 - Danach erscheinen Überschriften per **Masken-Reveal**: jede Zeile bzw. jedes Wort gleitet aus `translateY(105%)` in einem `overflow:hidden`-Container hoch. 1 s, gestaffelt um 0.06–0.1 s.
 - Sekundärtext blendet mit `opacity 0 → 1, y 16 → 0` nach (`.fade`).
 
