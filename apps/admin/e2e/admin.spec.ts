@@ -131,6 +131,34 @@ test('Anthropic-Key speichern schaltet den Übersetzen-Button frei; der Key wird
   await expect(page.getByText('nicht eingerichtet')).toBeVisible();
 });
 
+test('Navigation: Einträge liegen in den Tabs Kopfzeile, Fußzeile und Rechtliches', async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole('link', { name: 'Navigation', exact: true }).click();
+  const tabs = page.getByRole('tablist', { name: 'Navigationsbereich' });
+  await expect(tabs.getByRole('tab', { name: /^Kopfzeile/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+
+  // Der Bereich im Formular folgt dem aktiven Tab
+  await tabs.getByRole('tab', { name: /^Rechtliches/ }).click();
+  await expect(page.locator('select[name="location"]')).toHaveValue('legal');
+  await page.locator('input[name="label"]').fill('Impressum E2E');
+  await page.locator('select[name="kind"]').selectOption('url');
+  await page.locator('input[name="url"]').fill('https://example.com/impressum');
+  await page.getByRole('button', { name: 'Anlegen' }).click();
+  await expect(page.getByRole('tabpanel').getByText('Impressum E2E')).toBeVisible();
+  await expect(tabs.getByRole('tab', { name: /^Rechtliches/ })).toContainText('1');
+
+  // In anderen Tabs ist der Eintrag nicht sichtbar
+  await tabs.getByRole('tab', { name: /^Fußzeile/ }).click();
+  await expect(page.getByRole('tabpanel').getByText('Impressum E2E')).toBeHidden();
+  await tabs.getByRole('tab', { name: /^Kopfzeile/ }).click();
+  await expect(page.getByRole('tabpanel').getByText('Impressum E2E')).toBeHidden();
+});
+
 test('Abmelden beendet die Session', async ({ page }) => {
   await login(page);
   await page.getByRole('button', { name: 'Abmelden' }).click();

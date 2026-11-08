@@ -169,7 +169,7 @@ function NavEditForm({
         <Field label="Bereich">
           <select value={location} onChange={(e) => setLocation(e.target.value)}>
             <option value="header">Kopfzeile</option>
-            <option value="footer">Footer</option>
+            <option value="footer">Fußzeile</option>
             <option value="legal">Rechtliches</option>
           </select>
         </Field>
@@ -224,8 +224,15 @@ function NavEditForm({
   );
 }
 
+const NAV_TABS = [
+  { key: 'header', label: 'Kopfzeile' },
+  { key: 'footer', label: 'Fußzeile' },
+  { key: 'legal', label: 'Rechtliches' },
+] as const;
+
 export function NavigationPage() {
   const [locale, setLocale] = useLocale();
+  const [tab, setTab] = useState<(typeof NAV_TABS)[number]['key']>('header');
   const q = useQuery({
     queryKey: ['navigation', locale],
     queryFn: () => api.get<{ items: any[] }>(`/navigation?locale=${locale}`),
@@ -246,7 +253,7 @@ export function NavigationPage() {
   const create = useAction((v: any) => api.post('/navigation', { locale, ...v }), keys);
   const pageTitle = (id: string) =>
     pages.data?.pages.find((p) => p.id === id)?.title ?? '(unbekannte Seite)';
-  const { register, handleSubmit, reset, watch } = useForm({
+  const { register, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: {
       location: 'header',
       label: '',
@@ -258,6 +265,8 @@ export function NavigationPage() {
     },
   });
   const kind = watch('kind');
+  const items = q.data?.items ?? [];
+  const visible = items.filter((n) => n.location === tab);
   const target = (v: any) =>
     v.kind === 'page'
       ? { kind: 'page', pageId: v.pageId, fragment: v.fragment || null }
@@ -269,63 +278,86 @@ export function NavigationPage() {
         <div>
           <h1>Navigation</h1>
           <p className="muted">
-            Kopfzeile, Footer und „Rechtliches“. Einträge auf unveröffentlichte Seiten erscheinen
+            Kopfzeile, Fußzeile und „Rechtliches“. Einträge auf unveröffentlichte Seiten erscheinen
             erst mit der Seite.
           </p>
         </div>
         <LocaleSwitch value={locale} onChange={setLocale} />
       </div>
       {err && <Notice>{errText(err)}</Notice>}
-      <Sortable
-        items={q.data?.items ?? []}
-        getId={(n) => n.id}
-        onReorder={(n) => order.mutate(n.map((x) => x.id))}
-        render={(n, _i, handle) => (
-          <div className="sortable">
-            <div className="row between">
-              <div className="row">
-                {handle}
-                <strong>{n.label}</strong>
-                <span className="pill">{n.location}</span>
-                <span className="muted small">
-                  {n.target.kind === 'page'
-                    ? `→ ${pageTitle(n.target.pageId)}${n.target.fragment ? `#${n.target.fragment}` : ''}`
-                    : n.target.url}
-                </span>
+      <div className="tabs" role="tablist" aria-label="Navigationsbereich">
+        {NAV_TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            id={`navtab-${t.key}`}
+            aria-selected={tab === t.key}
+            aria-controls="navpanel"
+            className={`tab${tab === t.key ? ' active' : ''}`}
+            onClick={() => {
+              setTab(t.key);
+              setEditing(null);
+              setValue('location', t.key);
+            }}
+          >
+            {t.label}
+            <span className="count">{items.filter((n) => n.location === t.key).length}</span>
+          </button>
+        ))}
+      </div>
+      <div id="navpanel" role="tabpanel" aria-labelledby={`navtab-${tab}`}>
+        {visible.length === 0 && <p className="muted">Keine Einträge in diesem Bereich.</p>}
+        <Sortable
+          items={visible}
+          getId={(n) => n.id}
+          onReorder={(n) => order.mutate(n.map((x) => x.id))}
+          render={(n, _i, handle) => (
+            <div className="sortable">
+              <div className="row between">
+                <div className="row">
+                  {handle}
+                  <strong>{n.label}</strong>
+                  <span className="muted small">
+                    {n.target.kind === 'page'
+                      ? `→ ${pageTitle(n.target.pageId)}${n.target.fragment ? `#${n.target.fragment}` : ''}`
+                      : n.target.url}
+                  </span>
+                </div>
+                <div className="row">
+                  <select
+                    aria-label="Status"
+                    value={n.status}
+                    onChange={(e) => update.mutate({ id: n.id, patch: { status: e.target.value } })}
+                  >
+                    {STATUS.map((x) => (
+                      <option key={x}>{x}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn small"
+                    onClick={() => setEditing(editing === n.id ? null : n.id)}
+                  >
+                    {editing === n.id ? 'Schließen' : 'Bearbeiten'}
+                  </button>
+                  <button className="btn small danger" onClick={() => remove.mutate(n.id)}>
+                    Löschen
+                  </button>
+                </div>
               </div>
-              <div className="row">
-                <select
-                  aria-label="Status"
-                  value={n.status}
-                  onChange={(e) => update.mutate({ id: n.id, patch: { status: e.target.value } })}
-                >
-                  {STATUS.map((x) => (
-                    <option key={x}>{x}</option>
-                  ))}
-                </select>
-                <button
-                  className="btn small"
-                  onClick={() => setEditing(editing === n.id ? null : n.id)}
-                >
-                  {editing === n.id ? 'Schließen' : 'Bearbeiten'}
-                </button>
-                <button className="btn small danger" onClick={() => remove.mutate(n.id)}>
-                  Löschen
-                </button>
-              </div>
+              {editing === n.id && (
+                <NavEditForm
+                  item={n}
+                  pages={pages.data?.pages ?? []}
+                  saving={update.isPending}
+                  onSave={(patch) => update.mutate({ id: n.id, patch })}
+                  onCancel={() => setEditing(null)}
+                />
+              )}
             </div>
-            {editing === n.id && (
-              <NavEditForm
-                item={n}
-                pages={pages.data?.pages ?? []}
-                saving={update.isPending}
-                onSave={(patch) => update.mutate({ id: n.id, patch })}
-                onCancel={() => setEditing(null)}
-              />
-            )}
-          </div>
-        )}
-      />
+          )}
+        />
+      </div>
       <h2>Neuer Eintrag</h2>
       <form
         className="card"
@@ -336,14 +368,14 @@ export function NavigationPage() {
             status: v.status,
             target: target(v),
           });
-          reset();
+          reset({ location: tab });
         })}
       >
         <div className="grid3">
           <Field label="Bereich">
             <select {...register('location')}>
               <option value="header">Kopfzeile</option>
-              <option value="footer">Footer</option>
+              <option value="footer">Fußzeile</option>
               <option value="legal">Rechtliches</option>
             </select>
           </Field>
