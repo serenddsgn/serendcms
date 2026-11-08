@@ -242,7 +242,9 @@ video {
 .mask {
   display: block;
   overflow: hidden;
-  padding-bottom: 0.06em;
+  /* Unterlängen (g, p, y, Komma) ragen bei line-height < 1 unter die Zeilenbox: Platz lassen, Abstand per Margin zurücknehmen */
+  padding-bottom: 0.24em;
+  margin-bottom: -0.24em;
 }
 .mask > span {
   display: inline-block;
@@ -253,8 +255,8 @@ video {
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
+  padding-bottom: 0.24em;
+  margin-bottom: -0.24em;
 }
 .w > span {
   display: inline-block;
@@ -719,6 +721,20 @@ a.loc {
   scale: 0.9;
   transition-duration: 0.12s;
 }
+/* Mobil (schmal oder Touch ohne Hover): Titel und Kategorie dauerhaft zeigen, den „Ansehen"-Kreis ausblenden */
+@media (hover: none), (max-width: 820px) {
+  .tile .cap {
+    transform: none;
+    opacity: 1;
+  }
+  .tile .look,
+  .tile.follow .look {
+    display: none;
+  }
+  .tile.follow {
+    cursor: pointer;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .tile.follow .look {
     transition: opacity 0.15s;
@@ -826,6 +842,29 @@ a.loc {
 @media (min-width: 901px) {
   .hero-h1 {
     font-size: clamp(48px, calc((min(100vw, 1360px) - 304px) / (var(--hl, 24) * 0.46)), 112px);
+  }
+}
+/* Einspaltig fließen die Zeilen als ein Satz zusammen (Umbruch nach Platz, nicht nach Zeilenvorgabe) */
+@media (max-width: 900px) {
+  .hero-h1 {
+    text-wrap: balance;
+  }
+  .hero-h1 .mask {
+    display: inline;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+  .hero-h1 .mask > span {
+    display: inline;
+    transform: none;
+    opacity: 0;
+    animation: fadein 1s var(--ease-out) forwards;
+  }
+}
+@keyframes fadein {
+  to {
+    opacity: 1;
   }
 }
 .hero-grid {
@@ -1481,6 +1520,8 @@ a.loc {
 @media (max-width: 820px) {
   .bento {
     grid-template-columns: 1fr;
+    /* feste 330 px aus der Desktop-Regel würden die Kacheln (aspect-ratio) überlappen lassen */
+    grid-auto-rows: auto;
   }
   .bento > * {
     grid-column: auto !important;

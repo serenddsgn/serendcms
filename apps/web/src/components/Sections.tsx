@@ -48,11 +48,14 @@ export function Hero({ b }: { b: B<typeof HeroBlock> }) {
           style={`margin:0;line-height:.98;letter-spacing:-.055em;--hl:${longest}`}
         >
           {b.headline.map((line, i) => (
-            <span class="mask">
-              <span style={`animation-delay:${delays[i] ?? '1.1s'}`}>
-                <Runs runs={line} />
+            <>
+              {i > 0 && ' '}
+              <span class="mask">
+                <span style={`animation-delay:${delays[i] ?? '1.1s'}`}>
+                  <Runs runs={line} />
+                </span>
               </span>
-            </span>
+            </>
           ))}
         </h1>
         <div class="hero-grid" style="margin-top:56px">
