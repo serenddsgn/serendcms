@@ -16,9 +16,11 @@ export const GET: APIRoute = async ({ props }) => {
   if (!entry) return new Response('not found', { status: 404 });
   const siteName = setting(entry.locale, 'seo.defaults').siteName;
   const project = entry.kind === 'project' ? entry.project : undefined;
-  const cover = project?.revision.coverMediaId
+  const coverMedia = project?.revision.coverMediaId
     ? data().mediaById.get(project.revision.coverMediaId)
     : undefined;
+  // Ein Video als Cover liefert kein Standbild: das OG-Bild bekommt dann nur Farbe und Titel.
+  const cover = coverMedia && !coverMedia.mime.startsWith('video/') ? coverMedia : undefined;
   const title =
     entry.kind === 'project'
       ? entry.project.revision.title

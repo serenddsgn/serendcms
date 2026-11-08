@@ -30,7 +30,8 @@ export const mediaRoutes: FastifyPluginAsyncZod<{ mediaService: MediaService }> 
     {
       schema: {
         tags,
-        summary: 'Bild hochladen (multipart/form-data, Feld „file“; Typ per Magic Bytes geprüft)',
+        summary:
+          'Bild oder Video (MP4/WebM) hochladen (multipart/form-data, Feld „file“; Typ per Magic Bytes geprüft)',
         response: { 201: MediaResponse, ...errorResponses },
       },
     },
@@ -104,7 +105,22 @@ export const mediaRoutes: FastifyPluginAsyncZod<{ mediaService: MediaService }> 
     { schema: { tags, summary: 'Originaldatei (nur Admin-Vorschau)', params: MediaIdParams } },
     async (request, reply) => {
       const { buffer, mime } = await mediaService.file(request.params.id);
-      return reply.headers({ ...SAFE_FILE_HEADERS, 'content-type': mime }).send(buffer);
+      reply.headers({ ...SAFE_FILE_HEADERS, 'content-type': mime, 'accept-ranges': 'bytes' });
+      // Browser (Safari vor allem) laden Videos nur mit Range-Unterstützung
+      const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range ?? '');
+      if (range && (range[1] || range[2])) {
+        const total = buffer.length;
+        const start = range[1] ? Number(range[1]) : Math.max(0, total - Number(range[2]));
+        const end = range[1] && range[2] ? Math.min(Number(range[2]), total - 1) : total - 1;
+        if (start > end || start >= total) {
+          return reply.status(416).header('content-range', `bytes */${total}`).send();
+        }
+        return reply
+          .status(206)
+          .header('content-range', `bytes ${start}-${end}/${total}`)
+          .send(buffer.subarray(start, end + 1));
+      }
+      return reply.send(buffer);
     },
   );
 
@@ -113,14 +129,14 @@ export const mediaRoutes: FastifyPluginAsyncZod<{ mediaService: MediaService }> 
     {
       schema: {
         tags,
-        summary: 'Vorschaubild (WebP)',
+        summary: 'Vorschaubild (WebP; für Videos ein Platzhalter)',
         params: MediaIdParams,
         querystring: ThumbQuery,
       },
     },
     async (request, reply) => {
-      const buffer = await mediaService.thumb(request.params.id, request.query.w);
-      return reply.headers({ ...SAFE_FILE_HEADERS, 'content-type': 'image/webp' }).send(buffer);
+      const { buffer, mime } = await mediaService.thumb(request.params.id, request.query.w);
+      return reply.headers({ ...SAFE_FILE_HEADERS, 'content-type': mime }).send(buffer);
     },
   );
 };

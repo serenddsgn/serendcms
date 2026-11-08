@@ -28,7 +28,7 @@ export interface AppConfig {
     from: string;
   };
   argon2: { memoryCost: number; timeCost: number; parallelism: number };
-  media: { storageDir: string; maxBytes: number };
+  media: { storageDir: string; maxBytes: number; videoMaxBytes: number };
   siteOrigin: string;
   previewUrl: string;
   contact: { notifyTo: string | undefined; retentionDays: number };
@@ -98,6 +98,12 @@ const EnvSchema = z.object({
     .min(1024)
     .max(100 * 1024 * 1024)
     .default(15 * 1024 * 1024),
+  MEDIA_VIDEO_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(500 * 1024 * 1024)
+    .default(60 * 1024 * 1024),
 });
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost']);
@@ -191,7 +197,11 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       branch: e.DEPLOY_BRANCH,
     },
     caddyReloadCommand: e.CADDY_RELOAD_COMMAND,
-    media: { storageDir: resolve(e.STORAGE_DIR), maxBytes: e.MEDIA_MAX_BYTES },
+    media: {
+      storageDir: resolve(e.STORAGE_DIR),
+      maxBytes: e.MEDIA_MAX_BYTES,
+      videoMaxBytes: e.MEDIA_VIDEO_MAX_BYTES,
+    },
     argon2: { memoryCost: 19456, timeCost: 2, parallelism: 1 },
     rateLimit: {
       loginMax: e.LOGIN_RATE_LIMIT_MAX,

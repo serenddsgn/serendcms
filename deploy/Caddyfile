@@ -30,9 +30,9 @@
 	@legacy_de path_regexp legacy_de ^/de(?:/(.*))?$
 	redir @legacy_de /{re.legacy_de.1} 301
 
-	@immutable path /img/* /_assets/* /fonts/*
+	@immutable path /img/* /video/* /_assets/* /fonts/*
 	header @immutable Cache-Control "public, max-age=31536000, immutable"
-	@pages not path /img/* /_assets/* /fonts/* /og/*
+	@pages not path /img/* /video/* /_assets/* /fonts/* /og/*
 	header @pages Cache-Control "public, max-age=0, must-revalidate"
 	@md path *.md
 	header @md Content-Type "text/markdown; charset=utf-8"

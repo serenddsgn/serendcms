@@ -104,11 +104,11 @@ export function createMaintenanceService({
         logoMediaId: string | null;
       },
     ): Promise<MaintenanceDto> {
-      if (
-        body.logoMediaId &&
-        (await mediaRepo(db).findManyByIds([body.logoMediaId])).length === 0
-      ) {
-        throw new AppError(400, 'validation_error', 'Das Logo existiert nicht.');
+      if (body.logoMediaId) {
+        const [logo] = await mediaRepo(db).findManyByIds([body.logoMediaId]);
+        if (!logo) throw new AppError(400, 'validation_error', 'Das Logo existiert nicht.');
+        if (logo.mime.startsWith('video/'))
+          throw new AppError(400, 'validation_error', 'Das Logo muss ein Bild sein.');
       }
       await row();
       const [updated] = await db

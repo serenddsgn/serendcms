@@ -159,6 +159,24 @@ if (loc && locText) {
   });
 }
 
+// ── Videos (Cover, Galerie, Inhaltsbilder): nur im Sichtfeld abspielen; bei reduzierter Bewegung bleibt das erste Bild ──
+{
+  const videos = $$<HTMLVideoElement>('video[data-autoplay]');
+  if (videos.length > 0 && !reduced) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const v = e.target as HTMLVideoElement;
+          if (e.isIntersecting) void v.play().catch(() => {});
+          else v.pause();
+        }
+      },
+      { rootMargin: '80px' },
+    );
+    videos.forEach((v) => io.observe(v));
+  }
+}
+
 // ── Projekt-Kacheln: „Ansehen" ersetzt den Mauszeiger und folgt ihm ───
 if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
   const HALF = 48; // halbe Kreisbreite, entspricht .look in global.css

@@ -103,7 +103,13 @@ export async function buildApp({
 
   await app.register(cookie);
   await app.register(multipart, {
-    limits: { fileSize: config.media.maxBytes, files: 1, fields: 5, parts: 6 },
+    // Grundlimit für Videos; Bilder werden nach der Typerkennung gegen das kleinere Bildlimit geprüft.
+    limits: {
+      fileSize: Math.max(config.media.maxBytes, config.media.videoMaxBytes),
+      files: 1,
+      fields: 5,
+      parts: 6,
+    },
   });
   await app.register(rateLimit, {
     global: false,
@@ -130,7 +136,11 @@ export async function buildApp({
   const authService = createAuthService({ db, config, hasher });
   const usersService = createUsersService({ db, hasher });
   const storageImpl = storage ?? createLocalStorage(config.media.storageDir);
-  const mediaService = createMediaService({ db, storage: storageImpl });
+  const mediaService = createMediaService({
+    db,
+    storage: storageImpl,
+    maxImageBytes: config.media.maxBytes,
+  });
   const buildsService = createBuildsService({
     db,
     queue: queue ?? { enqueue: async () => {} },

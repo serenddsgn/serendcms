@@ -49,10 +49,12 @@ export function markdownFor(e: Entry): string {
       r.liveUrl ? `- ${ui.live}: ${r.liveUrl}` : null,
       `- URL: ${abs(e.url)}`,
     ].filter(Boolean);
-    const gallery = r.gallery.map(
-      (g) =>
-        `![${altOf(g.mediaId, e.locale, g.altOverride)}](${abs(`/img/${(data().mediaById.get(g.mediaId)?.sha256 ?? '').slice(0, 12)}-1200.webp`)})`,
-    );
+    const gallery = r.gallery
+      .filter((g) => !data().mediaById.get(g.mediaId)?.mime.startsWith('video/'))
+      .map(
+        (g) =>
+          `![${altOf(g.mediaId, e.locale, g.altOverride)}](${abs(`/img/${(data().mediaById.get(g.mediaId)?.sha256 ?? '').slice(0, 12)}-1200.webp`)})`,
+      );
     return [
       head.join('\n\n'),
       meta.join('\n'),

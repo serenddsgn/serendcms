@@ -6,10 +6,16 @@ import type { MediaDto, UpdateMediaBody } from '@serend/schema';
 import type { z } from 'zod';
 import { AppError, errors } from '../lib/errors.js';
 import { detectImageType, inspectImage } from '../lib/image.js';
+import { detectVideoType, inspectVideo } from '../lib/video.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { mediaRepo } from '../repositories/media.repo.js';
 import { StorageNotFoundError, type Storage } from '../storage/storage.js';
 import { toMediaDto } from './dto.js';
+
+/** Ohne ffmpeg gibt es kein Vorschaubild; die Admin-Oberfläche zeigt für Videos diesen Platzhalter. */
+const VIDEO_PLACEHOLDER = Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100"><rect width="160" height="100" fill="#1d1d1c"/><circle cx="80" cy="50" r="22" fill="none" stroke="#f5f5f4" stroke-width="3"/><path d="M73 38v24l20-12z" fill="#f5f5f4"/></svg>',
+);
 
 function sanitizeFilename(name: string): string {
   const clean = [...basename(name)]
@@ -22,7 +28,16 @@ function sanitizeFilename(name: string): string {
   return (clean || 'upload').slice(0, 200);
 }
 
-export function createMediaService({ db, storage }: { db: Database; storage: Storage }) {
+export function createMediaService({
+  db,
+  storage,
+  maxImageBytes = 15 * 1024 * 1024,
+}: {
+  db: Database;
+  storage: Storage;
+  /** Bildlimit; das Multipart-Limit der Route gilt für das (größere) Videolimit. */
+  maxImageBytes?: number;
+}) {
   const repo = mediaRepo(db);
 
   async function getRow(id: string) {
@@ -33,15 +48,21 @@ export function createMediaService({ db, storage }: { db: Database; storage: Sto
 
   return {
     async upload(actorId: string, originalName: string, buffer: Buffer): Promise<MediaDto> {
-      const detected = detectImageType(buffer);
+      const image = detectImageType(buffer);
+      const detected = image ?? detectVideoType(buffer);
       if (!detected) {
         throw new AppError(
           415,
           'unsupported_media_type',
-          'Nur JPEG, PNG, WebP und AVIF sind erlaubt.',
+          'Nur JPEG, PNG, WebP, AVIF, MP4 und WebM sind erlaubt.',
         );
       }
-      const { width, height } = await inspectImage(buffer, detected);
+      if (image && buffer.length > maxImageBytes) {
+        throw new AppError(413, 'payload_too_large', 'Die Datei ist zu groß.');
+      }
+      const { width, height } = image
+        ? await inspectImage(buffer, image)
+        : inspectVideo(buffer, detected as ReturnType<typeof detectVideoType> & object);
       const year = new Date().getUTCFullYear();
       const storageKey = `${year}/${randomUUID()}.${detected.ext}`;
       await storage.put(storageKey, buffer);
@@ -114,13 +135,17 @@ export function createMediaService({ db, storage }: { db: Database; storage: Sto
       }
     },
 
-    async thumb(id: string, width: number): Promise<Buffer> {
-      const { buffer } = await this.file(id);
-      return sharp(buffer)
-        .rotate()
-        .resize({ width, withoutEnlargement: true })
-        .webp({ quality: 78 })
-        .toBuffer();
+    async thumb(id: string, width: number): Promise<{ buffer: Buffer; mime: string }> {
+      const { buffer, mime } = await this.file(id);
+      if (mime.startsWith('video/')) return { buffer: VIDEO_PLACEHOLDER, mime: 'image/svg+xml' };
+      return {
+        buffer: await sharp(buffer)
+          .rotate()
+          .resize({ width, withoutEnlargement: true })
+          .webp({ quality: 78 })
+          .toBuffer(),
+        mime: 'image/webp',
+      };
     },
   };
 }

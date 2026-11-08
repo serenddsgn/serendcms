@@ -9,6 +9,9 @@ import sharp from 'sharp';
 import type { BuildMedia } from '@serend/schema';
 import { CACHE_DIR, PREVIEW_MODE, data, readOriginal } from './data';
 
+/** Videos (MP4/WebM) werden unverändert ausgeliefert, nicht über sharp umgerechnet. */
+export const isVideo = (m: Pick<BuildMedia, 'mime'>): boolean => m.mime.startsWith('video/');
+
 export const WIDTHS = [480, 800, 1200, 1800, 2400];
 export const FORMATS = ['avif', 'webp'] as const;
 export type Format = (typeof FORMATS)[number];
@@ -50,6 +53,45 @@ export function pictureData(mediaId: string): PictureData {
   };
 }
 
+const videoExt = (m: Pick<BuildMedia, 'mime'>) => (m.mime === 'video/webm' ? 'webm' : 'mp4');
+export const videoName = (m: Pick<BuildMedia, 'sha256' | 'mime'>) =>
+  `${m.sha256.slice(0, 12)}.${videoExt(m)}`;
+
+export interface VideoData {
+  width: number;
+  height: number;
+  src: string;
+  type: string;
+}
+
+/** Video-URL: statischer Build `/video/<hash>.<ext>`, SSR-Vorschau endungslos `/preview-video/<hash>-<ext>`. */
+export function videoData(mediaId: string): VideoData {
+  const m = data().mediaById.get(mediaId);
+  if (!m) throw new Error(`Medium ${mediaId} fehlt im Build-Datenstand`);
+  return {
+    width: m.width,
+    height: m.height,
+    type: m.mime,
+    src: PREVIEW_MODE
+      ? `/preview-video/${m.sha256.slice(0, 12)}-${videoExt(m)}`
+      : `/video/${videoName(m)}`,
+  };
+}
+
+/** Alle Videos, die in den statischen Build kopiert werden (für getStaticPaths des Video-Endpunkts). */
+export function allVideos(): { file: string; media: BuildMedia }[] {
+  return data()
+    .media.filter(isVideo)
+    .map((media) => ({ file: videoName(media), media }));
+}
+
+/** Löst `<sha12>.<ext>` oder `<sha12>-<ext>` zu einem Video auf. */
+export function findVideo(file: string): BuildMedia | undefined {
+  const m = /^([0-9a-f]{12})[.-](mp4|webm)$/.exec(file);
+  if (!m) return undefined;
+  return data().media.find((x) => isVideo(x) && videoName(x) === `${m[1]}.${m[2]}`);
+}
+
 /** Alle Varianten, die gebaut werden müssen (für getStaticPaths des Bild-Endpunkts). */
 export function allVariants(): {
   file: string;
@@ -59,6 +101,7 @@ export function allVariants(): {
 }[] {
   const out = [];
   for (const m of data().media) {
+    if (isVideo(m)) continue;
     for (const width of widthsFor(m))
       for (const format of FORMATS)
         out.push({ file: variantName(m, width, format), media: m, width, format });

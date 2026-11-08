@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { LOCALES, Uuid } from './common.js';
 
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
+export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'] as const;
+
+/** Videos dürfen nur dort stehen, wo bewegte Bilder sinnvoll sind (Cover, Galerie, Inhaltsbilder). */
+export const isVideoMime = (mime: string): boolean => mime.startsWith('video/');
 
 /** Alt-Text je Sprache; fehlende Sprachen sind erlaubt, aber nicht veröffentlichbar. */
 export const AltTexts = z.partialRecord(z.enum(LOCALES), z.string().trim().max(300));

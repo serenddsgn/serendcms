@@ -143,9 +143,15 @@ export function createPagesService({
       ...(input.ogMediaId ? [input.ogMediaId] : []),
     ];
     const unique = [...new Set(mediaIds)];
-    if ((await mediaRepo(tx).findManyByIds(unique)).length !== unique.length) {
+    const foundMedia = await mediaRepo(tx).findManyByIds(unique);
+    if (foundMedia.length !== unique.length) {
       throw validation('Ein referenziertes Medium existiert nicht.');
     }
+    if (
+      input.ogMediaId &&
+      foundMedia.find((m) => m.id === input.ogMediaId)?.mime.startsWith('video/')
+    )
+      throw validation('Das Social-Media-Bild muss ein Bild sein, kein Video.');
     const { pageIds, projectIds } = collectLinkTargets(input.content);
     for (const id of pageIds) {
       const p = await pagesRepo(tx).findPage(id);

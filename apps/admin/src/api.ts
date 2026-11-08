@@ -50,4 +50,5 @@ export const api = {
   },
 };
 
+export const fileUrl = (id: string) => `${BASE}/media/${id}/file`;
 export const thumbUrl = (id: string, w = 320) => `${BASE}/media/${id}/thumb?w=${w}`;

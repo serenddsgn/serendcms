@@ -54,7 +54,11 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       branch: 'main',
     },
     caddyReloadCommand: undefined,
-    media: { storageDir: mkdtempSync(join(tmpdir(), 'serend-media-')), maxBytes: 1024 * 1024 },
+    media: {
+      storageDir: mkdtempSync(join(tmpdir(), 'serend-media-')),
+      maxBytes: 1024 * 1024,
+      videoMaxBytes: 4 * 1024 * 1024,
+    },
     argon2: { memoryCost: 1024, timeCost: 1, parallelism: 1 }, // nur für Tests billig
     rateLimit: { loginMax: 1000, loginWindowMs: 60_000, contactMax: 1000, contactWindowMs: 60_000 },
     ...overrides,
@@ -311,4 +315,22 @@ export async function editorSession(
   role: 'admin' | 'editor' = 'editor',
 ) {
   return login(t, (await createUser(t, { role })).email);
+}
+
+/** Minimaler MP4-Container: ftyp + moov/trak/tkhd mit Breite und Höhe (16.16-Festkomma). */
+export function mp4Buffer(width: number, height: number): Buffer {
+  const box = (type: string, ...parts: Buffer[]) => {
+    const body = Buffer.concat(parts);
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(8 + body.length, 0);
+    head.write(type, 4, 'latin1');
+    return Buffer.concat([head, body]);
+  };
+  const tkhd = Buffer.alloc(84);
+  tkhd.writeUInt32BE(width * 65536, 76);
+  tkhd.writeUInt32BE(height * 65536, 80);
+  return Buffer.concat([
+    box('ftyp', Buffer.from('isom\0\0\0\0isomiso2', 'latin1')),
+    box('moov', box('trak', box('tkhd', tkhd))),
+  ]);
 }

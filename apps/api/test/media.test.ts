@@ -8,6 +8,7 @@ import {
   editorSession,
   expectError,
   imageBuffer,
+  mp4Buffer,
   multipart,
   createTestApp,
   uploadImage,
@@ -120,6 +121,68 @@ describe('Upload und Validierung', () => {
     expect(res.json().media.filename).toBe('passwd.png');
     const files = readdirSync(t.config.media.storageDir, { recursive: true }).map(String);
     expect(files.every((f) => !f.includes('passwd'))).toBe(true);
+  });
+});
+
+/** Minimales WebM: EBML-Kopf + Segment/Tracks/TrackEntry/Video mit PixelWidth/PixelHeight. */
+function webmBuffer(width: number, height: number): Buffer {
+  const el = (id: number[], body: Buffer) =>
+    Buffer.concat([Buffer.from(id), Buffer.from([0x80 | body.length]), body]);
+  const u16 = (n: number) => Buffer.from([n >> 8, n & 0xff]);
+  const video = el([0xe0], Buffer.concat([el([0xb0], u16(width)), el([0xba], u16(height))]));
+  const tracks = el([0x16, 0x54, 0xae, 0x6b], el([0xae], video));
+  return Buffer.concat([
+    Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x80]),
+    el([0x18, 0x53, 0x80, 0x67], tracks),
+  ]);
+}
+
+describe('Videos', () => {
+  it.each([
+    ['mp4', 'video/mp4', mp4Buffer(1920, 1080)],
+    ['webm', 'video/webm', webmBuffer(640, 360)],
+  ] as const)(
+    'akzeptiert %s und liest die Abmessungen aus dem Container',
+    async (ext, mime, data) => {
+      const res = await uploadImage(t, ed, {
+        filename: `film.${ext}`,
+        contentType: 'application/octet-stream',
+        data,
+      });
+      expect(res.statusCode).toBe(201);
+      const m = res.json().media;
+      expect(m.mime).toBe(mime);
+      expect(m.width).toBe(ext === 'mp4' ? 1920 : 640);
+      expect(m.height).toBe(ext === 'mp4' ? 1080 : 360);
+    },
+  );
+
+  it('lehnt Container ohne Videospur ab', async () => {
+    expectError(
+      await uploadImage(t, ed, { data: Buffer.from('....ftypisom\0\0\0\0isom', 'latin1') }),
+      415,
+      'unsupported_media_type',
+    );
+  });
+
+  it('erlaubt Videos über dem Bildlimit, Bilder aber nicht', async () => {
+    const big = Buffer.concat([mp4Buffer(320, 180), Buffer.alloc(2 * 1024 * 1024)]);
+    expect((await uploadImage(t, ed, { data: big })).statusCode).toBe(201);
+  });
+
+  it('unterstützt Range-Anfragen und liefert für Videos ein Platzhalter-Vorschaubild', async () => {
+    const res = await uploadImage(t, ed, { data: mp4Buffer(320, 180) });
+    const id = res.json().media.id as string;
+    const range = await t.app.inject({
+      method: 'GET',
+      url: `/api/v1/media/${id}/file`,
+      headers: { cookie: ed.cookie, range: 'bytes=0-7' },
+    });
+    expect(range.statusCode).toBe(206);
+    expect(range.rawPayload.length).toBe(8);
+    expect(range.headers['content-range']).toMatch(/^bytes 0-7\//);
+    const thumb = await as(t, ed, 'GET', `/api/v1/media/${id}/thumb`);
+    expect(thumb.headers['content-type']).toBe('image/svg+xml');
   });
 });
 

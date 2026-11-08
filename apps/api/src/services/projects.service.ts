@@ -89,6 +89,8 @@ export function createProjectsService({ db, onPublishedChange }: ProjectsService
     const found = await mediaRepo(tx).findManyByIds(wanted);
     if (found.length !== wanted.length)
       throw validation('Ein referenziertes Medium existiert nicht.');
+    if (input.ogMediaId && found.find((m) => m.id === input.ogMediaId)?.mime.startsWith('video/'))
+      throw validation('Das Social-Media-Bild muss ein Bild sein, kein Video.');
 
     if (input.nextProjectId) {
       const next = await projectsRepo(tx).findProject(input.nextProjectId);

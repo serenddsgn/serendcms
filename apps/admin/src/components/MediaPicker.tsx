@@ -29,13 +29,13 @@ export function MediaPicker({
     (r) => onPick(r.media.id),
   );
   return (
-    <Modal title="Bild wählen" onClose={onClose}>
+    <Modal title="Bild oder Video wählen" onClose={onClose}>
       {(err || upload.error) && <Notice>{err ?? errText(upload.error)}</Notice>}
       <div className="row" style={{ margin: '12px 0' }}>
         <input
           ref={file}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
+          accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
           aria-label="Datei hochladen"
           style={{ maxWidth: 320 }}
         />

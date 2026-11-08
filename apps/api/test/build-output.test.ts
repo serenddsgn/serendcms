@@ -4,6 +4,7 @@
  * Entwürfe mit einem Marker an, baut die Astro-Seite und durchsucht den gesamten Output.
  */
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
@@ -25,7 +26,16 @@ import { createMediaService } from '../src/services/media.service.js';
 import { createPagesService } from '../src/services/pages.service.js';
 import { createProjectsService } from '../src/services/projects.service.js';
 import { createLocalStorage } from '../src/storage/local.js';
-import { as, createTestApp, createUser, draftBody, login, type TestApp } from './helpers.js';
+import {
+  as,
+  createTestApp,
+  createUser,
+  draftBody,
+  login,
+  mp4Buffer,
+  uploadImage,
+  type TestApp,
+} from './helpers.js';
 
 const run = promisify(execFile);
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
@@ -35,6 +45,7 @@ const SECRET = 'GEHEIMER-ENTWURF-7c1e';
 let t: TestApp;
 let out: string;
 let baseUrl: string;
+let videoSha: string;
 
 function* walk(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {
@@ -82,6 +93,23 @@ beforeAll(async () => {
     slug: string;
     title: string;
   }[];
+  // Video als Cover (Cardex): Datei wird unverändert ausgeliefert, kein Bild-Varianten- und kein OG-Standbild
+  const film = mp4Buffer(1280, 720);
+  videoSha = createHash('sha256').update(film).digest('hex');
+  const filmId = (await uploadImage(t, session, { filename: 'film.mp4', data: film })).json().media
+    .id as string;
+  await as(t, session, 'PATCH', `/api/v1/media/${filmId}`, { altText: { de: 'Film', en: 'Film' } });
+  const cardex = list.find((p) => p.slug === 'cardex-autoteile')!;
+  const cardexDetail = (await as(t, session, 'GET', `/api/v1/projects/${cardex.id}`)).json();
+  await as(
+    t,
+    session,
+    'PUT',
+    `/api/v1/projects/${cardex.id}/draft`,
+    draftBody(cardexDetail, { coverMediaId: filmId }),
+  );
+  await as(t, session, 'POST', `/api/v1/projects/${cardex.id}/publish`);
+
   const live = list.find((p) => p.slug === 'cista')!;
   const detail = (await as(t, session, 'GET', `/api/v1/projects/${live.id}`)).json();
   await as(
@@ -142,6 +170,25 @@ beforeAll(async () => {
   }
 }, 240_000);
 afterAll(() => t.close());
+
+describe('Video-Cover', () => {
+  it('kopiert das Video unverändert und bindet es als stummes Endlosvideo ein', () => {
+    const name = `${videoSha.slice(0, 12)}.mp4`;
+    expect(existsSync(join(out, 'video', name))).toBe(true);
+    const html = text(join(out, 'projekte/index.html'));
+    expect(html).toMatch(new RegExp(`<video[^>]*src="/video/${name}#t=0.001"[^>]*>`));
+    expect(html).toMatch(/<video[^>]*\bmuted\b[^>]*\bloop\b[^>]*\bplaysinline\b/);
+    expect(html).toContain('aria-label="Film"');
+  });
+
+  it('erzeugt für das Video keine Bildvarianten, aber weiter ein OG-Bild', () => {
+    const variants = readdirSync(join(out, 'img')).filter((f) =>
+      f.startsWith(videoSha.slice(0, 12)),
+    );
+    expect(variants).toEqual([]);
+    expect(existsSync(join(out, 'og/de/projekte/cardex-autoteile.png'))).toBe(true);
+  });
+});
 
 describe('Build-Output', () => {
   it('enthält nirgends Entwurfsinhalt (HTML, Markdown, Sitemap, llms.txt, JSON, JS, CSS)', () => {

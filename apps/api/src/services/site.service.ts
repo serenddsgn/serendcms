@@ -259,11 +259,11 @@ export function createSiteService({
         sortOrder: number;
         status: Status;
       }) {
-        if (
-          body.photoMediaId &&
-          (await mediaRepo(db).findManyByIds([body.photoMediaId])).length === 0
-        )
-          throw validation('Das Foto existiert nicht.');
+        if (body.photoMediaId) {
+          const [photo] = await mediaRepo(db).findManyByIds([body.photoMediaId]);
+          if (!photo) throw validation('Das Foto existiert nicht.');
+          if (photo.mime.startsWith('video/')) throw validation('Das Foto muss ein Bild sein.');
+        }
         const [row] = await db.insert(teamMembers).values(body).returning();
         return teamDto(row!);
       },
@@ -278,11 +278,11 @@ export function createSiteService({
           status: Status;
         }>,
       ) {
-        if (
-          patch.photoMediaId &&
-          (await mediaRepo(db).findManyByIds([patch.photoMediaId])).length === 0
-        )
-          throw validation('Das Foto existiert nicht.');
+        if (patch.photoMediaId) {
+          const [photo] = await mediaRepo(db).findManyByIds([patch.photoMediaId]);
+          if (!photo) throw validation('Das Foto existiert nicht.');
+          if (photo.mime.startsWith('video/')) throw validation('Das Foto muss ein Bild sein.');
+        }
         const [row] = await db
           .update(teamMembers)
           .set({ ...patch, updatedAt: sql`now()` })

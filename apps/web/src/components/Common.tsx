@@ -1,6 +1,6 @@
 import type { Inline } from '@serend/schema';
 import { data } from '../lib/data';
-import { pictureData } from '../lib/images';
+import { isVideo, pictureData, videoData } from '../lib/images';
 
 export const ArrowIcon = ({ size = 16 }: { size?: number }) => (
   <svg
@@ -77,9 +77,34 @@ export function Picture({
   focal = false,
   style = '',
 }: PictureProps) {
-  const p = pictureData(mediaId);
   const m = data().mediaById.get(mediaId)!;
   const pos = focal ? `object-position:${m.focalX}% ${m.focalY}%;` : '';
+  if (isVideo(m)) {
+    // Stummes Endlosvideo wie ein bewegtes Bild; site.ts spielt es nur im Sichtfeld ab (und nicht bei reduzierter Bewegung).
+    // Der Fragment-Zeitstempel zeigt ohne Skript und vor dem Abspielen das erste Bild.
+    const v = videoData(mediaId);
+    // role="img" macht das Label zulässig (stummes Bewegtbild ohne Steuerung); ohne Alt-Text rein dekorativ
+    const a11y: Record<string, string> = alt
+      ? { role: 'img', 'aria-label': alt }
+      : { 'aria-hidden': 'true' };
+    return (
+      <video
+        class="vid"
+        src={`${v.src}#t=0.001`}
+        width={v.width}
+        height={v.height}
+        {...a11y}
+        muted
+        loop
+        playsinline
+        preload={eager ? 'auto' : 'metadata'}
+        disablepictureinpicture
+        data-autoplay
+        style={pos + style}
+      />
+    );
+  }
+  const p = pictureData(mediaId);
   const priority: Record<string, string> = eager ? { fetchpriority: 'high' } : {};
   return (
     <picture>
