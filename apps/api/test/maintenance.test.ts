@@ -63,6 +63,7 @@ describe('Wartungsmodus ein- und ausschalten', () => {
     expect(html).toContain('We are reworking our');
     expect(html).toContain('noindex');
     expect(existsSync(join(dir(), 'fonts', 'plus-jakarta-sans-latin.woff2'))).toBe(true);
+    expect(existsSync(join(dir(), 'fonts', 'codec-pro-extrabold.woff2'))).toBe(true);
 
     expect((await put(admin, body({ enabled: false }))).json().maintenance.enabled).toBe(false);
     expect(existsSync(join(dir(), 'on'))).toBe(false);

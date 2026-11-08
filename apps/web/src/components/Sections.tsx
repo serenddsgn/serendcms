@@ -45,7 +45,7 @@ export function Hero({ b }: { b: B<typeof HeroBlock> }) {
       <div>
         <h1
           class="display hero-h1"
-          style={`margin:0;line-height:.98;letter-spacing:-.055em;--hl:${longest}`}
+          style={`margin:0;line-height:.98;--hl:${longest}`}
         >
           {b.headline.map((line, i) => (
             <>
@@ -227,7 +227,7 @@ export function ContactCta({ b, locale }: { b: B<typeof ContactCtaBlock>; locale
       </p>
       <h2
         class="display reveal"
-        style="margin:0;font-size:clamp(56px,9vw,150px);line-height:.92;letter-spacing:-.055em"
+        style="margin:0;font-size:clamp(56px,9vw,150px);line-height:.92"
       >
         {b.line1}
         <br />
@@ -261,7 +261,7 @@ export function PageTitle({
     >
       <h1
         class="display"
-        style="margin:0;font-size:clamp(72px,12vw,184px);line-height:.86;letter-spacing:-.055em"
+        style="margin:0;font-size:clamp(72px,12vw,184px);line-height:.86"
       >
         <span class="w">
           <span>{b.title}</span>
@@ -467,7 +467,7 @@ export function Quote({ b }: { b: B<typeof QuoteBlock> }) {
       <blockquote style="margin:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:64px 0">
         <p
           class="display"
-          style="margin:0;font-size:clamp(36px,5.4vw,80px);line-height:1;letter-spacing:-.05em"
+          style="margin:0;font-size:clamp(36px,5.4vw,80px);line-height:1"
         >
           {b.lines.map((line, i) => (
             <>

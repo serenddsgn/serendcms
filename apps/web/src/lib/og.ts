@@ -42,7 +42,7 @@ export async function renderOg(opts: {
   const text = lines
     .map(
       (l, i) =>
-        `<text x="72" y="${startY + i * (size + 6)}" font-family="Plus Jakarta Sans, Inter, Helvetica, Arial, sans-serif" font-weight="800" font-size="${size}" letter-spacing="-2" fill="#f5f5f4">${esc(l)}</text>`,
+        `<text x="72" y="${startY + i * (size + 6)}" font-family="Codec Pro, Plus Jakarta Sans, Helvetica, Arial, sans-serif" font-weight="800" font-size="${size}" fill="#f5f5f4">${esc(l)}</text>`,
     )
     .join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">

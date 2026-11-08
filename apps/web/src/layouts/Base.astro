@@ -77,8 +77,8 @@ const canonical = abs(path);
     {ogImage && <meta property="og:image:width" content="1200" />}
     {ogImage && <meta property="og:image:height" content="630" />}
     <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <link rel="preload" href="/fonts/codec-pro-extrabold.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     {jsonLd.map((j) => <script type="application/ld+json" set:html={JSON.stringify(j).replace(/</g, '\\u003c')} />)}
     <noscript><style>.pgrid[hidden],.plist[hidden]{display:revert !important}.pgrid{display:grid}.plist{display:none !important}.g,.lr,.fade,.reveal,.mask>span,.w>span{opacity:1 !important;transform:none !important;animation:none !important}</style></noscript>
   </head>

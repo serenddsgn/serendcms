@@ -37,7 +37,7 @@ export function ProjectHero({ p, locale }: { p: BuildProject; locale: Locale }) 
       <div>
         <h1
           class="display"
-          style="margin:0;font-size:clamp(56px,9.6vw,152px);letter-spacing:-.055em;line-height:.88"
+          style="margin:0;font-size:clamp(56px,9.6vw,152px);line-height:.88"
         >
           {lines.map((l, i) => (
             <>
@@ -183,7 +183,7 @@ export function NextProject({ p, locale }: { p: BuildProject; locale: Locale }) 
         </span>
         <span
           class="nt display"
-          style="display:block;font-size:clamp(56px,9vw,140px);letter-spacing:-.055em;line-height:.9"
+          style="display:block;font-size:clamp(56px,9vw,140px);line-height:.9"
         >
           {next.revision.title} →
         </span>

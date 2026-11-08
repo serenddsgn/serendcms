@@ -31,3 +31,6 @@ apps/web/.build-tmp/
 .claude/
 dist-preview/
 apps/web/dist-test-*/
+
+# Import-Quellen (Dumps, Lite-HTML der alten Seite)
+import/

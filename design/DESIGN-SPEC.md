@@ -46,10 +46,10 @@ Alle Werte stehen in `tokens.css` und werden als CSS-Variablen (oder Tailwind-Th
 | Status-Punkt | `#1aa179` | `#1aa179` |
 
 **Schriften**
-- **Display:** Plus Jakarta Sans 700/800, Laufweite −0.035em, auf großen Titeln −0.055em, Zeilenhöhe 0.86–1.0.
-- **Text/UI:** Inter 400/500/600.
+- **Display:** Codec Pro ExtraBold (800, lokal als WOFF2), normale Laufweite (kein negatives Letterspacing), Zeilenhöhe 0.86–1.0.
+- **Text/UI:** Plus Jakarta Sans 400/500/600.
 - **Labels:** Geist Mono 500, 11 px, Versalien, Laufweite .08em, Farbe `--mute`.
-- **Platzhalter:** Die Hausschrift „CPE“ der aktuellen Seite ist hier durch Plus Jakarta Sans ersetzt. Liegt die Lizenz als Webfont vor, ersetzt sie `--font-display`.
+- **Hausschrift:** Codec Pro (die „CPE“-Webfont der bisherigen Seite) ist als `--font-display` eingebunden.
 
 **Raster:** Container 1360 px, Seitenränder 40 px (Phone 16 px). Viele Abschnitte nutzen eine **Label-Spalte von 200 px links** und den Inhalt rechts. Unter 820/900 px stapeln sie sich.
 
@@ -67,7 +67,7 @@ Alle Werte stehen in `tokens.css` und werden als CSS-Variablen (oder Tailwind-Th
 
 ### 3.1 Header (sticky)
 - 80 px hoch, Hintergrund `--bg` bei 78 % mit `backdrop-filter: blur(14px)`, untere Linie `--line`.
-- **Links:** Wortmarke `serend.design®`, Plus Jakarta 700, 18 px.
+- **Links:** Wortmarke `serend.design®`, Codec Pro 800, 18 px.
 - **Mitte:** `Arbeiten · Leistungen · Studio` (EN: `Work · Services · Studio`), 14 px, Abstand 36 px.
   - Hover: 1-px-Unterstreichung wächst von links (`scaleX`, 0.5 s).
   - Aktive Seite: Unterstreichung bleibt stehen, dazu `aria-current="page"`.
@@ -128,10 +128,10 @@ Komponente `<LiquidText>`: Hintergrund `--liquid` mit `background-clip:text`, Gr
    - **Rechts:** Zähler „12 / 12“ (`aria-live`) und ein Segment „Raster | Liste“ mit gleitendem Thumb.
 3. **Rasteransicht:** 3 Spalten, Spaltenabstand 20 px, Zeilenabstand 56 px.
    - Seitenverhältnisse wechseln 4:5 / 1:1 / 4:5, die Spalten sind vertikal um 0 / 64 / 24 px versetzt (ruhiges Mauerwerk).
-   - Unter jedem Bild: Name (Inter 600, 18 px) und Jahr (Mono).
+   - Unter jedem Bild: Name (Plus Jakarta Sans 600, 18 px) und Jahr (Mono).
    - Hover: Bild 1.04, Kategorie-Tag blendet oben links ein, Name rückt 6 px nach rechts.
    - Beim Filterwechsel blenden die Kacheln gestaffelt neu ein (50 ms pro Kachel).
-4. **Listenansicht** (`02-projekte-*-listenansicht.png`): Kopfzeile Nr. / Kunde / Bereich / Jahr. Zeilen mit großem Namen (Plus Jakarta 700).
+4. **Listenansicht** (`02-projekte-*-listenansicht.png`): Kopfzeile Nr. / Kunde / Bereich / Jahr. Zeilen mit großem Namen (Codec Pro 800).
    - Hover: Ein Punkt in der Projektfarbe poppt vor dem Namen auf, der Name rückt 12 px nach rechts. Ein Vorschaubild (200×250, um 3° gedreht) springt rechts neben der Zeile auf.
 5. **Phone:** zwei Spalten ab 900 px, eine ab 560 px. In der Liste nur Nr., Name und Pfeil, ohne Vorschau.
 

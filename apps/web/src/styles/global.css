@@ -1,18 +1,18 @@
 /* serend.design · globale Styles. Tokens und Prototyp-Regeln (design/tokens.css, design/prototype/*.html). */
 
 @font-face {
-  font-family: 'Plus Jakarta Sans';
+  font-family: 'Codec Pro';
   font-style: normal;
-  font-weight: 500 800;
+  font-weight: 800;
   font-display: swap;
-  src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+  src: url('/fonts/codec-pro-extrabold.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Plus Jakarta Sans';
   font-style: normal;
-  font-weight: 300 600;
+  font-weight: 200 800;
   font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
+  src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Geist Mono';
@@ -54,8 +54,8 @@
     var(--liquid-3),
     var(--liquid-4)
   );
-  --font-display: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
-  --font-body: Inter, system-ui, sans-serif;
+  --font-display: 'Codec Pro', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
   --container: 1360px;
   --gutter: 40px;
@@ -135,7 +135,6 @@ video {
 .display {
   font-family: var(--font-display);
   font-weight: 800;
-  letter-spacing: -0.035em;
 }
 .mono,
 .eyebrow {
@@ -596,7 +595,6 @@ a.loc {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 44px;
-  letter-spacing: -0.04em;
   padding: 6px 0;
 }
 .menuclose {
@@ -1065,7 +1063,6 @@ a.loc {
 .g .t b {
   font-weight: 600;
   font-size: 18px;
-  letter-spacing: -0.015em;
   transition: transform 0.5s var(--ease-out);
 }
 .g:hover .t b {
@@ -1096,7 +1093,6 @@ a.loc {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(22px, 2.6vw, 36px);
-  letter-spacing: -0.035em;
   transition: transform 0.6s var(--ease-out);
 }
 .lr:hover .nm {
@@ -1295,7 +1291,6 @@ a.loc {
 .ch .lead {
   font-size: clamp(24px, 2.4vw, 32px);
   line-height: 1.4;
-  letter-spacing: -0.02em;
   color: var(--fg);
 }
 .ch .label {
@@ -1634,7 +1629,6 @@ a.loc {
   margin: 24px 0 28px;
   font-size: clamp(44px, 6.4vw, 104px);
   line-height: 0.95;
-  letter-spacing: -0.05em;
 }
 .iq-lead h2 span {
   color: var(--mute);
@@ -1777,7 +1771,6 @@ a.loc {
   margin: 0;
   font-size: clamp(40px, 5vw, 72px);
   line-height: 1;
-  letter-spacing: -0.045em;
 }
 .iq-done p {
   margin: 0;

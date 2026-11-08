@@ -2,7 +2,7 @@
    Quelle der Wahrheit für Farben, Typo, Abstände, Radien und Bewegung.
    Dunkel ist der Default; .light auf <html> schaltet um. */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');  /* Codec Pro: lokal, /fonts/codec-pro-extrabold.woff2 */
 
 :root {
   /* Farben · Dunkel (Default) */
@@ -37,11 +37,9 @@
   --liquid-line: linear-gradient(90deg, var(--liquid-1), var(--liquid-2), var(--liquid-3), var(--liquid-4));
 
   /* Typografie */
-  --font-display: "Plus Jakarta Sans", Inter, system-ui, sans-serif;  /* 700/800 */
-  --font-body: Inter, system-ui, sans-serif;                          /* 400/500/600 */
+  --font-display: "Codec Pro", "Plus Jakarta Sans", system-ui, sans-serif;  /* 800 */
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;            /* 400/500/600 */
   --font-mono: "Geist Mono", ui-monospace, monospace;                 /* Labels */
-  --tracking-display: -0.035em;
-  --tracking-hero: -0.055em;
   --fs-hero: clamp(48px, 7.4vw, 112px);
   --fs-page-title: clamp(72px, 12vw, 184px);
   --fs-case-title: clamp(56px, 9.6vw, 152px);
