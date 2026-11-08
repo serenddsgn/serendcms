@@ -76,6 +76,9 @@ export const TranslateBody = z.object({
   slug: Slug.optional(),
 });
 
+/** Bestehende Version der anderen Sprache als Gegenstück verknüpfen (Projekt oder Seite). */
+export const LinkTranslationBody = z.object({ targetId: Uuid });
+
 export const ProjectIdParams = z.object({ id: Uuid });
 export const RevisionParams = z.object({ id: Uuid, revisionId: Uuid });
 export const ProjectListQuery = z.object({

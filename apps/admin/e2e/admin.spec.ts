@@ -115,12 +115,12 @@ test('Anthropic-Key speichern schaltet den Übersetzen-Button frei; der Key wird
   await expect(page.getByLabel(/Neuer Key/)).toHaveValue('');
   expect(await page.content()).not.toContain(key);
 
-  // Original ohne Gegenversion: kein Button. Nach „Sprachversion EN anlegen“ erscheint er in der Kopie.
+  // Original ohne Gegenversion: kein Button. Nach „Kopie als EN-Version anlegen“ erscheint er in der Kopie.
   await page.getByRole('link', { name: 'Seiten' }).click();
   await page.getByRole('link', { name: 'Übersetzungstest' }).click();
   await expect(page.getByRole('heading', { name: 'Übersetzungstest' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Automatisch nach/ })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Sprachversion EN anlegen' }).click();
+  await page.getByRole('button', { name: 'Kopie als EN-Version anlegen' }).click();
   await expect(page.getByText('EN ·')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Automatisch nach EN übersetzen' })).toBeVisible();
 

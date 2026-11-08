@@ -391,6 +391,54 @@ export function createProjectsService({ db, onPublishedChange }: ProjectsService
       });
     },
 
+    /**
+     * Verknüpft zwei unabhängig angelegte Projekte (DE und EN) als Sprachversionen derselben Sache:
+     * `targetId` übernimmt die Übersetzungsgruppe von `id`. Beide dürfen noch kein Gegenstück haben.
+     */
+    async linkTranslation(id: string, targetId: string) {
+      const result = await db.transaction(async (tx) => {
+        if (id === targetId)
+          throw errors.conflict('Ein Projekt kann nicht mit sich selbst verknüpft werden.');
+        const repo = projectsRepo(tx);
+        // feste Sperrreihenfolge, damit gleichzeitiges Verknüpfen nicht in einen Deadlock läuft
+        const locked = new Map<string, ProjectRow>();
+        for (const pid of [id, targetId].sort()) locked.set(pid, await lockOrFail(tx, pid));
+        const source = locked.get(id)!;
+        const target = locked.get(targetId)!;
+        if (source.locale === target.locale)
+          throw errors.conflict('Gegenstück und Projekt müssen verschiedene Sprachen haben.');
+        if (
+          source.translationGroupId === target.translationGroupId ||
+          (await repo.groupHasLocale(source.translationGroupId, target.locale)) ||
+          (await repo.groupHasLocale(target.translationGroupId, source.locale))
+        ) {
+          throw errors.conflict('Eines der beiden Projekte hat bereits eine Sprachversion.');
+        }
+        await repo.setGroup(target.id, source.translationGroupId);
+        return {
+          detail: await loadDetail(tx, (await repo.findProject(id))!),
+          published: source.status === 'published' || target.status === 'published',
+        };
+      });
+      if (result.published) await notify();
+      return result.detail;
+    },
+
+    /** Löst die Verknüpfung: Das Projekt bekommt eine eigene Übersetzungsgruppe, das Gegenstück bleibt wie es ist. */
+    async unlinkTranslation(id: string) {
+      const result = await db.transaction(async (tx) => {
+        const repo = projectsRepo(tx);
+        const project = await lockOrFail(tx, id);
+        if ((await repo.groupSize(project.translationGroupId)) < 2)
+          throw errors.conflict('Das Projekt hat keine verknüpfte Sprachversion.');
+        await repo.setGroup(id, null);
+        return { detail: await loadDetail(tx, (await repo.findProject(id))!) };
+      });
+      // Das gelöste Gegenstück kann veröffentlicht sein: hreflang/Umschalter müssen neu gebaut werden
+      await notify();
+      return result.detail;
+    },
+
     /** Legt die Sprachversion als Kopie der neuesten Revision an. */
     async translate(
       actorId: string,

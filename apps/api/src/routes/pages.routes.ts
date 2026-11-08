@@ -1,6 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   CreatePageBody,
+  LinkTranslationBody,
   OkResponse,
   PageDetailResponse,
   PageIdParams,
@@ -103,6 +104,35 @@ export const pagesRoutes: FastifyPluginAsyncZod<{
       reply
         .status(201)
         .send(await pagesService.translate(actor(request), request.params.id, request.body)),
+  );
+
+  app.put(
+    '/pages/:id/translation-link',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Bestehende Seite der anderen Sprache als Sprachversion verknüpfen',
+        params: PageIdParams,
+        body: LinkTranslationBody,
+        response: detail,
+      },
+    },
+    async (request) => pagesService.linkTranslation(request.params.id, request.body.targetId),
+  );
+
+  app.delete(
+    '/pages/:id/translation-link',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Verknüpfung mit der anderen Sprachversion lösen',
+        params: PageIdParams,
+        response: detail,
+      },
+    },
+    async (request) => pagesService.unlinkTranslation(request.params.id),
   );
 
   app.post(

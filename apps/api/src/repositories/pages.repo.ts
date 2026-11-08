@@ -33,6 +33,20 @@ export function pagesRepo(x: Executor) {
         .returning();
       return row;
     },
+    /** Hängt die Zeile an eine Übersetzungsgruppe; ohne `groupId` bekommt sie eine neue (Verknüpfung lösen). */
+    async setGroup(id: string, groupId: string | null): Promise<void> {
+      await x
+        .update(pages)
+        .set({ translationGroupId: groupId ?? sql`uuidv7()`, updatedAt: sql`now()` })
+        .where(eq(pages.id, id));
+    },
+    async groupSize(groupId: string): Promise<number> {
+      const rows = await x
+        .select({ id: pages.id })
+        .from(pages)
+        .where(eq(pages.translationGroupId, groupId));
+      return rows.length;
+    },
     async groupHasLocale(groupId: string, locale: string): Promise<boolean> {
       const rows = await x
         .select({ id: pages.id })

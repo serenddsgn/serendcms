@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { projectPath } from '@serend/schema';
 import { api } from '../api';
 import { AutoTranslateButton, autoTranslateNotice } from '../components/AutoTranslate';
+import { TranslationPanel } from '../components/Translations';
 import { BlockEditor, type Block } from '../components/BlockEditor';
 import { InlineField } from '../components/InlineField';
 import { MediaField, MediaThumb } from '../components/MediaPicker';
@@ -291,7 +292,6 @@ export function ProjectEditPage() {
 
   if (q.error) return <Notice>{errText(q.error)}</Notice>;
   if (!d) return <p className="muted">Lädt …</p>;
-  const other = d.project.locale === 'de' ? 'en' : 'de';
   const err =
     save.error ??
     publish.error ??
@@ -474,6 +474,14 @@ export function ProjectEditPage() {
           <input {...form.register('seoDescription')} />
         </Field>
       </div>
+      <TranslationPanel
+        kind="projects"
+        id={id}
+        locale={d.project.locale}
+        groupId={d.project.translationGroupId}
+        onCopy={(l) => translate.mutate(l)}
+        copying={translate.isPending}
+      />
       <h2>Weitere Aktionen</h2>
       <div className="row">
         <label className="row">
@@ -498,9 +506,6 @@ export function ProjectEditPage() {
             Wiederherstellen
           </button>
         )}
-        <button className="btn" onClick={() => translate.mutate(other)}>
-          Sprachversion {other.toUpperCase()} anlegen
-        </button>
         <button
           className="btn danger"
           onClick={() =>

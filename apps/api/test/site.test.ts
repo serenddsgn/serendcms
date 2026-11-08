@@ -132,6 +132,53 @@ describe('Seiten', () => {
     );
   });
 
+  it('verknüpft unabhängig angelegte DE- und EN-Seiten und löst die Verknüpfung wieder', async () => {
+    const de = await newPage('verknuepfen-de', 'de');
+    const en = await newPage('verknuepfen-en', 'en');
+    expect(de.page.translationGroupId).not.toBe(en.page.translationGroupId);
+    const link = (id: string, targetId: string) =>
+      as(t, ed, 'PUT', `/api/v1/pages/${id}/translation-link`, { targetId });
+
+    const de2 = await newPage('verknuepfen-de2', 'de');
+    expectError(await link(de.page.id, de2.page.id), 409, 'conflict');
+    expectError(await link(de.page.id, de.page.id), 409, 'conflict');
+    expectError(await link(de.page.id, randomUUID()), 404, 'not_found');
+
+    expect((await link(de.page.id, en.page.id)).statusCode).toBe(200);
+    const enList = (await as(t, ed, 'GET', '/api/v1/pages?locale=en')).json().pages as {
+      id: string;
+      translationGroupId: string;
+    }[];
+    expect(enList.find((p) => p.id === en.page.id)?.translationGroupId).toBe(
+      de.page.translationGroupId,
+    );
+
+    // belegt: weder als Quelle noch als Ziel erneut verknüpfbar
+    const en2 = await newPage('verknuepfen-en2', 'en');
+    expectError(await link(de.page.id, en2.page.id), 409, 'conflict');
+    expectError(await link(de2.page.id, en.page.id), 409, 'conflict');
+
+    // Systemseite nur mit gleichem Seitentyp
+    const pages = (await as(t, ed, 'GET', '/api/v1/pages')).json().pages as {
+      id: string;
+      systemKey: string | null;
+      locale: string;
+      translationGroupId: string;
+    }[];
+    const home = pages.find((p) => p.systemKey === 'home' && p.locale === 'de');
+    if (home) expectError(await link(de2.page.id, home.id), 409, 'conflict');
+
+    expectError(
+      await as(t, ed, 'DELETE', `/api/v1/pages/${de2.page.id}/translation-link`),
+      409,
+      'conflict',
+    );
+    const unlinked = await as(t, ed, 'DELETE', `/api/v1/pages/${en.page.id}/translation-link`);
+    expect(unlinked.statusCode).toBe(200);
+    expect(unlinked.json().page.translationGroupId).not.toBe(de.page.translationGroupId);
+    expect((await link(en.page.id, de.page.id)).statusCode).toBe(200);
+  });
+
   it('kopiert Systemseiten mit festem Slug und biegt Links auf die Zielsprache um', async () => {
     const svc = createPagesService({ db: t.handle.db });
     const mk = (

@@ -431,6 +431,60 @@ export function createPagesService({
       });
     },
 
+    /**
+     * Verknüpft zwei unabhängig angelegte Seiten (DE und EN) als Sprachversionen: `targetId` übernimmt die
+     * Übersetzungsgruppe von `id`. Beide dürfen noch kein Gegenstück haben und müssen derselbe Seitentyp sein
+     * (Startseite nur mit Startseite, normale Seite nur mit normaler Seite).
+     */
+    async linkTranslation(id: string, targetId: string) {
+      const result = await db.transaction(async (tx) => {
+        if (id === targetId)
+          throw errors.conflict('Eine Seite kann nicht mit sich selbst verknüpft werden.');
+        const repo = pagesRepo(tx);
+        const locked = new Map<string, PageRow>();
+        for (const pid of [id, targetId].sort()) locked.set(pid, await lockOrFail(tx, pid));
+        const source = locked.get(id)!;
+        const target = locked.get(targetId)!;
+        if (source.locale === target.locale)
+          throw errors.conflict('Gegenstück und Seite müssen verschiedene Sprachen haben.');
+        if (source.systemKey !== target.systemKey)
+          throw errors.conflict(
+            'Systemseiten lassen sich nur mit dem gleichen Seitentyp verknüpfen.',
+          );
+        if (
+          source.translationGroupId === target.translationGroupId ||
+          (await repo.groupHasLocale(source.translationGroupId, target.locale)) ||
+          (await repo.groupHasLocale(target.translationGroupId, source.locale))
+        ) {
+          throw errors.conflict('Eine der beiden Seiten hat bereits eine Sprachversion.');
+        }
+        await repo.setGroup(target.id, source.translationGroupId);
+        return {
+          detail: await detail(tx, (await repo.findPage(id))!),
+          published: source.status === 'published' || target.status === 'published',
+        };
+      });
+      if (result.published) await onPublishedChange?.();
+      return result.detail;
+    },
+
+    /** Löst die Verknüpfung: Die Seite bekommt eine eigene Übersetzungsgruppe, das Gegenstück bleibt wie es ist. */
+    async unlinkTranslation(id: string) {
+      const result = await db.transaction(async (tx) => {
+        const repo = pagesRepo(tx);
+        const page = await lockOrFail(tx, id);
+        if ((await repo.groupSize(page.translationGroupId)) < 2)
+          throw errors.conflict('Die Seite hat keine verknüpfte Sprachversion.');
+        await repo.setGroup(id, null);
+        return {
+          detail: await detail(tx, (await repo.findPage(id))!),
+        };
+      });
+      // Das gelöste Gegenstück kann veröffentlicht sein: hreflang/Umschalter müssen neu gebaut werden
+      await onPublishedChange?.();
+      return result.detail;
+    },
+
     async unpublish(id: string) {
       const result = await db.transaction(async (tx) => {
         const repo = pagesRepo(tx);

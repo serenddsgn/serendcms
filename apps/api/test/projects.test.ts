@@ -551,6 +551,56 @@ describe('Liste, Reihenfolge, Hervorhebung, Sprachversionen', () => {
     );
   });
 
+  it('verknüpft unabhängig angelegte DE- und EN-Projekte und löst die Verknüpfung wieder', async () => {
+    const de = await createProject(t, ed, { locale: 'de' });
+    const en = await createProject(t, ed, { locale: 'en' });
+    expect(de.project.translationGroupId).not.toBe(en.project.translationGroupId);
+    const link = (id: string, targetId: string) =>
+      as(t, ed, 'PUT', `/api/v1/projects/${id}/translation-link`, { targetId });
+
+    // gleiche Sprache und sich selbst verknüpfen geht nicht
+    const de2 = await createProject(t, ed, { locale: 'de' });
+    expectError(await link(de.project.id, de2.project.id), 409, 'conflict');
+    expectError(await link(de.project.id, de.project.id), 409, 'conflict');
+    expectError(await link(de.project.id, randomUUID()), 404, 'not_found');
+
+    const linked = await link(de.project.id, en.project.id);
+    expect(linked.statusCode).toBe(200);
+    const list = (await as(t, ed, 'GET', '/api/v1/projects?locale=en')).json().projects as {
+      id: string;
+      translationGroupId: string;
+    }[];
+    expect(list.find((p) => p.id === en.project.id)?.translationGroupId).toBe(
+      de.project.translationGroupId,
+    );
+
+    // ein Projekt mit Gegenstück lässt sich nicht noch einmal verknüpfen (weder als Quelle noch als Ziel)
+    const en2 = await createProject(t, ed, { locale: 'en' });
+    expectError(await link(de.project.id, en2.project.id), 409, 'conflict');
+    expectError(await link(de2.project.id, en.project.id), 409, 'conflict');
+
+    // lösen: nur das aufgerufene Projekt bekommt eine neue Gruppe
+    expectError(
+      await as(t, ed, 'DELETE', `/api/v1/projects/${de2.project.id}/translation-link`),
+      409,
+      'conflict',
+    );
+    const unlinked = await as(
+      t,
+      ed,
+      'DELETE',
+      `/api/v1/projects/${en.project.id}/translation-link`,
+    );
+    expect(unlinked.statusCode).toBe(200);
+    expect(unlinked.json().project.translationGroupId).not.toBe(de.project.translationGroupId);
+    expect(
+      (await as(t, ed, 'GET', `/api/v1/projects/${de.project.id}`)).json().project
+        .translationGroupId,
+    ).toBe(de.project.translationGroupId);
+    // danach ist erneutes Verknüpfen möglich
+    expect((await link(en.project.id, de.project.id)).statusCode).toBe(200);
+  });
+
   it('hält „Nächstes Projekt“ innerhalb derselben Sprache', async () => {
     const de = await createProject(t, ed, { locale: 'de' });
     const en = await createProject(t, ed, { locale: 'en' });

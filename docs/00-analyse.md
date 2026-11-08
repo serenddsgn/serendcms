@@ -493,6 +493,7 @@ Alle unter `/api/v1` (Cookie-Session, CSRF-Header bei POST/PUT/PATCH/DELETE), Fe
 | `GET /projects/:id/revisions` · `GET /projects/:id/revisions/:rid` | editor+ | Verlauf |
 | `POST /projects/:id/publish` · `/unpublish` · `/archive` · `/restore` | editor+ | Veröffentlichen (erzeugt Build-Job, Redirects, Slug-Claims) / zurück zum Entwurf / archivieren / wiederherstellen |
 | `POST /projects/:id/translations` | editor+ | Sprachversion anlegen (kopiert) |
+| `PUT/DELETE /projects/:id/translation-link` (ebenso `/pages/:id/…`) | editor+ | Bestehende Version der anderen Sprache verknüpfen (`{targetId}`) bzw. Verknüpfung lösen |
 | `PUT /projects/order` | editor+ | Reihenfolge per Drag & Drop |
 | `POST /projects/:id/preview-link` | editor+ | signierter Vorschau-Link (max. 15 Min.) |
 | `DELETE /projects/:id` | admin | hartes Löschen, nur wenn nie veröffentlicht |
@@ -588,5 +589,6 @@ Stand nach Phase 6. Die freigegebenen Entscheidungen aus Abschnitt 0 wurden umge
 - **CSP:** Skripte nur `'self'` plus Hashes der Inline-Skripte des jeweiligen Builds (`build-meta/csp.caddy`, vom Worker erzeugt). Styles erlauben `'unsafe-inline'`, weil das Design viele Inline-Werte nutzt.
 - **Datenbank-Zugriff:** In Produktion per Unix-Socket (Peer-Authentifizierung), daher gibt es kein Datenbank-Passwort, das geschützt werden müsste.
 - **URL-Felder** (Link-Ziele, Navigation, Live-URL) erlauben nur `http(s)`, `mailto` und `tel`, nie `javascript:`.
+- **Sprachversionen verknüpfen (2026-11-08):** Getrennt angelegte DE- und EN-Einträge haben je eine eigene `translation_group_id`, der Umschalter findet dann kein Gegenstück. Der Admin zeigt deshalb bei Projekten und Seiten ein Panel „Sprachversion“: Gegenstück anzeigen und lösen, oder eine vorhandene Version der anderen Sprache verknüpfen (die Zielzeile übernimmt die Gruppe; Systemseiten nur mit gleichem Typ).
 - **Seiten-Übersetzungen:** Für Projekte gibt es „Sprachversion anlegen“. Freie Seiten und Systemseiten legt man je Sprache einzeln an (Link-Ziele sind sprachgebunden).
 - **Noch offen, weil im Design nicht vorgesehen:** das Kontaktformular im Frontend (der Endpunkt `POST /api/contact` ist fertig und getestet), eine Teamseite (Daten werden gepflegt, aber nicht ausgeliefert), die Texte von Impressum und Datenschutz (Entwürfe ohne Inhalt).

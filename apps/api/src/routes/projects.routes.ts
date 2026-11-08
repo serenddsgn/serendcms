@@ -12,6 +12,7 @@ import {
   RevisionResponse,
   PreviewLinkResponse,
   SaveDraftBody,
+  LinkTranslationBody,
   TranslateBody,
   UpdateProjectBody,
 } from '@serend/schema';
@@ -178,6 +179,35 @@ export const projectsRoutes: FastifyPluginAsyncZod<{
       reply
         .status(201)
         .send(await projectsService.translate(actor(request), request.params.id, request.body)),
+  );
+
+  app.put(
+    '/projects/:id/translation-link',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Bestehendes Projekt der anderen Sprache als Sprachversion verknüpfen',
+        params: ProjectIdParams,
+        body: LinkTranslationBody,
+        response: detail,
+      },
+    },
+    async (request) => projectsService.linkTranslation(request.params.id, request.body.targetId),
+  );
+
+  app.delete(
+    '/projects/:id/translation-link',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Verknüpfung mit der anderen Sprachversion lösen',
+        params: ProjectIdParams,
+        response: detail,
+      },
+    },
+    async (request) => projectsService.unlinkTranslation(request.params.id),
   );
 
   app.post(

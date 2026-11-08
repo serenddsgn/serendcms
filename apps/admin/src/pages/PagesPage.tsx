@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { homePath, pagePath, projectIndexPath } from '@serend/schema';
 import { api } from '../api';
 import { AutoTranslateButton, autoTranslateNotice } from '../components/AutoTranslate';
+import { TranslationPanel } from '../components/Translations';
 import { BlockEditor, newBlock, type Block } from '../components/BlockEditor';
 import { WarnBadge, useLiveWarnings } from '../warnings';
 import {
@@ -219,7 +220,6 @@ export function PageEditPage() {
   if (q.error) return <Notice>{errText(q.error)}</Notice>;
   if (!d) return <p className="muted">Lädt …</p>;
   const system = d.page.systemKey !== null;
-  const other = d.page.locale === 'de' ? 'en' : 'de';
   const err =
     save.error ??
     publish.error ??
@@ -287,15 +287,21 @@ export function PageEditPage() {
         onChange={setContent}
         allowed={system ? [] : ['page_title', 'heading', 'richtext', 'image']}
       />
+      <TranslationPanel
+        kind="pages"
+        id={id}
+        locale={d.page.locale}
+        groupId={d.page.translationGroupId}
+        systemKey={d.page.systemKey}
+        onCopy={(l) => translate.mutate(l)}
+        copying={translate.isPending}
+      />
       <div className="row" style={{ marginTop: 20 }}>
         {d.page.status === 'published' && (
           <button className="btn" onClick={() => unpublish.mutate(undefined)}>
             Zurück zum Entwurf
           </button>
         )}
-        <button className="btn" onClick={() => translate.mutate(other)}>
-          Sprachversion {other.toUpperCase()} anlegen
-        </button>
         {!system && (
           <button
             className="btn danger"
