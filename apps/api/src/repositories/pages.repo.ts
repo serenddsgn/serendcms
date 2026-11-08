@@ -41,6 +41,14 @@ export function pagesRepo(x: Executor) {
         .limit(1);
       return rows.length > 0;
     },
+    async findInGroup(groupId: string, locale: string): Promise<PageRow | undefined> {
+      const [row] = await x
+        .select()
+        .from(pages)
+        .where(and(eq(pages.translationGroupId, groupId), eq(pages.locale, locale)))
+        .limit(1);
+      return row;
+    },
     async listWithLatest(filter: { locale?: string; status?: string }) {
       return x
         .select({ page: pages, latest: pageRevisions })

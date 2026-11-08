@@ -8,6 +8,7 @@ import {
   PageListResponse,
   PreviewLinkResponse,
   SavePageDraftBody,
+  TranslatePageBody,
 } from '@serend/schema';
 import { requireRole } from '../plugins/auth-context.js';
 import type { PagesService } from '../services/pages.service.js';
@@ -84,6 +85,24 @@ export const pagesRoutes: FastifyPluginAsyncZod<{
       },
     },
     async (request) => pagesService.saveDraft(actor(request), request.params.id, request.body),
+  );
+
+  app.post(
+    '/pages/:id/translations',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Sprachversion als Kopie anlegen',
+        params: PageIdParams,
+        body: TranslatePageBody,
+        response: { 201: PageDetailResponse, ...errorResponses },
+      },
+    },
+    async (request, reply) =>
+      reply
+        .status(201)
+        .send(await pagesService.translate(actor(request), request.params.id, request.body)),
   );
 
   app.post(

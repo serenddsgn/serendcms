@@ -79,6 +79,14 @@ export function projectsRepo(x: Executor) {
         .limit(1);
       return rows.length > 0;
     },
+    async findInGroup(groupId: string, locale: string): Promise<ProjectRow | undefined> {
+      const [row] = await x
+        .select()
+        .from(projects)
+        .where(and(eq(projects.translationGroupId, groupId), eq(projects.locale, locale)))
+        .limit(1);
+      return row;
+    },
     async findManyByIds(ids: string[]): Promise<ProjectRow[]> {
       if (ids.length === 0) return [];
       return x.select().from(projects).where(inArray(projects.id, ids));

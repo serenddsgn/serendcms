@@ -89,6 +89,134 @@ describe('Seiten', () => {
     ).toBe(201);
   });
 
+  it('legt Sprachversionen als Kopie an', async () => {
+    const photo = await createMedia(t, ed);
+    const source = await as(
+      t,
+      ed,
+      'POST',
+      '/api/v1/pages',
+      body('uebersetzen', {
+        content: [
+          { id: randomUUID(), type: 'page_title', title: 'Quelle', showCount: false },
+          { id: randomUUID(), type: 'image', mediaId: photo, size: 'full', caption: 'Studio' },
+        ],
+      }),
+    );
+    const src = source.json();
+    const res = await as(t, ed, 'POST', `/api/v1/pages/${src.page.id}/translations`, {
+      locale: 'en',
+    });
+    expect(res.statusCode).toBe(201);
+    const en = res.json();
+    expect(en.page).toMatchObject({
+      locale: 'en',
+      translationGroupId: src.page.translationGroupId,
+      status: 'draft',
+    });
+    expect(en.latest.slug).toBe('uebersetzen');
+    expect(en.latest.content).toEqual(src.latest.content);
+    // eigener Slug für die Zielsprache möglich; doppelte Version und eigene Sprache sind Konflikte
+    for (const locale of ['en', 'de'])
+      expectError(
+        await as(t, ed, 'POST', `/api/v1/pages/${src.page.id}/translations`, { locale }),
+        409,
+        'conflict',
+      );
+    expectError(
+      await as(t, ed, 'POST', '/api/v1/pages/00000000-0000-4000-8000-000000000000/translations', {
+        locale: 'en',
+      }),
+      404,
+      'not_found',
+    );
+  });
+
+  it('kopiert Systemseiten mit festem Slug und biegt Links auf die Zielsprache um', async () => {
+    const svc = createPagesService({ db: t.handle.db });
+    const mk = (
+      locale: 'de' | 'en',
+      systemKey: 'home' | 'projects',
+      slug: string,
+      content: unknown[],
+    ) =>
+      svc.create(admin.userId, {
+        locale,
+        systemKey,
+        slug,
+        title: slug,
+        content,
+        seoTitle: null,
+        seoDescription: null,
+        ogMediaId: null,
+      });
+    const photo = await createMedia(t, admin);
+    // DE-Projektübersicht, die erst später übersetzt wird
+    const deProjects = await mk('de', 'projects', 'projekte', [
+      { id: randomUUID(), type: 'page_title', title: 'Projekte', showCount: true },
+      { id: randomUUID(), type: 'project_index', defaultView: 'grid' },
+    ]);
+    const link = (pageId: string) => ({
+      label: 'Alle Projekte',
+      target: { kind: 'page', pageId },
+    });
+    const deHome = await mk('de', 'home', 'home', [
+      {
+        id: randomUUID(),
+        type: 'hero',
+        eyebrow: 'e',
+        headline: [[{ text: 'Hallo' }]],
+        intro: 'i',
+        link: link(deProjects.page.id),
+      },
+      {
+        id: randomUUID(),
+        type: 'featured_projects',
+        label: 'l',
+        allProjectsLink: link(deProjects.page.id),
+        limit: 3,
+      },
+      { id: randomUUID(), type: 'services_overview', eyebrow: 'e', title: [{ text: 't' }] },
+      {
+        id: randomUUID(),
+        type: 'media_text_card',
+        mediaId: photo,
+        eyebrow: 'e',
+        heading: [{ text: 'h' }],
+        text: 't',
+      },
+      { id: randomUUID(), type: 'contact_cta', eyebrow: 'e', line1: 'a', line2: 'b' },
+    ]);
+
+    // Solange die Projektübersicht keine EN-Version hat, bricht die Kopie mit klarer Meldung ab
+    const blocked = await as(t, ed, 'POST', `/api/v1/pages/${deHome.page.id}/translations`, {
+      locale: 'en',
+    });
+    expectError(blocked, 409, 'conflict');
+    expect(blocked.json().message ?? blocked.body).toContain('projekte');
+
+    const enProjects = (
+      await as(t, ed, 'POST', `/api/v1/pages/${deProjects.page.id}/translations`, {
+        locale: 'en',
+        slug: 'ignoriert',
+      })
+    ).json();
+    expect(enProjects.latest.slug).toBe('work'); // Slug der Systemseite ist fest
+
+    const res = await as(t, ed, 'POST', `/api/v1/pages/${deHome.page.id}/translations`, {
+      locale: 'en',
+    });
+    expect(res.statusCode).toBe(201);
+    const en = res.json();
+    expect(en.page).toMatchObject({ locale: 'en', systemKey: 'home' });
+    expect(en.latest.slug).toBe('home');
+    expect(en.latest.content[0].link.target.pageId).toBe(enProjects.page.id);
+    expect(en.latest.content[1].allProjectsLink.target.pageId).toBe(enProjects.page.id);
+    // die Vorlage bleibt unverändert
+    const stillDe = (await as(t, ed, 'GET', `/api/v1/pages/${deHome.page.id}`)).json();
+    expect(stillDe.latest.content[0].link.target.pageId).toBe(deProjects.page.id);
+  });
+
   it('validiert den Inhalt je Seitentyp und die Link-Ziele', async () => {
     expectError(
       await as(
@@ -199,19 +327,11 @@ describe('Seiten', () => {
   });
 
   it('schützt Systemseiten (fester Slug, nicht löschbar) und veröffentlichte Seiten vor dem Löschen', async () => {
-    const home = await createPagesService({ db: t.handle.db }).create(admin.userId, {
-      locale: 'en',
-      systemKey: 'projects',
-      slug: 'work',
-      title: 'Work',
-      content: [
-        { id: randomUUID(), type: 'page_title', title: 'Work', showCount: true },
-        { id: randomUUID(), type: 'project_index', defaultView: 'grid' },
-      ],
-      seoTitle: null,
-      seoDescription: null,
-      ogMediaId: null,
-    });
+    // die EN-Projektübersicht legt schon der Kopier-Test an (pro Sprache gibt es nur eine)
+    const existing = (await as(t, ed, 'GET', '/api/v1/pages?locale=en'))
+      .json()
+      .pages.find((p: { systemKey: string | null }) => p.systemKey === 'projects');
+    const home = (await as(t, ed, 'GET', `/api/v1/pages/${existing.id}`)).json();
     const wrongSlug = { slug: 'anderer-slug', title: 'Work', content: home.latest.content };
     expectError(
       await as(t, ed, 'PUT', `/api/v1/pages/${home.page.id}/draft`, wrongSlug),

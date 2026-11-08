@@ -43,6 +43,13 @@
       "when": 1793968693616,
       "tag": "0005_maintenance_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794152075164,
+      "tag": "0006_integration_secrets",
+      "breakpoints": true
     }
   ]
 }

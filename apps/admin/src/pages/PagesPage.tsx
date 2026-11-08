@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { homePath, pagePath, projectIndexPath } from '@serend/schema';
 import { api } from '../api';
+import { AutoTranslateButton, autoTranslateNotice } from '../components/AutoTranslate';
 import { BlockEditor, newBlock, type Block } from '../components/BlockEditor';
 import { WarnBadge, useLiveWarnings } from '../warnings';
 import {
@@ -186,6 +187,30 @@ export function PageEditPage() {
     [],
     (r) => window.open(r.url, '_blank', 'noopener'),
   );
+  const autoTranslate = useAction(
+    () => {
+      const b = body();
+      return api.post<any>(`/pages/${id}/auto-translate`, {
+        title: b.title,
+        seoTitle: b.seoTitle,
+        seoDescription: b.seoDescription,
+        content: b.content,
+      });
+    },
+    [],
+    (r) => {
+      form.setValue('title', r.title, { shouldDirty: true });
+      form.setValue('seoTitle', r.seoTitle ?? '', { shouldDirty: true });
+      form.setValue('seoDescription', r.seoDescription ?? '', { shouldDirty: true });
+      setContent(r.content);
+      setMsg(autoTranslateNotice(r.model));
+    },
+  );
+  const translate = useAction(
+    (locale: string) => api.post<any>(`/pages/${id}/translations`, { locale }),
+    [['pages']],
+    (r) => nav(`/pages/${r.page.id}`),
+  );
   const remove = useAction(
     () => api.del(`/pages/${id}`),
     [['pages']],
@@ -194,7 +219,15 @@ export function PageEditPage() {
   if (q.error) return <Notice>{errText(q.error)}</Notice>;
   if (!d) return <p className="muted">Lädt …</p>;
   const system = d.page.systemKey !== null;
-  const err = save.error ?? publish.error ?? unpublish.error ?? preview.error ?? remove.error;
+  const other = d.page.locale === 'de' ? 'en' : 'de';
+  const err =
+    save.error ??
+    publish.error ??
+    unpublish.error ??
+    preview.error ??
+    translate.error ??
+    autoTranslate.error ??
+    remove.error;
   return (
     <>
       <p>
@@ -216,6 +249,13 @@ export function PageEditPage() {
           <button className="btn" onClick={() => preview.mutate(undefined)}>
             Vorschau
           </button>
+          <AutoTranslateButton
+            kind="pages"
+            groupId={d.page.translationGroupId}
+            locale={d.page.locale}
+            pending={autoTranslate.isPending}
+            onConfirm={() => autoTranslate.mutate(undefined)}
+          />
           <button className="btn" onClick={() => save.mutate(undefined)}>
             Entwurf speichern
           </button>
@@ -253,6 +293,9 @@ export function PageEditPage() {
             Zurück zum Entwurf
           </button>
         )}
+        <button className="btn" onClick={() => translate.mutate(other)}>
+          Sprachversion {other.toUpperCase()} anlegen
+        </button>
         {!system && (
           <button
             className="btn danger"

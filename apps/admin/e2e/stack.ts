@@ -33,6 +33,8 @@ const env = {
   SESSION_SECRET: secret(),
   BUILD_TOKEN: secret(),
   PREVIEW_SIGNING_KEY: secret(),
+  SECRETS_ENCRYPTION_KEY: secret(),
+  LOGIN_RATE_LIMIT_MAX: '1000', // mehrere Tests melden sich an
   SMTP_HOST: '127.0.0.1',
   SMTP_PORT: '1025',
   SMTP_FROM: 'e2e@localhost',

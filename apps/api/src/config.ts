@@ -16,6 +16,10 @@ export interface AppConfig {
   sessionSecret: string;
   buildToken: string;
   previewSigningKey: string;
+  /** Schlüssel, mit dem Zugangsdaten externer Dienste in der Datenbank verschlüsselt werden (fehlt: Eingabe im Admin gesperrt). */
+  secretsKey: string | undefined;
+  /** Anthropic-Key aus der Umgebung; hat Vorrang vor dem im Admin hinterlegten. */
+  anthropicApiKey: string | undefined;
   smtp: {
     host: string;
     port: number;
@@ -62,9 +66,13 @@ const EnvSchema = z.object({
     .min(1)
     .max(24 * 90)
     .default(168),
+  /** Fehlversuche/Anmeldungen je IP und 15 Minuten; nur die E2E-Umgebung setzt das höher. */
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100_000).default(5),
   SESSION_SECRET: Secret,
   BUILD_TOKEN: Secret,
   PREVIEW_SIGNING_KEY: Secret,
+  SECRETS_ENCRYPTION_KEY: Secret.optional(),
+  ANTHROPIC_API_KEY: z.string().min(20).optional(),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535),
   SMTP_USER: z.string().optional(),
@@ -129,10 +137,15 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     if (!e.ADMIN_ORIGIN.startsWith('https://'))
       problems.push('ADMIN_ORIGIN: in Produktion muss https:// sein');
   }
-  const secrets = [e.SESSION_SECRET, e.BUILD_TOKEN, e.PREVIEW_SIGNING_KEY];
+  const secrets = [
+    e.SESSION_SECRET,
+    e.BUILD_TOKEN,
+    e.PREVIEW_SIGNING_KEY,
+    ...(e.SECRETS_ENCRYPTION_KEY ? [e.SECRETS_ENCRYPTION_KEY] : []),
+  ];
   if (new Set(secrets).size !== secrets.length) {
     problems.push(
-      'SESSION_SECRET, BUILD_TOKEN und PREVIEW_SIGNING_KEY müssen voneinander verschieden sein',
+      'SESSION_SECRET, BUILD_TOKEN, PREVIEW_SIGNING_KEY und SECRETS_ENCRYPTION_KEY müssen voneinander verschieden sein',
     );
   }
   if (problems.length > 0) throw new ConfigError(problems);
@@ -151,6 +164,8 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     sessionSecret: e.SESSION_SECRET,
     buildToken: e.BUILD_TOKEN,
     previewSigningKey: e.PREVIEW_SIGNING_KEY,
+    secretsKey: e.SECRETS_ENCRYPTION_KEY,
+    anthropicApiKey: e.ANTHROPIC_API_KEY,
     smtp: {
       host: e.SMTP_HOST,
       port: e.SMTP_PORT,
@@ -179,7 +194,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     media: { storageDir: resolve(e.STORAGE_DIR), maxBytes: e.MEDIA_MAX_BYTES },
     argon2: { memoryCost: 19456, timeCost: 2, parallelism: 1 },
     rateLimit: {
-      loginMax: 5,
+      loginMax: e.LOGIN_RATE_LIMIT_MAX,
       loginWindowMs: 15 * 60 * 1000,
       contactMax: 5,
       contactWindowMs: 60 * 60 * 1000,

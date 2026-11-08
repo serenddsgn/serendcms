@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { projectPath } from '@serend/schema';
 import { api } from '../api';
+import { AutoTranslateButton, autoTranslateNotice } from '../components/AutoTranslate';
 import { BlockEditor, type Block } from '../components/BlockEditor';
 import { InlineField } from '../components/InlineField';
 import { MediaField, MediaThumb } from '../components/MediaPicker';
@@ -255,6 +256,27 @@ export function ProjectEditPage() {
     [],
     (r) => window.open(r.url, '_blank', 'noopener'),
   );
+  const autoTranslate = useAction(
+    () => {
+      const b = body();
+      return api.post<any>(`/projects/${id}/auto-translate`, {
+        title: b.title,
+        subtitle: b.subtitle,
+        seoTitle: b.seoTitle,
+        seoDescription: b.seoDescription,
+        content: b.content,
+      });
+    },
+    [],
+    (r) => {
+      form.setValue('title', r.title, { shouldDirty: true });
+      form.setValue('seoTitle', r.seoTitle ?? '', { shouldDirty: true });
+      form.setValue('seoDescription', r.seoDescription ?? '', { shouldDirty: true });
+      setMeta((m: any) => ({ ...m, subtitle: r.subtitle }));
+      setContent(r.content);
+      setMsg(autoTranslateNotice(r.model));
+    },
+  );
   const translate = useAction(
     (locale: string) => api.post<any>(`/projects/${id}/translations`, { locale }),
     [['projects']],
@@ -276,6 +298,7 @@ export function ProjectEditPage() {
     act.error ??
     preview.error ??
     translate.error ??
+    autoTranslate.error ??
     patchStable.error ??
     remove.error;
   const cats = form.watch('categories') ?? [];
@@ -299,6 +322,13 @@ export function ProjectEditPage() {
           <button className="btn" onClick={() => preview.mutate(undefined)}>
             Vorschau
           </button>
+          <AutoTranslateButton
+            kind="projects"
+            groupId={d.project.translationGroupId}
+            locale={d.project.locale}
+            pending={autoTranslate.isPending}
+            onConfirm={() => autoTranslate.mutate(undefined)}
+          />
           <button className="btn" onClick={() => save.mutate(undefined)} disabled={save.isPending}>
             Entwurf speichern
           </button>

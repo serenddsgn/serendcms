@@ -131,7 +131,9 @@ export function createPagesService({
       page.locale === DEFAULT_LOCALE &&
       RESERVED_ROOT_SEGMENTS.includes(input.slug)
     )
-      throw validation(`Der Slug „${input.slug}“ ist reserviert (Sprachpräfix oder technische Route).`);
+      throw validation(
+        `Der Slug „${input.slug}“ ist reserviert (Sprachpräfix oder technische Route).`,
+      );
     const parsed = pageContentSchema(page.systemKey).safeParse(input.content);
     if (!parsed.success) {
       throw validation(`Ungültiger Seiteninhalt: ${describeIssues(parsed.error)}`);
@@ -189,7 +191,7 @@ export function createPagesService({
     return page;
   }
 
-  return {
+  const service = {
     async list(filter: { locale?: string | undefined; status?: string | undefined }) {
       return (await pagesRepo(db).listWithLatest(filter)).map(({ page, latest }) => ({
         ...toDto(page),
@@ -246,6 +248,80 @@ export function createPagesService({
         });
         await sync(tx, page, revision, body);
         return detail(tx, page);
+      });
+    },
+
+    /**
+     * Legt die Sprachversion als Kopie der neuesten Revision an (gleiches Layout, gleiche Blöcke).
+     * Links auf Seiten/Projekte müssen in der Zielsprache liegen: Sie werden auf die jeweilige
+     * Sprachversion umgebogen. Fehlt diese, bricht das Kopieren mit einer Liste der fehlenden Versionen ab.
+     */
+    async translate(
+      actorId: string,
+      id: string,
+      body: { locale: Locale; slug?: string | undefined },
+    ) {
+      const source = await db.transaction(async (tx) => {
+        const page = await pagesRepo(tx).findPage(id);
+        if (!page) throw errors.notFound('Seite nicht gefunden.');
+        const latest = (await pagesRepo(tx).latestRevision(id))!;
+        return { page, latest };
+      });
+      const { page, latest } = source;
+      if (page.locale === body.locale)
+        throw errors.conflict('Die Seite hat bereits diese Sprache.');
+
+      const missing: string[] = [];
+      const targets = collectLinkTargets(latest.content);
+      const pageMap = new Map<string, string>();
+      const projectMap = new Map<string, string>();
+      await db.transaction(async (tx) => {
+        for (const pid of targets.pageIds) {
+          const linked = await pagesRepo(tx).findPage(pid);
+          const sibling =
+            linked && (await pagesRepo(tx).findInGroup(linked.translationGroupId, body.locale));
+          if (sibling) pageMap.set(pid, sibling.id);
+          else missing.push(`Seite „${(await pagesRepo(tx).latestRevision(pid))?.title ?? pid}“`);
+        }
+        for (const pid of targets.projectIds) {
+          const linked = await projectsRepo(tx).findProject(pid);
+          const sibling =
+            linked && (await projectsRepo(tx).findInGroup(linked.translationGroupId, body.locale));
+          if (sibling) projectMap.set(pid, sibling.id);
+          else
+            missing.push(`Projekt „${(await projectsRepo(tx).latestRevision(pid))?.title ?? pid}“`);
+        }
+      });
+      if (missing.length > 0)
+        throw errors.conflict(
+          `Verlinkte Inhalte haben noch keine Version in dieser Sprache: ${[...new Set(missing)].join(', ')}. Bitte zuerst diese übersetzen.`,
+        );
+
+      const remap = (v: unknown): unknown => {
+        if (Array.isArray(v)) return v.map(remap);
+        if (typeof v !== 'object' || v === null) return v;
+        const o = { ...(v as Record<string, unknown>) };
+        if (o.kind === 'page' && typeof o.pageId === 'string')
+          o.pageId = pageMap.get(o.pageId) ?? o.pageId;
+        if (o.kind === 'project' && typeof o.projectId === 'string')
+          o.projectId = projectMap.get(o.projectId) ?? o.projectId;
+        for (const [k, val] of Object.entries(o)) o[k] = remap(val);
+        return o;
+      };
+
+      return service.create(actorId, {
+        locale: body.locale,
+        systemKey: page.systemKey as PageSystemKey | null,
+        translationGroupId: page.translationGroupId,
+        slug:
+          expectedSystemSlug(page.systemKey as PageSystemKey | null, body.locale) ??
+          body.slug ??
+          latest.slug,
+        title: latest.title,
+        content: remap(latest.content) as unknown[],
+        seoTitle: null,
+        seoDescription: null,
+        ogMediaId: latest.ogMediaId,
       });
     },
 
@@ -370,6 +446,7 @@ export function createPagesService({
       return result;
     },
   };
+  return service;
 }
 
 export type PagesService = ReturnType<typeof createPagesService>;

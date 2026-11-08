@@ -31,6 +31,7 @@ import { siteRoutes } from './routes/site.routes.js';
 import { mediaRoutes } from './routes/media.routes.js';
 import { projectsRoutes } from './routes/projects.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
+import { integrationsRoutes } from './routes/integrations.routes.js';
 import { createAuthService } from './services/auth.service.js';
 import { createLocalStorage } from './storage/local.js';
 import type { Storage } from './storage/storage.js';
@@ -47,6 +48,8 @@ import { createMediaService } from './services/media.service.js';
 import { createPagesService } from './services/pages.service.js';
 import { createProjectsService } from './services/projects.service.js';
 import { createUsersService } from './services/users.service.js';
+import { createIntegrationsService } from './services/integrations.service.js';
+import { createTranslationService, type ClaudeFactory } from './services/translation.service.js';
 
 export interface BuildAppOptions {
   config: AppConfig;
@@ -63,6 +66,8 @@ export interface BuildAppOptions {
   mailer?: Mailer;
   /** Standard: das `git` des Servers im Repository-Verzeichnis. Tests geben eine Attrappe mit. */
   git?: GitRunner;
+  /** Standard: das Anthropic-SDK. Tests geben eine Attrappe mit. */
+  claude?: ClaudeFactory;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -76,6 +81,7 @@ export async function buildApp({
   queue,
   mailer,
   git,
+  claude,
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: createLogger(config, logStream),
@@ -157,6 +163,11 @@ export async function buildApp({
   });
   const previewService = createPreviewService({ db, config, buildService });
   const deployService = createDeployService({ config, git, log: app.log });
+  const integrationsService = createIntegrationsService({ db, config });
+  const translationService = createTranslationService({
+    integrations: integrationsService,
+    ...(claude && { claude }),
+  });
 
   registerAuthContext(app, { config, authService });
 
@@ -176,6 +187,7 @@ export async function buildApp({
       await api.register(maintenanceRoutes, { maintenanceService, config });
       await api.register(buildsRoutes, { buildsService });
       await api.register(deployRoutes, { deployService });
+      await api.register(integrationsRoutes, { integrationsService, translationService, db });
     },
     { prefix: API_PREFIX },
   );

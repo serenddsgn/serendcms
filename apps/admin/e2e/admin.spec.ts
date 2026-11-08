@@ -91,6 +91,46 @@ test('Wartungsmodus ein- und ausschalten (rote Leiste in der ganzen Oberfläche)
   await expect(page.getByText('AUS: Seite ist öffentlich')).toBeVisible();
 });
 
+test('Anthropic-Key speichern schaltet den Übersetzen-Button frei; der Key wird nie wieder angezeigt', async ({
+  page,
+}) => {
+  const key = 'sk-ant-e2e-testkey-1234567890';
+  await login(page);
+
+  // ohne Key: kein Button im Seiten-Editor
+  await page.getByRole('link', { name: 'Seiten' }).click();
+  await page.getByRole('button', { name: 'Neue Seite' }).click();
+  await page.getByLabel('Titel').fill('Übersetzungstest');
+  await page.getByLabel('Slug (URL)').fill('uebersetzungstest');
+  await page.getByRole('button', { name: 'Anlegen' }).click();
+  await expect(page.getByRole('heading', { name: 'Übersetzungstest' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Automatisch nach/ })).toHaveCount(0);
+
+  // Key hinterlegen
+  await page.getByRole('link', { name: 'Einstellungen' }).click();
+  await expect(page.getByText('nicht eingerichtet')).toBeVisible();
+  await page.getByLabel('Anthropic-Key').fill(key);
+  await page.getByRole('button', { name: 'Key speichern' }).click();
+  await expect(page.getByText('eingerichtet (Key endet auf …7890)')).toBeVisible();
+  await expect(page.getByLabel(/Neuer Key/)).toHaveValue('');
+  expect(await page.content()).not.toContain(key);
+
+  // Original ohne Gegenversion: kein Button. Nach „Sprachversion EN anlegen“ erscheint er in der Kopie.
+  await page.getByRole('link', { name: 'Seiten' }).click();
+  await page.getByRole('link', { name: 'Übersetzungstest' }).click();
+  await expect(page.getByRole('heading', { name: 'Übersetzungstest' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Automatisch nach/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Sprachversion EN anlegen' }).click();
+  await expect(page.getByText('EN ·')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Automatisch nach EN übersetzen' })).toBeVisible();
+
+  // Key entfernen schaltet ihn wieder ab
+  page.once('dialog', (d) => void d.accept());
+  await page.getByRole('link', { name: 'Einstellungen' }).click();
+  await page.getByRole('button', { name: 'Key entfernen' }).click();
+  await expect(page.getByText('nicht eingerichtet')).toBeVisible();
+});
+
 test('Abmelden beendet die Session', async ({ page }) => {
   await login(page);
   await page.getByRole('button', { name: 'Abmelden' }).click();

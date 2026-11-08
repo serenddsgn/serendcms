@@ -64,4 +64,9 @@ export const PageListResponse = z.object({
   ),
 });
 export const PageIdParams = z.object({ id: Uuid });
+/** Sprachversion einer Seite als Kopie anlegen; ohne `slug` bleibt der Slug der Vorlage. */
+export const TranslatePageBody = z.object({
+  locale: Locale,
+  slug: Slug.optional(),
+});
 export const PageListQuery = z.object({ locale: Locale.optional(), status: Status.optional() });

@@ -31,6 +31,8 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     sessionSecret: generateToken(),
     buildToken: generateToken(),
     previewSigningKey: generateToken(),
+    secretsKey: generateToken(),
+    anthropicApiKey: undefined,
     smtp: {
       host: '127.0.0.1',
       port: 1025,
@@ -73,7 +75,7 @@ export async function createTestApp(
   overrides: Partial<AppConfig> = {},
   extra: Pick<
     Parameters<typeof buildApp>[0],
-    'onPublishedChange' | 'storage' | 'queue' | 'mailer' | 'git'
+    'onPublishedChange' | 'storage' | 'queue' | 'mailer' | 'git' | 'claude'
   > = {},
 ): Promise<TestApp> {
   const database: TestDatabase = await createTestDatabase(inject('pgAdminUrl'));

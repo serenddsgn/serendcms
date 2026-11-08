@@ -390,6 +390,21 @@ export const siteSettings = pgTable(
   ],
 );
 
+/**
+ * Zugangsdaten externer Dienste (z. B. Anthropic-API-Key). Der Schlüssel liegt nur verschlüsselt (AES-256-GCM)
+ * in `ciphertext` und wird nie an Browser oder Build ausgeliefert; `last4` dient der Anzeige.
+ * `options` enthält nicht geheime Einstellungen (z. B. das Modell).
+ */
+export const integrationSecrets = pgTable('integration_secrets', {
+  name: text('name').primaryKey(),
+  ciphertext: text('ciphertext').notNull(),
+  last4: text('last4').notNull(),
+  options: jsonb('options').$type<Record<string, unknown>>().notNull().default({}),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+export type IntegrationSecretRow = typeof integrationSecrets.$inferSelect;
+
 export type PageRow = typeof pages.$inferSelect;
 export type PageRevisionRow = typeof pageRevisions.$inferSelect;
 export type ServiceRow = typeof services.$inferSelect;
