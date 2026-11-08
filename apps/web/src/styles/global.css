@@ -875,13 +875,13 @@ a.loc {
 /* Hero-Überschrift: Einspaltig (schmal) darf sie umbrechen. Zweispaltig (ab 901 px) richtet sich die Größe nach der Breite
    der Überschrift-Spalte und der längsten Zeile (--hl = Zeichen, setzt die Hero-Komponente), damit keine feste Zeile
    umbricht und ein Rest wie „nur,“ allein steht. Spalte = min(100vw, 1360px) − 80 px Rand − 224 px (Eyebrow-Spalte +
-   Abstand); 0,46 em je Zeichen ist ein vorsichtiger Mittelwert dieser Schrift mit −0,055 em Laufweite. */
+   Abstand); 0,5 em je Zeichen: Codec Pro ExtraBold ohne Laufweite misst ca. 0,47 em (gemessen an „Wir gestalten nicht nur,“), der Rest ist Puffer. */
 .hero-h1 {
   font-size: clamp(48px, 7.4vw, 112px);
 }
 @media (min-width: 901px) {
   .hero-h1 {
-    font-size: clamp(48px, calc((min(100vw, 1360px) - 304px) / (var(--hl, 24) * 0.46)), 112px);
+    font-size: clamp(48px, calc((min(100vw, 1360px) - 304px) / (var(--hl, 24) * 0.5)), 112px);
   }
 }
 /* Einspaltig fließen die Zeilen als ein Satz zusammen (Umbruch nach Platz, nicht nach Zeilenvorgabe) */
