@@ -40,10 +40,7 @@ export function blocksToMarkdown(blocks: readonly unknown[], ctx: MarkdownContex
         break;
       }
       case 'featured_projects':
-        out.push(
-          `## ${String(b.label)}`,
-          ...ctx.projects.slice(0, Number(b.limit ?? 5)).map(projectLine),
-        );
+        out.push(`## ${String(b.label)}`, ...ctx.projects.map(projectLine));
         break;
       case 'services_overview':
         out.push(

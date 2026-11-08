@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { BuildsPage } from './pages/BuildsPage';
 import { ProjectsPage, ProjectEditPage } from './pages/ProjectsPage';
 import { PagesPage, PageEditPage } from './pages/PagesPage';
+import { LayoutPage } from './pages/LayoutPage';
 import { MediaPage } from './pages/MediaPage';
 import { ServicesPage, NavigationPage, TeamPage } from './pages/SitePages';
 import { SettingsPage } from './pages/SettingsPage';
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
       { index: true, element: <BuildsPage /> },
       { path: 'projects', element: <ProjectsPage /> },
       { path: 'projects/:id', element: <ProjectEditPage /> },
+      { path: 'layout', element: <LayoutPage /> },
       { path: 'pages', element: <PagesPage /> },
       { path: 'pages/:id', element: <PageEditPage /> },
       { path: 'media', element: <MediaPage /> },

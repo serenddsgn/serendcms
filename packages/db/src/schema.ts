@@ -106,6 +106,7 @@ export const projects = pgTable(
     status: text('status').notNull().default('draft'),
     featured: boolean('featured').notNull().default(false),
     featuredSortOrder: integer('featured_sort_order'),
+    featuredSize: text('featured_size').notNull().default('auto'),
     sortOrder: integer('sort_order').notNull().default(0),
     publishedRevisionId: uuid('published_revision_id').references(
       (): AnyPgColumn => projectRevisions.id,
@@ -116,6 +117,7 @@ export const projects = pgTable(
   },
   (t) => [
     check('projects_locale_check', LOCALE_CHECK(t.locale)),
+    check('projects_featured_size_check', sql`${t.featuredSize} in ('auto', 's', 'w', 't', 'l')`),
     check('projects_status_check', STATUS_CHECK(t.status)),
     uniqueIndex('projects_group_locale_key').on(t.translationGroupId, t.locale),
     index('projects_locale_sort_idx').on(t.locale, t.sortOrder),

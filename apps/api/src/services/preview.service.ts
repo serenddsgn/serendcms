@@ -8,6 +8,7 @@ import {
   type BuildMedia,
   type BuildPage,
   type BuildProject,
+  type FeaturedSize,
   type Locale,
 } from '@serend/schema';
 import { errors } from '../lib/errors.js';
@@ -93,6 +94,7 @@ export function createPreviewService({
           translationGroupId: project.translationGroupId,
           featured: project.featured,
           featuredSortOrder: project.featuredSortOrder,
+          featuredSize: project.featuredSize as FeaturedSize,
           sortOrder: project.sortOrder,
           revision: {
             id: latest.id,

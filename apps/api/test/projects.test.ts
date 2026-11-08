@@ -492,6 +492,75 @@ describe('Liste, Reihenfolge, Hervorhebung, Sprachversionen', () => {
     }
   });
 
+  it('setzt die Startseiten-Auswahl samt Reihenfolge und Größe in einem Zug', async () => {
+    const loc = await createTestApp();
+    try {
+      const s = await editorSession(loc);
+      const a = (await createProject(loc, s, { locale: 'en', featured: true })).project.id;
+      const b = (await createProject(loc, s, { locale: 'en' })).project.id;
+      const c = (await createProject(loc, s, { locale: 'en' })).project.id;
+      const put = (body: object) => as(loc, s, 'PUT', '/api/v1/projects/featured-layout', body);
+      const list = async () =>
+        (await as(loc, s, 'GET', '/api/v1/projects?locale=en')).json().projects as {
+          id: string;
+          featured: boolean;
+          featuredSortOrder: number | null;
+          featuredSize: string;
+        }[];
+
+      expect(
+        (
+          await put({
+            locale: 'en',
+            items: [
+              { id: c, size: 'l' },
+              { id: b, size: 'auto' },
+            ],
+          })
+        ).statusCode,
+      ).toBe(200);
+      const rows = await list();
+      const get = (id: string) => rows.find((r) => r.id === id)!;
+      expect(get(c)).toMatchObject({ featured: true, featuredSortOrder: 0, featuredSize: 'l' });
+      expect(get(b)).toMatchObject({ featured: true, featuredSortOrder: 1, featuredSize: 'auto' });
+      // a war vorher hervorgehoben und fliegt raus, die Größe fällt auf auto zurück
+      expect(get(a)).toMatchObject({
+        featured: false,
+        featuredSortOrder: null,
+        featuredSize: 'auto',
+      });
+
+      expectError(
+        await put({ locale: 'en', items: [{ id: b, size: 'xl' }] }),
+        400,
+        'validation_error',
+      );
+      expectError(
+        await put({
+          locale: 'en',
+          items: [
+            { id: b, size: 's' },
+            { id: b, size: 'w' },
+          ],
+        }),
+        400,
+        'validation_error',
+      );
+      expectError(
+        await put({ locale: 'de', items: [{ id: b, size: 's' }] }),
+        400,
+        'validation_error',
+      );
+      // Größe über die stabilen Felder; Entfernen setzt auf auto zurück
+      const patched = await as(loc, s, 'PATCH', `/api/v1/projects/${b}`, { featuredSize: 'w' });
+      expect(patched.json().project).toMatchObject({ featured: true, featuredSize: 'w' });
+      const off = await as(loc, s, 'PATCH', `/api/v1/projects/${b}`, { featured: false });
+      expect(off.json().project).toMatchObject({ featured: false, featuredSize: 'auto' });
+    } finally {
+      await loc.close();
+    }
+  });
+
   it('vergibt featured-Reihenfolge getrennt von der Listenreihenfolge', async () => {
     const a = await createProject(t, ed, { locale: 'en', featured: true });
     const b = await createProject(t, ed, { locale: 'en' });

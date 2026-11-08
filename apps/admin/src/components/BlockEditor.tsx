@@ -286,15 +286,10 @@ function BlockForm({ block: b, onChange }: { block: Block; onChange: (b: Block) 
       return (
         <>
           <Text label="Beschriftung" value={b.label} onChange={(v) => up({ label: v })} />
-          <Field label="Anzahl (1–5)">
-            <input
-              type="number"
-              min={1}
-              max={5}
-              value={b.limit ?? 5}
-              onChange={(e) => up({ limit: Number(e.target.value) })}
-            />
-          </Field>
+          <p className="small muted">
+            Auswahl, Reihenfolge und Größen der Kacheln legst du im Menüpunkt „Startseiten-Layout“
+            fest.
+          </p>
           <LinkForm
             label="„Alle Projekte“-Link"
             value={b.allProjectsLink}

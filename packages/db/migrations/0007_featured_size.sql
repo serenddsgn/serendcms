@@ -1,0 +1,2 @@
+ALTER TABLE "projects" ADD COLUMN "featured_size" text DEFAULT 'auto' NOT NULL;--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_featured_size_check" CHECK ("projects"."featured_size" in ('auto', 's', 'w', 't', 'l'));

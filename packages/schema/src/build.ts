@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ProjectContent } from './blocks.js';
 import { Locale, Uuid } from './common.js';
 import { SettingKeySchema } from './settings.js';
-import { Category } from './projects.js';
+import { Category, FeaturedSize } from './projects.js';
 import { Inline } from './blocks.js';
 
 /**
@@ -29,6 +29,7 @@ export const BuildProject = z.object({
   translationGroupId: Uuid,
   featured: z.boolean(),
   featuredSortOrder: z.number().int().nullable(),
+  featuredSize: FeaturedSize.default('auto'),
   sortOrder: z.number().int(),
   revision: z.object({
     id: Uuid,

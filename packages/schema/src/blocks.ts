@@ -50,7 +50,8 @@ export const FeaturedProjectsBlock = z.object({
   type: z.literal('featured_projects'),
   label: z.string().max(80),
   allProjectsLink: Link,
-  limit: z.number().int().min(1).max(5).default(5),
+  /** Veraltet und ohne Wirkung: Auswahl, Reihenfolge und Größen kommen aus dem Layout-Builder (Projekt-Felder `featured*`). */
+  limit: z.number().int().min(1).max(24).optional(),
 });
 export const ServicesOverviewBlock = z.object({
   ...Base,

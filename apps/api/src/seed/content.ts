@@ -584,7 +584,6 @@ export async function seedContent(d: SeedDeps): Promise<void> {
           type: 'featured_projects',
           label: s.selected,
           allProjectsLink: { label: s.allProjects, target: { kind: 'page', pageId: pid.projects } },
-          limit: 5,
         },
         {
           id: randomUUID(),

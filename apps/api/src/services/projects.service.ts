@@ -1,8 +1,10 @@
 import type { Database, ProjectRevisionRow, ProjectRow } from '@serend/db';
 import {
   CONTENT_SCHEMA_VERSION,
+  LOCALES,
   collectMediaIds,
   projectPath,
+  type FeaturedSize,
   type Locale,
   type ProjectRevisionInput,
 } from '@serend/schema';
@@ -267,6 +269,7 @@ export function createProjectsService({ db, onPublishedChange }: ProjectsService
       patch: {
         featured?: boolean | undefined;
         featuredSortOrder?: number | null | undefined;
+        featuredSize?: FeaturedSize | undefined;
         sortOrder?: number | undefined;
       },
     ) {
@@ -279,9 +282,11 @@ export function createProjectsService({ db, onPublishedChange }: ProjectsService
           if (!featured) featuredSortOrder = null;
           else if (featuredSortOrder === null)
             featuredSortOrder = (await repo.maxFeaturedOrder(project.locale)) + 1;
+          const featuredSize = featured ? (patch.featuredSize ?? project.featuredSize) : 'auto';
           const updated = await repo.updateProject(id, {
             featured,
             featuredSortOrder,
+            featuredSize,
             ...(patch.sortOrder !== undefined && { sortOrder: patch.sortOrder }),
           });
           const detail = await loadDetail(tx, updated!);
@@ -291,6 +296,60 @@ export function createProjectsService({ db, onPublishedChange }: ProjectsService
           if (r.published) await notify();
           return r.detail;
         });
+    },
+
+    /**
+     * Setzt die Startseiten-Auswahl in einem Zug: genau diese Projekte, in dieser Reihenfolge und Größe.
+     * Alle anderen Projekte der Sprache verlieren `featured`. Optional gilt dasselbe für die verknüpften Sprachversionen.
+     */
+    async setFeaturedLayout(body: {
+      locale: Locale;
+      items: { id: string; size: FeaturedSize }[];
+      applyToOtherLocales: boolean;
+    }): Promise<void> {
+      const ids = body.items.map((i) => i.id);
+      if (new Set(ids).size !== ids.length) throw validation('IDs müssen eindeutig sein.');
+      await db.transaction(async (tx) => {
+        const repo = projectsRepo(tx);
+        const rows = await repo.findManyByIds(ids);
+        if (rows.length !== ids.length || rows.some((r) => r.locale !== body.locale)) {
+          throw validation('Unbekannte Projekte oder falsche Sprache.');
+        }
+        const apply = async (
+          locale: string,
+          items: { id: string; size: FeaturedSize }[],
+        ): Promise<void> => {
+          const keep = new Set(items.map((i) => i.id));
+          for (const row of await repo.featuredInLocale(locale)) {
+            if (keep.has(row.id)) continue;
+            await repo.updateProject(row.id, {
+              featured: false,
+              featuredSortOrder: null,
+              featuredSize: 'auto',
+            });
+          }
+          for (const [i, item] of items.entries()) {
+            await repo.updateProject(item.id, {
+              featured: true,
+              featuredSortOrder: i,
+              featuredSize: item.size,
+            });
+          }
+        };
+        await apply(body.locale, body.items);
+        if (body.applyToOtherLocales) {
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          for (const locale of LOCALES.filter((l) => l !== body.locale)) {
+            const mapped: { id: string; size: FeaturedSize }[] = [];
+            for (const item of body.items) {
+              const sibling = await repo.findInGroup(byId.get(item.id)!.translationGroupId, locale);
+              if (sibling) mapped.push({ id: sibling.id, size: item.size });
+            }
+            await apply(locale, mapped);
+          }
+        }
+      });
+      await notify();
     },
 
     async order(locale: Locale, ids: string[]): Promise<void> {

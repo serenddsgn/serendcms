@@ -1,6 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   CreateProjectBody,
+  FeaturedLayoutBody,
   OkResponse,
   OrderBody,
   ProjectDetailResponse,
@@ -57,6 +58,23 @@ export const projectsRoutes: FastifyPluginAsyncZod<{
     },
     async (request, reply) =>
       reply.status(201).send(await projectsService.create(actor(request), request.body)),
+  );
+
+  app.put(
+    '/projects/featured-layout',
+    {
+      onRequest: [editor],
+      schema: {
+        tags,
+        summary: 'Startseiten-Auswahl festlegen (Projekte, Reihenfolge, Kachelgröße)',
+        body: FeaturedLayoutBody,
+        response: { 200: OkResponse, ...errorResponses },
+      },
+    },
+    async (request) => {
+      await projectsService.setFeaturedLayout(request.body);
+      return { ok: true as const };
+    },
   );
 
   app.put(

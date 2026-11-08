@@ -5,6 +5,7 @@ import { useSession } from './session';
 const NAV: [string, string, boolean?][] = [
   ['/', 'Veröffentlichung'],
   ['/projects', 'Projekte'],
+  ['/layout', 'Startseiten-Layout'],
   ['/pages', 'Seiten'],
   ['/media', 'Medien'],
   ['/services', 'Leistungen'],

@@ -58,13 +58,30 @@ export const SaveDraftBody = ProjectRevisionInput.extend({
   expectedRevisionNo: z.number().int().min(1).optional(),
 });
 
+/**
+ * Kachelgröße in der Startseiten-Auswahl (3-Spalten-Raster): `auto` richtet sich nach der Position,
+ * `s` = 1×1, `w` = breit 2×1, `t` = hoch 1×2, `l` = groß 2×2.
+ */
+export const FEATURED_SIZES = ['auto', 's', 'w', 't', 'l'] as const;
+export const FeaturedSize = z.enum(FEATURED_SIZES);
+export type FeaturedSize = z.infer<typeof FeaturedSize>;
+
 export const UpdateProjectBody = z
   .object({
     featured: z.boolean().optional(),
     featuredSortOrder: z.number().int().min(0).max(999).nullable().optional(),
+    featuredSize: FeaturedSize.optional(),
     sortOrder: z.number().int().min(0).max(100_000).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'Mindestens ein Feld angeben' });
+
+/** Layout der Startseiten-Auswahl: genau diese Projekte in dieser Reihenfolge und Größe, alle anderen fliegen raus. */
+export const FeaturedLayoutBody = z.object({
+  locale: Locale,
+  items: z.array(z.object({ id: Uuid, size: FeaturedSize })).max(24),
+  /** Auswahl auch auf verknüpfte Sprachversionen übertragen. */
+  applyToOtherLocales: z.boolean().default(false),
+});
 
 export const OrderBody = z.object({
   locale: Locale,
@@ -94,6 +111,7 @@ export const ProjectDto = z.object({
   status: Status,
   featured: z.boolean(),
   featuredSortOrder: z.number().int().nullable(),
+  featuredSize: FeaturedSize,
   sortOrder: z.number().int(),
   publishedRevisionId: Uuid.nullable(),
   createdAt: z.iso.datetime(),

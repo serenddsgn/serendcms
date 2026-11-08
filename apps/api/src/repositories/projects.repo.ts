@@ -93,6 +93,12 @@ export function projectsRepo(x: Executor) {
         .limit(1);
       return rows.length > 0;
     },
+    async featuredInLocale(locale: string): Promise<ProjectRow[]> {
+      return x
+        .select()
+        .from(projects)
+        .where(and(eq(projects.locale, locale), eq(projects.featured, true)));
+    },
     async findInGroup(groupId: string, locale: string): Promise<ProjectRow | undefined> {
       const [row] = await x
         .select()

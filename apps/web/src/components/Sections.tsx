@@ -1,4 +1,4 @@
-import type { Locale } from '@serend/schema';
+import type { FeaturedSize, Locale } from '@serend/schema';
 import { projectIndexPath, splitParagraphs } from '@serend/schema';
 import type { z } from 'zod';
 import type {
@@ -73,11 +73,14 @@ export function Hero({ b }: { b: B<typeof HeroBlock> }) {
   );
 }
 
-const TILE_SIZES = [
-  '(max-width: 820px) 100vw, 66vw',
-  '(max-width: 820px) 100vw, 34vw',
-  '(max-width: 820px) 100vw, 34vw',
-];
+/** Standard-Größen im Automodus: erste Kachel groß, zweite hoch, der Rest klein. */
+const AUTO_SIZE: FeaturedSize[] = ['l', 't'];
+const TILE_SIZES: Record<Exclude<FeaturedSize, 'auto'>, string> = {
+  l: '(max-width: 820px) 100vw, 66vw',
+  w: '(max-width: 820px) 100vw, 66vw',
+  t: '(max-width: 820px) 100vw, 34vw',
+  s: '(max-width: 820px) 100vw, 34vw',
+};
 
 export function FeaturedProjects({
   b,
@@ -87,45 +90,36 @@ export function FeaturedProjects({
   locale: Locale;
 }) {
   const ui = t(locale);
-  const all = projectsFor(locale);
-  const items = featuredFor(locale).slice(0, b.limit);
-  const years = all.map((p) => p.revision.year);
-  const range = `${Math.min(...years)} — ${Math.max(...years)}`;
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const items = featuredFor(locale);
   return (
     <section class="section" aria-label={b.label} style="padding-bottom:40px" id={idAttr(b)}>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:20px">
-        <p class="eyebrow" style="margin:0">
-          {b.label} — {pad(items.length)} / {pad(all.length)}
-        </p>
-        <p class="eyebrow hide-m" style="margin:0">
-          {range}
-        </p>
-      </div>
       <div class="bento">
-        {items.map((p, i) => (
-          <a
-            class="tile reveal"
-            href={projectUrl(p)}
-            style={`--tc:${p.revision.tileColor ?? p.revision.color}`}
-          >
-            <Picture
-              mediaId={p.revision.coverMediaId!}
-              alt={altOf(p.revision.coverMediaId!, locale)}
-              sizes={TILE_SIZES[Math.min(i, 2)]!}
-              eager={i === 0}
-            />
-            <span class="look">{ui.view}</span>
-            <span class="cap">
-              <span style={`font-size:${i < 2 ? 22 : 20}px;font-weight:600`}>
-                {p.revision.title}
+        {items.map((p, i) => {
+          const size = (p.featuredSize === 'auto' ? AUTO_SIZE[i] : p.featuredSize) ?? 's';
+          return (
+            <a
+              class={`tile reveal sz-${size}`}
+              href={projectUrl(p)}
+              style={`--tc:${p.revision.tileColor ?? p.revision.color}`}
+            >
+              <Picture
+                mediaId={p.revision.coverMediaId!}
+                alt={altOf(p.revision.coverMediaId!, locale)}
+                sizes={TILE_SIZES[size as Exclude<FeaturedSize, 'auto'>]}
+                eager={i === 0}
+              />
+              <span class="look">{ui.view}</span>
+              <span class="cap">
+                <span style={`font-size:${size === 's' ? 20 : 22}px;font-weight:600`}>
+                  {p.revision.title}
+                </span>
+                <span class="eyebrow" style="color:rgba(255,255,255,.8)">
+                  {categoryName(locale, p.revision.categories[0]!)}
+                </span>
               </span>
-              <span class="eyebrow" style="color:rgba(255,255,255,.8)">
-                {categoryName(locale, p.revision.categories[0]!)}
-              </span>
-            </span>
-          </a>
-        ))}
+            </a>
+          );
+        })}
       </div>
       <div style="display:flex;justify-content:flex-end;padding-top:40px">
         <BigLink

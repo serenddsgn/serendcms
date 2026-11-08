@@ -10,6 +10,7 @@ import {
   type BuildRedirect,
   type BuildService,
   type BuildSetting,
+  type FeaturedSize,
   type Locale,
   type ProjectContent,
   type SettingKey,
@@ -31,6 +32,7 @@ export function createBuildService({ db, storage }: { db: Database; storage: Sto
       translationGroupId: project.translationGroupId,
       featured: project.featured,
       featuredSortOrder: project.featuredSortOrder,
+      featuredSize: project.featuredSize as FeaturedSize,
       sortOrder: project.sortOrder,
       revision: {
         id: revision.id,
