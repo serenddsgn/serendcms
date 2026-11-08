@@ -684,6 +684,38 @@ img {
 .tile:focus-visible .look {
   transform: scale(1);
 }
+/* Maus-Modus (von site.ts gesetzt): „Ansehen" ersetzt den Mauszeiger und folgt ihm */
+.tile.follow {
+  cursor: none;
+}
+.tile.follow .look {
+  top: 0;
+  left: 0;
+  margin: -48px 0 0 -48px;
+  transform: none;
+  translate: var(--lx, 50%) var(--ly, 50%);
+  scale: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: translate, scale;
+  transition:
+    scale 0.45s var(--ease-spring),
+    opacity 0.2s;
+}
+.tile.follow.on .look {
+  scale: 1;
+  opacity: 1;
+}
+.tile.follow.on:active .look {
+  scale: 0.9;
+  transition-duration: 0.12s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile.follow .look {
+    transition: opacity 0.15s;
+    scale: 1;
+  }
+}
 .svc {
   display: grid;
   grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1.2fr) 44px;

@@ -159,6 +159,53 @@ if (loc && locText) {
   });
 }
 
+// ── Projekt-Kacheln: „Ansehen" ersetzt den Mauszeiger und folgt ihm ───
+if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  const HALF = 48; // halbe Kreisbreite, entspricht .look in global.css
+  $$<HTMLElement>('.tile').forEach((tile) => {
+    const look = $<HTMLElement>('.look', tile);
+    if (!look) return;
+    tile.classList.add('follow');
+    let tx = 0;
+    let ty = 0;
+    let x = 0;
+    let y = 0;
+    let raf = 0;
+    const paint = () => {
+      look.style.setProperty('--lx', `${x + HALF}px`);
+      look.style.setProperty('--ly', `${y + HALF}px`);
+    };
+    const tick = () => {
+      // sanftes Nachziehen; bei reduzierter Bewegung direkt am Zeiger
+      x += (tx - x) * (reduced ? 1 : 0.22);
+      y += (ty - y) * (reduced ? 1 : 0.22);
+      paint();
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.3 ? requestAnimationFrame(tick) : 0;
+    };
+    const target = (e: PointerEvent) => {
+      const r = tile.getBoundingClientRect();
+      tx = e.clientX - r.left - HALF;
+      ty = e.clientY - r.top - HALF;
+    };
+    tile.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      target(e);
+      x = tx;
+      y = ty;
+      paint();
+      tile.classList.add('on');
+    });
+    tile.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      target(e);
+      if (!raf) raf = requestAnimationFrame(tick);
+    });
+    tile.addEventListener('pointerleave', () => {
+      tile.classList.remove('on');
+    });
+  });
+}
+
 // ── Anfrage-Modal: Vollbild-Dialog, öffnet als Kreis vom Button aus ──
 const inquiry = $<HTMLDialogElement>('#inquiry');
 if (inquiry && typeof inquiry.showModal === 'function') {
