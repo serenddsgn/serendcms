@@ -8,6 +8,7 @@ const NAV: [string, string, boolean?][] = [
   ['/layout', 'Startseiten-Layout'],
   ['/pages', 'Seiten'],
   ['/media', 'Medien'],
+  ['/import', 'Import'],
   ['/services', 'Leistungen'],
   ['/navigation', 'Navigation'],
   ['/team', 'Team'],

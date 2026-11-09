@@ -9,6 +9,7 @@ import { ProjectsPage, ProjectEditPage } from './pages/ProjectsPage';
 import { PagesPage, PageEditPage } from './pages/PagesPage';
 import { LayoutPage } from './pages/LayoutPage';
 import { MediaPage } from './pages/MediaPage';
+import { ImportPage } from './pages/ImportPage';
 import { ServicesPage, NavigationPage, TeamPage } from './pages/SitePages';
 import { SettingsPage } from './pages/SettingsPage';
 import { MessagesPage, UsersPage } from './pages/AdminPages';
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: 'pages', element: <PagesPage /> },
       { path: 'pages/:id', element: <PageEditPage /> },
       { path: 'media', element: <MediaPage /> },
+      { path: 'import', element: <ImportPage /> },
       { path: 'services', element: <ServicesPage /> },
       { path: 'navigation', element: <NavigationPage /> },
       { path: 'team', element: <TeamPage /> },
