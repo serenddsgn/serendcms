@@ -1323,6 +1323,38 @@ a.loc {
     width: 100%;
   }
 }
+/* Bilderstrecke „Raster“ im Projekt: zwei Spalten, mobil eine */
+.pgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.pgrid figure {
+  margin: 0;
+}
+.pgrid picture,
+.pgrid img,
+.pgrid video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pgrid img,
+.pgrid video {
+  border-radius: var(--r-card);
+  background: var(--chip, rgba(127, 127, 127, 0.12));
+}
+.pgrid figcaption {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+@media (max-width: 900px) {
+  .pgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .ch p {
   margin: 0 0 18px;
   font-size: 19px;

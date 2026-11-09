@@ -463,7 +463,7 @@ export function ProjectEditPage() {
       <BlockEditor
         blocks={content}
         onChange={setContent}
-        allowed={['chapter', 'quote', 'interactive_demo']}
+        allowed={['chapter', 'quote', 'image', 'gallery', 'interactive_demo']}
       />
       <h2>SEO</h2>
       <div className="card grid2">

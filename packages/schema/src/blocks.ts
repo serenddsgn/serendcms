@@ -153,6 +153,19 @@ export const ImageBlock = z.object({
   size: ImageSize.default('medium'),
   caption: z.string().max(200).optional(),
 });
+/** Bilderstrecke: `strip` = horizontal scrollbarer Streifen, `grid` = zweispaltiges Raster. Alt-Texte kommen aus der Medienbibliothek. */
+export const GALLERY_LAYOUTS = ['strip', 'grid'] as const;
+export const GalleryLayout = z.enum(GALLERY_LAYOUTS);
+export type GalleryLayout = z.infer<typeof GalleryLayout>;
+export const GalleryBlock = z.object({
+  ...Base,
+  type: z.literal('gallery'),
+  layout: GalleryLayout.default('strip'),
+  items: z
+    .array(z.object({ mediaId: Uuid, caption: z.string().max(200).optional() }))
+    .min(1)
+    .max(24),
+});
 export const RichTextBlock = z.object({
   ...Base,
   type: z.literal('richtext'),
@@ -177,7 +190,15 @@ const unique = (blocks: { id: string }[]) =>
 const uniqueIds = { message: 'Block-IDs müssen eindeutig sein' };
 
 export const ProjectContent = z
-  .array(z.discriminatedUnion('type', [ChapterBlock, QuoteBlock, InteractiveDemoBlock]))
+  .array(
+    z.discriminatedUnion('type', [
+      ChapterBlock,
+      QuoteBlock,
+      InteractiveDemoBlock,
+      ImageBlock,
+      GalleryBlock,
+    ]),
+  )
   .max(60)
   .refine(unique, uniqueIds);
 export type ProjectContent = z.infer<typeof ProjectContent>;
@@ -213,10 +234,15 @@ export function pageContentSchema(systemKey: PageSystemKey | null) {
 export function collectMediaIds(content: readonly unknown[]): string[] {
   const ids = new Set<string>();
   for (const block of content) {
-    if (typeof block === 'object' && block !== null && 'mediaId' in block) {
-      const id = (block as { mediaId: unknown }).mediaId;
-      if (typeof id === 'string') ids.add(id);
-    }
+    if (typeof block !== 'object' || block === null) continue;
+    const b = block as { mediaId?: unknown; items?: unknown };
+    if (typeof b.mediaId === 'string') ids.add(b.mediaId);
+    // Bilderstrecke: Medien stehen in `items[].mediaId`
+    if (Array.isArray(b.items))
+      for (const item of b.items) {
+        const id = (item as { mediaId?: unknown } | null)?.mediaId;
+        if (typeof id === 'string') ids.add(id);
+      }
   }
   return [...ids];
 }

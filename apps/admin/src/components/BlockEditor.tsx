@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Inline } from '@serend/schema';
 import { api } from '../api';
 import { Field } from '../ui';
 import { InlineField } from './InlineField';
-import { MediaField } from './MediaPicker';
+import { MediaField, MediaThumb } from './MediaPicker';
 import { Sortable } from './Sortable';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -27,7 +27,44 @@ export const BLOCK_LABELS: Record<string, string> = {
   heading: 'Überschrift',
   richtext: 'Text',
   image: 'Bild',
+  gallery: 'Bilderstrecke',
 };
+
+/**
+ * Verfügbare interaktive Demos. Eine neue Demo braucht: Schema (`packages/schema/src/blocks.ts`), einen Eintrag hier
+ * (Menü + Startwerte), ein Formular (Fallunterscheidung im Block `interactive_demo` von `BlockForm`) und die Insel in `apps/web/src/components/DemoSection.astro`.
+ */
+export const DEMO_TYPES: {
+  component: string;
+  label: string;
+  description: string;
+  create: () => { navLabel: string; demo: Record<string, any> };
+}[] = [
+  {
+    component: 'pick-and-mix',
+    label: 'Pick & Mix',
+    description: 'Box aus Sorten zusammenstellen (Dolce & Falcone)',
+    create: () => ({
+      navLabel: 'Ausprobieren',
+      demo: {
+        component: 'pick-and-mix',
+        eyebrow: 'Ausprobieren',
+        title: 'Stellen Sie Ihre Box zusammen.',
+        sizes: [12, 18, 24],
+        defaultSize: 12,
+        flavors: [
+          { key: 'sorte-a', name: 'Sorte A', priceCents: 160, color: '#e0a98f' },
+          { key: 'sorte-b', name: 'Sorte B', priceCents: 200, color: '#b06bb4' },
+        ],
+      },
+    }),
+  },
+];
+
+export function newDemoBlock(component: string): Block {
+  const t = DEMO_TYPES.find((d) => d.component === component) ?? DEMO_TYPES[0]!;
+  return { id: uid(), type: 'interactive_demo', ...t.create() };
+}
 
 export function newBlock(type: string): Block {
   const id = uid();
@@ -37,22 +74,9 @@ export function newBlock(type: string): Block {
     case 'quote':
       return { id, type, lines: [run('Erste Zeile'), [{ text: 'Zweite Zeile', liquid: true }]] };
     case 'interactive_demo':
-      return {
-        id,
-        type,
-        navLabel: 'Ausprobieren',
-        demo: {
-          component: 'pick-and-mix',
-          eyebrow: 'Ausprobieren',
-          title: 'Stellen Sie Ihre Box zusammen.',
-          sizes: [12, 18, 24],
-          defaultSize: 12,
-          flavors: [
-            { key: 'sorte-a', name: 'Sorte A', priceCents: 160, color: '#e0a98f' },
-            { key: 'sorte-b', name: 'Sorte B', priceCents: 200, color: '#b06bb4' },
-          ],
-        },
-      };
+      return newDemoBlock(DEMO_TYPES[0]!.component);
+    case 'gallery':
+      return { id, type, layout: 'strip', items: [] };
     case 'heading':
       return { id, type, level: 2, text: 'Überschrift' };
     case 'richtext':
@@ -110,19 +134,98 @@ export function BlockEditor({ locale, blocks, onChange, allowed }: Props) {
       )}
       {!fixed && (
         <div className="row" style={{ marginTop: 8 }}>
-          {allowed.map((t) => (
+          {allowed.map((t) =>
+            t === 'interactive_demo' ? (
+              <DemoMenu key={t} onPick={(c) => onChange([...blocks, newDemoBlock(c)])} />
+            ) : (
+              <button
+                key={t}
+                type="button"
+                className="btn small"
+                onClick={() => onChange([...blocks, newBlock(t)])}
+              >
+                + {BLOCK_LABELS[t] ?? t}
+              </button>
+            ),
+          )}
+        </div>
+      )}
+    </LocaleContext.Provider>
+  );
+}
+
+/** „+ Interaktive Demo“: Auswahl, welche Demo eingefügt wird. */
+function DemoMenu({ onPick }: { onPick: (component: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', away);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', away);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+  return (
+    <div ref={box} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        className="btn small"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        + Interaktive Demo ▾
+      </button>
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: 4,
+            zIndex: 10,
+            minWidth: 280,
+            background: 'var(--card)',
+            border: '1px solid var(--line)',
+            borderRadius: 12,
+            padding: 4,
+            boxShadow: '0 8px 24px rgba(0,0,0,.2)',
+          }}
+        >
+          {DEMO_TYPES.map((d) => (
             <button
-              key={t}
+              key={d.component}
               type="button"
-              className="btn small"
-              onClick={() => onChange([...blocks, newBlock(t)])}
+              role="menuitem"
+              className="btn"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                border: 0,
+                borderRadius: 8,
+                background: 'transparent',
+              }}
+              onClick={() => {
+                setOpen(false);
+                onPick(d.component);
+              }}
             >
-              + {BLOCK_LABELS[t] ?? t}
+              <strong>{d.label}</strong>
+              <br />
+              <span className="small muted">{d.description}</span>
             </button>
           ))}
         </div>
       )}
-    </LocaleContext.Provider>
+    </div>
   );
 }
 
@@ -240,6 +343,118 @@ function LinkForm({
         />
       )}
     </fieldset>
+  );
+}
+
+/** Formular der Demo „Pick & Mix“. */
+function PickAndMixForm({ d, setD }: { d: any; setD: (patch: Record<string, unknown>) => void }) {
+  return (
+    <>
+      <Text label="Eyebrow" value={d.eyebrow} onChange={(v) => setD({ eyebrow: v })} />
+      <Text label="Titel" value={d.title} onChange={(v) => setD({ title: v })} />
+      <div className="grid2">
+        <Field label="Boxgrößen (Komma)">
+          <input
+            value={d.sizes.join(', ')}
+            onChange={(e) =>
+              setD({
+                sizes: e.target.value
+                  .split(',')
+                  .map((x) => Number(x.trim()))
+                  .filter(Boolean),
+              })
+            }
+          />
+        </Field>
+        <Field label="Standardgröße">
+          <input
+            type="number"
+            value={d.defaultSize}
+            onChange={(e) => setD({ defaultSize: Number(e.target.value) })}
+          />
+        </Field>
+      </div>
+      <h3>Sorten</h3>
+      {d.flavors.map((f: any, i: number) => (
+        <div key={i} className="grid3" style={{ alignItems: 'end' }}>
+          <Text
+            label="Schlüssel"
+            value={f.key}
+            onChange={(v) =>
+              setD({
+                flavors: d.flavors.map((x: any, j: number) => (j === i ? { ...x, key: v } : x)),
+              })
+            }
+          />
+          <Text
+            label="Name"
+            value={f.name}
+            onChange={(v) =>
+              setD({
+                flavors: d.flavors.map((x: any, j: number) => (j === i ? { ...x, name: v } : x)),
+              })
+            }
+          />
+          <Field label="Preis (Cent) / Farbe">
+            <div className="row">
+              <input
+                type="number"
+                value={f.priceCents}
+                onChange={(e) =>
+                  setD({
+                    flavors: d.flavors.map((x: any, j: number) =>
+                      j === i ? { ...x, priceCents: Number(e.target.value) } : x,
+                    ),
+                  })
+                }
+              />
+              <input
+                type="color"
+                value={f.color}
+                onChange={(e) =>
+                  setD({
+                    flavors: d.flavors.map((x: any, j: number) =>
+                      j === i ? { ...x, color: e.target.value } : x,
+                    ),
+                  })
+                }
+                style={{ width: 50 }}
+              />
+            </div>
+          </Field>
+        </div>
+      ))}
+      <div className="row">
+        <button
+          type="button"
+          className="btn small"
+          onClick={() =>
+            setD({
+              flavors: [
+                ...d.flavors,
+                {
+                  key: `sorte-${d.flavors.length + 1}`,
+                  name: 'Neue Sorte',
+                  priceCents: 200,
+                  color: '#888888',
+                },
+              ],
+            })
+          }
+        >
+          + Sorte
+        </button>
+        {d.flavors.length > 2 && (
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => setD({ flavors: d.flavors.slice(0, -1) })}
+          >
+            − Sorte
+          </button>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -411,119 +626,93 @@ function BlockForm({ block: b, onChange }: { block: Block; onChange: (b: Block) 
     case 'interactive_demo': {
       const d = b.demo;
       const setD = (patch: Record<string, unknown>) => up({ demo: { ...d, ...patch } });
+      const type = DEMO_TYPES.find((t) => t.component === d.component);
       return (
         <>
+          <p className="small muted" style={{ margin: '0 0 4px' }}>
+            Demo: {type?.label ?? d.component}
+          </p>
           <Text
             label="Navigations-Label"
             value={b.navLabel}
             onChange={(v) => up({ navLabel: v })}
           />
-          <Text label="Eyebrow" value={d.eyebrow} onChange={(v) => setD({ eyebrow: v })} />
-          <Text label="Titel" value={d.title} onChange={(v) => setD({ title: v })} />
-          <div className="grid2">
-            <Field label="Boxgrößen (Komma)">
+          {d.component === 'pick-and-mix' ? (
+            <PickAndMixForm d={d} setD={setD} />
+          ) : (
+            <p className="muted small">Für diese Demo gibt es kein Formular.</p>
+          )}
+        </>
+      );
+    }
+    case 'gallery': {
+      const items: { mediaId: string; caption?: string }[] = b.items;
+      const setItems = (n: typeof items) => up({ items: n });
+      const move = (i: number, by: number) => {
+        const n = [...items];
+        const [x] = n.splice(i, 1);
+        n.splice(i + by, 0, x!);
+        setItems(n);
+      };
+      return (
+        <>
+          <Field label="Darstellung">
+            <select value={b.layout ?? 'strip'} onChange={(e) => up({ layout: e.target.value })}>
+              <option value="strip">Streifen (horizontal scrollbar)</option>
+              <option value="grid">Raster (zwei Spalten)</option>
+            </select>
+          </Field>
+          {items.map((it, i) => (
+            <div key={i} className="row" style={{ marginBottom: 8 }}>
+              <MediaThumb id={it.mediaId} />
               <input
-                value={d.sizes.join(', ')}
+                style={{ flex: 1 }}
+                placeholder="Bildunterschrift (optional, nur im Raster sichtbar)"
+                aria-label={`Bildunterschrift Bild ${i + 1}`}
+                value={it.caption ?? ''}
                 onChange={(e) =>
-                  setD({
-                    sizes: e.target.value
-                      .split(',')
-                      .map((x) => Number(x.trim()))
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </Field>
-            <Field label="Standardgröße">
-              <input
-                type="number"
-                value={d.defaultSize}
-                onChange={(e) => setD({ defaultSize: Number(e.target.value) })}
-              />
-            </Field>
-          </div>
-          <h3>Sorten</h3>
-          {d.flavors.map((f: any, i: number) => (
-            <div key={i} className="grid3" style={{ alignItems: 'end' }}>
-              <Text
-                label="Schlüssel"
-                value={f.key}
-                onChange={(v) =>
-                  setD({
-                    flavors: d.flavors.map((x: any, j: number) => (j === i ? { ...x, key: v } : x)),
-                  })
-                }
-              />
-              <Text
-                label="Name"
-                value={f.name}
-                onChange={(v) =>
-                  setD({
-                    flavors: d.flavors.map((x: any, j: number) =>
-                      j === i ? { ...x, name: v } : x,
+                  setItems(
+                    items.map((x, j) =>
+                      j === i ? { ...x, caption: e.target.value || undefined } : x,
                     ),
-                  })
+                  )
                 }
               />
-              <Field label="Preis (Cent) / Farbe">
-                <div className="row">
-                  <input
-                    type="number"
-                    value={f.priceCents}
-                    onChange={(e) =>
-                      setD({
-                        flavors: d.flavors.map((x: any, j: number) =>
-                          j === i ? { ...x, priceCents: Number(e.target.value) } : x,
-                        ),
-                      })
-                    }
-                  />
-                  <input
-                    type="color"
-                    value={f.color}
-                    onChange={(e) =>
-                      setD({
-                        flavors: d.flavors.map((x: any, j: number) =>
-                          j === i ? { ...x, color: e.target.value } : x,
-                        ),
-                      })
-                    }
-                    style={{ width: 50 }}
-                  />
-                </div>
-              </Field>
-            </div>
-          ))}
-          <div className="row">
-            <button
-              type="button"
-              className="btn small"
-              onClick={() =>
-                setD({
-                  flavors: [
-                    ...d.flavors,
-                    {
-                      key: `sorte-${d.flavors.length + 1}`,
-                      name: 'Neue Sorte',
-                      priceCents: 200,
-                      color: '#888888',
-                    },
-                  ],
-                })
-              }
-            >
-              + Sorte
-            </button>
-            {d.flavors.length > 2 && (
               <button
                 type="button"
                 className="btn small"
-                onClick={() => setD({ flavors: d.flavors.slice(0, -1) })}
+                disabled={i === 0}
+                aria-label="Nach vorn"
+                onClick={() => move(i, -1)}
               >
-                − Sorte
+                ↑
               </button>
-            )}
-          </div>
+              <button
+                type="button"
+                className="btn small"
+                disabled={i === items.length - 1}
+                aria-label="Nach hinten"
+                onClick={() => move(i, 1)}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => setItems(items.filter((_, j) => j !== i))}
+              >
+                Entfernen
+              </button>
+            </div>
+          ))}
+          <MediaField
+            label="Bild hinzufügen"
+            value={null}
+            onChange={(v) => v && setItems([...items, { mediaId: v }])}
+          />
+          <p className="muted small" style={{ margin: '4px 0 0' }}>
+            Alt-Texte kommen aus der Medienbibliothek.
+          </p>
         </>
       );
     }

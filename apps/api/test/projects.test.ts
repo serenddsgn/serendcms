@@ -158,6 +158,42 @@ describe('Eingaben', () => {
     expect(got.latest.content).toEqual(content);
   });
 
+  it('speichert Bild und Bilderstrecke und lehnt unbekannte Medien darin ab', async () => {
+    const m1 = await createMedia(t, ed);
+    const m2 = await createMedia(t, ed);
+    const content = [
+      { id: randomUUID(), type: 'image', mediaId: m1, size: 'full', caption: 'Titelbild' },
+      {
+        id: randomUUID(),
+        type: 'gallery',
+        layout: 'grid',
+        items: [{ mediaId: m1 }, { mediaId: m2, caption: 'Detail' }],
+      },
+    ];
+    const p = await createProject(t, ed, { content });
+    const got = (await as(t, ed, 'GET', `/api/v1/projects/${p.project.id}`)).json();
+    expect(got.latest.content).toEqual(content);
+    // unbekanntes Medium innerhalb der Bilderstrecke
+    expectError(
+      await save(
+        ed,
+        p.project.id,
+        draftBody(p as never, {
+          content: [
+            {
+              id: randomUUID(),
+              type: 'gallery',
+              layout: 'strip',
+              items: [{ mediaId: randomUUID() }],
+            },
+          ],
+        }),
+      ),
+      400,
+      'validation_error',
+    );
+  });
+
   it('lehnt Verweise auf unbekannte Medien und Projekte ab', async () => {
     expectError(
       await as(t, ed, 'POST', '/api/v1/projects', projectPayload({ coverMediaId: randomUUID() })),

@@ -35,10 +35,7 @@ export function ProjectHero({ p, locale }: { p: BuildProject; locale: Locale }) 
         {ui.caseLabel} {pad(nr)} / {pad(list.length)} · {area}
       </p>
       <div>
-        <h1
-          class="display"
-          style="margin:0;font-size:clamp(56px,9.6vw,152px);line-height:.88"
-        >
+        <h1 class="display" style="margin:0;font-size:clamp(56px,9.6vw,152px);line-height:.88">
           {lines.map((l, i) => (
             <>
               {i > 0 && <br />}
@@ -118,6 +115,61 @@ export function ImageStrip({ p, locale }: { p: BuildProject; locale: Locale }) {
             alt={altOf(g.mediaId, locale, g.altOverride)}
             sizes="(max-width: 900px) 90vw, 700px"
             eager={i === 0}
+          />
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+/** Bilderstrecke als Block im Projekt: `strip` = horizontaler Streifen, `grid` = zweispaltiges Raster. */
+export function GalleryBlockView({
+  b,
+  locale,
+}: {
+  b: {
+    id: string;
+    anchor?: string;
+    layout: 'strip' | 'grid';
+    items: { mediaId: string; caption?: string }[];
+  };
+  locale: Locale;
+}) {
+  const ui = t(locale);
+  if (b.items.length === 0) return null;
+  if (b.layout === 'grid') {
+    return (
+      <section class="section" id={b.anchor} style="padding-bottom:96px">
+        <div class="pgrid">
+          {b.items.map((g) => (
+            <figure>
+              <Picture
+                mediaId={g.mediaId}
+                alt={altOf(g.mediaId, locale)}
+                sizes="(max-width: 900px) 100vw, 680px"
+              />
+              {g.caption && <figcaption>{g.caption}</figcaption>}
+            </figure>
+          ))}
+        </div>
+      </section>
+    );
+  }
+  return (
+    <div
+      class="strip"
+      id={b.anchor}
+      role="region"
+      aria-label={ui.stripLabel}
+      tabindex={0}
+      style="margin-bottom:96px"
+    >
+      {b.items.map((g) => (
+        <figure>
+          <Picture
+            mediaId={g.mediaId}
+            alt={altOf(g.mediaId, locale)}
+            sizes="(max-width: 900px) 90vw, 700px"
           />
         </figure>
       ))}

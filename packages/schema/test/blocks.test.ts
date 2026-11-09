@@ -119,6 +119,41 @@ describe('Block-Schemas', () => {
     expect(pageContentSchema(null)).toBe(ContentPageContent);
   });
 
+  it('erlaubt Bilder und Bilderstrecken in Projekten', () => {
+    const m = id();
+    const ok = ProjectContent.safeParse([
+      { id: id(), type: 'image', mediaId: m, size: 'large', caption: 'x' },
+      {
+        id: id(),
+        type: 'gallery',
+        layout: 'grid',
+        items: [{ mediaId: m, caption: 'a' }, { mediaId: id() }],
+      },
+    ]);
+    expect(ok.success).toBe(true);
+    // Standardlayout „strip“; leere Strecke und unbekanntes Layout werden abgelehnt
+    const strip = ProjectContent.parse([{ id: id(), type: 'gallery', items: [{ mediaId: m }] }]);
+    expect(strip[0]).toMatchObject({ layout: 'strip' });
+    expect(ProjectContent.safeParse([{ id: id(), type: 'gallery', items: [] }]).success).toBe(
+      false,
+    );
+    expect(
+      ProjectContent.safeParse([
+        { id: id(), type: 'gallery', layout: 'masonry', items: [{ mediaId: m }] },
+      ]).success,
+    ).toBe(false);
+  });
+
+  it('sammelt Medienverweise aus Bilderstrecken', () => {
+    const a = id();
+    const b = id();
+    expect(
+      collectMediaIds([
+        { type: 'gallery', items: [{ mediaId: a }, { mediaId: b }, { mediaId: a }] },
+      ]),
+    ).toEqual([a, b]);
+  });
+
   it('sammelt Medienverweise aus Blöcken', () => {
     const m = id();
     expect(collectMediaIds([{ type: 'media_text_card', mediaId: m }, { type: 'quote' }])).toEqual([

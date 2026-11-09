@@ -10,9 +10,9 @@ import {
 import Base from '../layouts/Base.astro';
 import DemoSection from '../components/DemoSection.astro';
 import { PageBlocks, planProject } from '../components/Blocks';
-import { Chapter, Quote } from '../components/Sections';
+import { Chapter, ImageFigure, Quote } from '../components/Sections';
 import { ChapterNav } from '../components/Project';
-import { ImageStrip, NextProject, ProjectHero } from '../components/Project';
+import { GalleryBlockView, ImageStrip, NextProject, ProjectHero } from '../components/Project';
 import { altOf, loadData, pageFor, projectsFor, setting } from '../lib/data';
 import { allEntries, findEntry, mdPath, ogPath, routeParam, type Entry } from '../lib/pages';
 import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText } from '../lib/seo';
@@ -89,10 +89,16 @@ const blocks =
         seg.type === 'chapters' ? (
           <section class="section side split" style={`padding-top:${seg.first ? 128 : 0}px`}>
             {seg.first && plan.entries.length > 0 ? <ChapterNav entries={plan.entries} label={ui.chapters} /> : <div class="hide-m" />}
-            <div style="max-width:760px">{seg.items.map((i) => <Chapter b={i.b as never} no={i.no} />)}</div>
+            <div style="max-width:760px">{seg.items.map((i) => i.b.type === 'chapter' ? <Chapter b={i.b as never} no={i.no} /> : <ImageFigure b={i.b as never} locale={locale} />)}</div>
           </section>
         ) : seg.type === 'quote' ? (
           <Quote b={seg.b as never} />
+        ) : seg.type === 'image-full' ? (
+          <section class="section" style="padding-bottom:96px">
+            <ImageFigure b={seg.b as never} locale={locale} />
+          </section>
+        ) : seg.type === 'gallery' ? (
+          <GalleryBlockView b={seg.b as never} locale={locale} />
         ) : (
           <DemoSection locale={locale} block={seg.b as never} />
         ),

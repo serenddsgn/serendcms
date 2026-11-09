@@ -95,9 +95,13 @@ export type Block = {
   title?: string;
 };
 export type Segment =
+  /** Textspalte: Kapitel (mit Nummer) und Bilder in Spaltenbreite stehen in der Reihenfolge des Admins zusammen. */
   | { type: 'chapters'; first: boolean; items: { b: Block; no: number }[] }
   | { type: 'quote'; b: Block }
-  | { type: 'demo'; b: Block };
+  | { type: 'demo'; b: Block }
+  /** Bild über die volle Seitenbreite */
+  | { type: 'image-full'; b: Block }
+  | { type: 'gallery'; b: Block };
 
 /**
  * Ordnet die Blöcke eines Projekts: aufeinanderfolgende Kapitel bilden eine Gruppe (die erste mit der
@@ -127,7 +131,22 @@ export function planProject(blocks: Block[]): { entries: ChapterEntry[]; segment
       group.items.push({ b, no: n });
       continue;
     }
+    // Bilder in Spaltenbreite bleiben in der laufenden Textspalte, sonst beginnen sie eine eigene
+    if (b.type === 'image' && (b as Block & { size?: string }).size !== 'full') {
+      if (!group) {
+        group = {
+          type: 'chapters',
+          first: !segments.some((s) => s.type === 'chapters'),
+          items: [],
+        };
+        segments.push(group);
+      }
+      group.items.push({ b, no: 0 });
+      continue;
+    }
     group = undefined;
+    if (b.type === 'image') segments.push({ type: 'image-full', b });
+    if (b.type === 'gallery') segments.push({ type: 'gallery', b });
     if (b.type === 'quote') segments.push({ type: 'quote', b });
     if (b.type === 'interactive_demo') {
       entries.push({
