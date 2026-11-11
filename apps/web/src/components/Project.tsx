@@ -45,10 +45,7 @@ export function ProjectHero({ p, locale }: { p: BuildProject; locale: Locale }) 
             </>
           ))}
         </h1>
-        <div
-          class="split"
-          style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:48px;margin-top:48px;align-items:start"
-        >
+        <div class="split hero-sub">
           {p.revision.subtitle ? (
             <p
               class="fade display"

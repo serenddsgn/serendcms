@@ -2428,3 +2428,25 @@ video.vid {
     animation: none;
   }
 }
+
+/* Projekt-Hero: Untertitel und Eckdaten nebeneinander. Ab 1280 px übernimmt die mitlaufende Karte die Eckdaten,
+   der Untertitel bekommt die ganze Breite. */
+.hero-sub {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 48px;
+  margin-top: 48px;
+  align-items: start;
+}
+@media (min-width: 1280px) {
+  .hero-sub {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero-sub .meta {
+    display: none;
+  }
+  .hero-sub > p {
+    max-width: 1000px;
+    font-size: clamp(32px, 3.2vw, 48px) !important;
+  }
+}
