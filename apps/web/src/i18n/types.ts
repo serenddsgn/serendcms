@@ -31,12 +31,12 @@ export interface UiStrings {
   dockLabel: string;
   newest: string;
   workedFor: string;
-  /** Block am Ende eines Projekts: persönlicher Kontakt mit Bezug auf das Projekt */
+  /** Block am Ende eines Projekts: persönlicher Kontakt; cardCta ist der Link in der mitlaufenden Karte */
   follow: {
     eyebrow: string;
     title: string;
     text: string;
-    reference: string;
+    cardCta: string;
   };
   breadcrumbHome: string;
   skip: string;

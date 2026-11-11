@@ -558,18 +558,8 @@ if (inquiry && typeof inquiry.showModal === 'function') {
     inquiry!.style.setProperty('--oy', `${y}px`);
     inquiry!.style.setProperty('--or', `${radius}px`);
   }
-  // Projektbezug: "Bezug: Dolce & Falcone" steht vorab im Nachrichtenfeld. Eigene Eingaben bleiben unangetastet.
-  const message = form.elements.namedItem('message') as HTMLTextAreaElement | null;
-  let prefill = '';
-  function applyReference(trigger: HTMLElement | null) {
-    if (!message || (message.value !== '' && message.value !== prefill)) return;
-    const ref = trigger?.dataset.inquiryRef;
-    prefill = ref ? `${inquiry!.dataset.refLabel ?? ''}: ${ref}\n\n` : '';
-    message.value = prefill;
-  }
   function openInquiry(trigger: HTMLElement | null) {
     if (inquiry!.open) return;
-    applyReference(trigger);
     origin = trigger;
     closing = false;
     setOrigin();
@@ -589,7 +579,6 @@ if (inquiry && typeof inquiry.showModal === 'function') {
       done.hidden = true;
       form.hidden = false;
       form.reset();
-      prefill = '';
     }
   }
   function closeInquiry() {

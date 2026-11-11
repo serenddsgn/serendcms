@@ -259,11 +259,10 @@ export function ProjectAside({ p, locale, cta }: { p: BuildProject; locale: Loca
           class="mc-cta"
           href={cta.href}
           data-inquiry-open
-          data-inquiry-ref={p.revision.title}
           aria-haspopup="dialog"
           aria-controls="inquiry"
         >
-          {ui.follow.title}
+          {ui.follow.cardCta}
           <ArrowIcon size={14} />
         </a>
       </div>
@@ -301,14 +300,12 @@ export function ProjectDock({ p, locale }: { p: BuildProject; locale: Locale }) 
   );
 }
 
-/** Abschluss einer Projektseite: Gesicht, Zusage zur Antwortzeit und Anfrage mit Bezug auf das Projekt. */
+/** Abschluss einer Projektseite: Gesicht, Einladung zur Anfrage und der Anfrage-Button. */
 export function ProjectFollowUp({
-  p,
   locale,
   cta,
   portraitId,
 }: {
-  p: BuildProject;
   locale: Locale;
   cta: Cta;
   portraitId?: string | undefined;
@@ -333,16 +330,12 @@ export function ProjectFollowUp({
               class="cta"
               href={cta.href}
               data-inquiry-open
-              data-inquiry-ref={p.revision.title}
               aria-haspopup="dialog"
               aria-controls="inquiry"
             >
               <span class="dot" />
               <span class="lbl">{cta.label}</span>
             </a>
-            <span class="ref mono">
-              {ui.follow.reference}: {p.revision.title}
-            </span>
           </div>
         </div>
       </div>

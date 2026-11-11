@@ -2347,12 +2347,6 @@ video.vid {
 .fu .cta .lbl {
   display: inline;
 }
-.fu .ref {
-  padding: 9px 13px;
-  border: 1px dashed var(--line);
-  border-radius: 999px;
-  color: var(--mute);
-}
 @media (max-width: 560px) {
   .fu {
     grid-template-columns: minmax(0, 1fr);
