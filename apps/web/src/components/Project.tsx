@@ -137,7 +137,7 @@ export function GalleryBlockView({
   if (b.layout === 'grid') {
     return (
       <section class="section" id={b.anchor} style="padding-bottom:96px">
-        <div class="pgrid">
+        <div class="gal">
           {b.items.map((g) => (
             <figure>
               <Picture

@@ -987,13 +987,20 @@ a.loc {
 }
 
 /* Projekte */
-.bar {
+/* Die Leiste klebt unter dem Header: Träger ist .bar-wrap (volle Breite, Elternteil ist die ganze Übersicht).
+   .bar selbst bleibt in der Inhaltsbreite, damit die Linien mit dem Raster abschließen. */
+.bar-wrap {
   position: sticky;
   top: calc(var(--nav-hc, var(--nav-h)) + 1px);
   z-index: 20;
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transition:
+    background-color 0.6s,
+    top 0.5s var(--ease-inout);
+}
+.bar {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   padding: 10px 0;
@@ -1002,9 +1009,6 @@ a.loc {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  transition:
-    background-color 0.6s,
-    top 0.5s var(--ease-inout);
 }
 .tab {
   position: relative;
@@ -1238,7 +1242,7 @@ a.loc {
   scroll-snap-type: x mandatory;
   padding: 0 var(--gutter) 8px;
   scrollbar-width: thin;
-  max-width: 1440px;
+  max-width: var(--container);
   margin: 0 auto;
 }
 .strip figure {
@@ -1351,34 +1355,34 @@ a.loc {
   }
 }
 /* Bilderstrecke „Raster“ im Projekt: zwei Spalten, mobil eine */
-.pgrid {
+.gal {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
-.pgrid figure {
+.gal figure {
   margin: 0;
 }
-.pgrid picture,
-.pgrid img,
-.pgrid video {
+.gal picture,
+.gal img,
+.gal video {
   display: block;
   width: 100%;
   height: auto;
 }
-.pgrid img,
-.pgrid video {
+.gal img,
+.gal video {
   border-radius: var(--r-card);
   background: var(--chip, rgba(127, 127, 127, 0.12));
 }
-.pgrid figcaption {
+.gal figcaption {
   margin-top: 10px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--mute);
 }
 @media (max-width: 900px) {
-  .pgrid {
+  .gal {
     grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -348,71 +348,73 @@ export function ProjectIndex({ b, locale }: { b: B<typeof ProjectIndexBlock>; lo
     p.revision.categories.map((c) => categoryName(locale, c)).join(' · ');
   return (
     <div data-project-index data-default-view={b.defaultView} data-total={list.length}>
-      <div class="section" style="padding:0">
-        <div class="bar fade" style="animation-delay:1.15s" id="filter">
-          <div role="group" aria-label={ui.filterLabel} style="display:flex;flex-wrap:wrap">
-            {tabs.map((tb, i) => (
-              <button
-                type="button"
-                class="tab"
-                data-filter={tb.key}
-                aria-pressed={i === 0 ? 'true' : 'false'}
-              >
-                {tb.label}
-                <sup>{tb.n}</sup>
-              </button>
-            ))}
-          </div>
-          <div style="display:flex;align-items:center;gap:16px">
-            <span class="mono" aria-live="polite" data-count style="color:var(--mute)">
-              {list.length} / {list.length}
-            </span>
-            <div class="seg" role="group" aria-label={ui.viewLabel} data-view={b.defaultView}>
-              <span class="thumb" />
-              <button
-                type="button"
-                data-view-btn="grid"
-                aria-pressed={b.defaultView === 'grid' ? 'true' : 'false'}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  aria-hidden="true"
+      <div class="bar-wrap">
+        <div class="section">
+          <div class="bar fade" style="animation-delay:1.15s" id="filter">
+            <div role="group" aria-label={ui.filterLabel} style="display:flex;flex-wrap:wrap">
+              {tabs.map((tb, i) => (
+                <button
+                  type="button"
+                  class="tab"
+                  data-filter={tb.key}
+                  aria-pressed={i === 0 ? 'true' : 'false'}
                 >
-                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                </svg>
-                {ui.grid}
-              </button>
-              <button
-                type="button"
-                data-view-btn="list"
-                aria-pressed={b.defaultView === 'list' ? 'true' : 'false'}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  aria-hidden="true"
+                  {tb.label}
+                  <sup>{tb.n}</sup>
+                </button>
+              ))}
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="mono" aria-live="polite" data-count style="color:var(--mute)">
+                {list.length} / {list.length}
+              </span>
+              <div class="seg" role="group" aria-label={ui.viewLabel} data-view={b.defaultView}>
+                <span class="thumb" />
+                <button
+                  type="button"
+                  data-view-btn="grid"
+                  aria-pressed={b.defaultView === 'grid' ? 'true' : 'false'}
                 >
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                {ui.list}
-              </button>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  </svg>
+                  {ui.grid}
+                </button>
+                <button
+                  type="button"
+                  data-view-btn="list"
+                  aria-pressed={b.defaultView === 'list' ? 'true' : 'false'}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  {ui.list}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="pgrid" data-view="grid" hidden={b.defaultView !== 'grid'}>
+      <div class="pgrid section" data-view="grid" hidden={b.defaultView !== 'grid'}>
         {list.map((p, i) => (
           <a
             class="g"
