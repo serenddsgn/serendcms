@@ -30,7 +30,6 @@ export interface UiStrings {
   allProjects: string;
   dockLabel: string;
   newest: string;
-  workedFor: string;
   /** Block am Ende eines Projekts: persönlicher Kontakt mit Bezug auf das Projekt */
   follow: {
     eyebrow: string;

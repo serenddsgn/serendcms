@@ -315,7 +315,7 @@ export function ProjectFollowUp({
 }) {
   const ui = t(locale);
   return (
-    <section class="section follow reveal">
+    <section class="section pfu reveal">
       <div class="fu">
         {portraitId && (
           <figure class="fu-p">

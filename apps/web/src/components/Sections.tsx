@@ -34,8 +34,8 @@ import { ArrowIcon, BigLink, Emphasis, Picture, Runs } from './Common';
 type B<T extends z.ZodType> = z.infer<T>;
 const idAttr = (b: { anchor?: string | undefined }) => b.anchor;
 
-/** Kleine Karte im Hero: das neueste Projekt, damit schon über dem Falz Arbeit zu sehen ist. */
-function ProjectTeaser({
+/** Hero rechts: das neueste Projekt als große Kachel, damit schon über dem Falz Arbeit zu sehen ist. */
+function HeroProject({
   p,
   locale,
 }: {
@@ -46,23 +46,28 @@ function ProjectTeaser({
   const area = p.revision.categories.map((c) => categoryName(locale, c)).join(' · ');
   return (
     <a
-      class="teaser"
+      class="hp"
       href={projectUrl(p)}
       data-no-vt
       style={`--tc:${p.revision.tileColor ?? p.revision.color}`}
     >
-      <span class="tz-img">
-        <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="96px" />
-      </span>
-      <span class="tz-tx">
-        <span class="eyebrow">
-          {ui.newest} · {p.revision.year}
+      <Picture
+        mediaId={p.revision.coverMediaId!}
+        alt={altOf(p.revision.coverMediaId!, locale)}
+        sizes="(max-width: 900px) 100vw, 560px"
+        eager
+      />
+      <span class="hp-cap">
+        <span class="hp-tx">
+          <span class="eyebrow">
+            {ui.newest} · {p.revision.year}
+          </span>
+          <b>{p.revision.title}</b>
+          <span class="hp-cat">{area}</span>
         </span>
-        <b>{p.revision.title}</b>
-        <span class="tz-cat">{area}</span>
-      </span>
-      <span class="ring" aria-hidden="true">
-        <ArrowIcon size={14} />
+        <span class="ring" aria-hidden="true">
+          <ArrowIcon size={14} />
+        </span>
       </span>
     </a>
   );
@@ -94,18 +99,23 @@ export function Hero({ b, locale }: { b: B<typeof HeroBlock>; locale: Locale }) 
           ))}
         </h1>
         <div class="hero-grid" style="margin-top:56px">
-          <div />
           <div class="fade" style="animation-delay:1.25s">
             <p style="margin:0;font-size:18px;line-height:1.6;color:var(--mute);max-width:520px">
               <Emphasis text={b.intro} />
             </p>
-            {newest && <ProjectTeaser p={newest} locale={locale} />}
             <BigLink
               href={resolveTarget(b.link.target)}
               label={b.link.label}
               style="margin-top:28px;font-size:15px"
             />
           </div>
+          {newest ? (
+            <div class="fade" style="animation-delay:1.35s">
+              <HeroProject p={newest} locale={locale} />
+            </div>
+          ) : (
+            <div />
+          )}
         </div>
       </div>
     </section>
@@ -167,23 +177,6 @@ export function FeaturedProjects({
           label={b.allProjectsLink.label}
           style="font-size:32px;font-weight:700"
         />
-      </div>
-      <div class="side names-row reveal">
-        <p class="eyebrow" style="margin:10px 0 0">
-          {ui.workedFor}
-        </p>
-        <ul class="names">
-          {projectsFor(locale).map((p) => (
-            <li>
-              <a href={projectUrl(p)} data-no-vt>
-                {p.revision.title}
-                <span class="pk" aria-hidden="true">
-                  <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="160px" />
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
   );

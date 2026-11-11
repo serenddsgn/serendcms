@@ -149,7 +149,7 @@ for (const el of $$<HTMLElement>('.cta')) {
       }
       paint();
     });
-    $$('.demo, .next, .footer, .follow').forEach((el) => io.observe(el));
+    $$('.demo, .next, .footer, .pfu').forEach((el) => io.observe(el));
   }
 }
 
