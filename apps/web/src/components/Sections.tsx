@@ -122,8 +122,9 @@ export function Hero({ b, locale }: { b: B<typeof HeroBlock>; locale: Locale }) 
   );
 }
 
-/** Standard-Größen im Automodus: erste Kachel groß, zweite hoch, der Rest klein. */
-const AUTO_SIZE: FeaturedSize[] = ['l', 't'];
+/** Standard-Größen im Automodus: alle gleich groß, drei Spalten. So räumen die Nachbarn beim Übergang „Welle“ ein gleichmäßiges Feld.
+ *  Im Layout-Builder gewählte Größen (l, t, w, s) gelten weiterhin. */
+const AUTO_SIZE: FeaturedSize[] = [];
 const TILE_SIZES: Record<Exclude<FeaturedSize, 'auto'>, string> = {
   l: '(max-width: 820px) 100vw, 66vw',
   w: '(max-width: 820px) 100vw, 66vw',

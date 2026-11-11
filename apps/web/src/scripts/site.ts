@@ -75,6 +75,7 @@ function wave(from: HTMLElement): Promise<void> {
 addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   curtain?.classList.remove('leaving');
+  document.dispatchEvent(new Event('serend:resume'));
   for (const a of waving) a.cancel();
   waving = [];
   leaving = false;
@@ -90,6 +91,7 @@ document.addEventListener('click', (e) => {
   if (samePage && url.hash) return; // Anker auf derselben Seite
   if (/\.(md|png|txt|xml)$/.test(url.pathname)) return;
   e.preventDefault();
+  document.dispatchEvent(new Event('serend:leave'));
   if (a.hasAttribute('data-no-vt')) (window as unknown as { __noVt?: boolean }).__noVt = true;
   if (leaving) return;
   if (canWave && !samePage && a.matches('.tile, .g')) {
@@ -184,6 +186,7 @@ if (loc && locText) {
   const STAGGER = 38; // ms Versatz pro Zeichen
   let state: 'A' | 'B' = 'B';
   let hovering = false;
+  let frozen = false;
   let raf = 0;
   let stopTimer = 0;
 
@@ -191,6 +194,10 @@ if (loc && locText) {
 
   function scrambleTo(target: string) {
     cancelAnimationFrame(raf);
+    if (frozen) {
+      locText!.textContent = target;
+      return;
+    }
     if (reduced) {
       locText!.textContent = target;
       return;
@@ -224,7 +231,7 @@ if (loc && locText) {
   addEventListener(
     'scroll',
     () => {
-      if (hovering) return;
+      if (hovering || frozen) return;
       activate();
       setState('A');
       clearTimeout(stopTimer);
@@ -234,7 +241,19 @@ if (loc && locText) {
     },
     { passive: true },
   );
+  // Beginnt ein Seitenwechsel, steht der Standort still: keine laufende Animation neben Welle und View Transition
+  document.addEventListener('serend:resume', () => {
+    frozen = false;
+  });
+  document.addEventListener('serend:leave', () => {
+    frozen = true;
+    cancelAnimationFrame(raf);
+    clearTimeout(stopTimer);
+    state = 'B';
+    locText.textContent = textB;
+  });
   loc.addEventListener('mouseenter', () => {
+    if (frozen) return;
     hovering = true;
     clearTimeout(stopTimer);
     activate();
