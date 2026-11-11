@@ -55,7 +55,9 @@ function wave(from: HTMLElement): Promise<void> {
         ...$$<HTMLElement>('.eyebrow, .hero-h1, .hero-grid > :first-child', hero),
         ...$$<HTMLElement>('.tile'),
       ]
-    : $$<HTMLElement>('.tile, .g', scope);
+    : from.closest('.names')
+      ? [...$$<HTMLElement>('.names a', from.closest('.names')!), ...$$<HTMLElement>('.svc, .tile')]
+      : $$<HTMLElement>('.tile, .g', scope);
   const peers = neighbours
     .filter((el) => el !== from && !from.contains(el))
     .map((el) => {
@@ -102,11 +104,12 @@ document.addEventListener('click', (e) => {
   document.dispatchEvent(new Event('serend:leave'));
   // Die angeklickte Kachel merkt sich der Seitenübergang (Head-Script in Base.astro), damit bei doppelten Links
   // (Hero-Karte und Kachel desselben Projekts) genau diese morpht
-  (window as unknown as { __vtSource?: Element | null }).__vtSource = a.matches('.tile, .g, .hp')
-    ? a
-    : null;
+  // Namenszeile: nur mit Hover (das Vorschaubild ist die Quelle des Morphs); auf Touch bleibt es beim Vorhang
+  const morphs =
+    a.matches('.tile, .g, .hp') || (a.matches('.names a') && matchMedia('(hover: hover)').matches);
+  (window as unknown as { __vtSource?: Element | null }).__vtSource = morphs ? a : null;
   if (leaving) return;
-  if (canWave && !samePage && a.matches('.tile, .g, .hp')) {
+  if (canWave && !samePage && morphs) {
     leaving = true;
     void wave(a).then(() => {
       location.href = url.href;

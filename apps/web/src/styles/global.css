@@ -2090,9 +2090,14 @@ video.vid {
   box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
 }
 .names a:hover .pk,
-.names a:focus-visible .pk {
+.names a:focus-visible .pk,
+.names a.on .pk {
   opacity: 1;
   transform: scale(1) rotate(3deg);
+}
+/* Beim Zurückkehren per Seitenübergang steht die Vorschau sofort (der Morph landet darauf) */
+.names a.on .pk {
+  transition: none;
 }
 .names .pk picture,
 .names .pk img {

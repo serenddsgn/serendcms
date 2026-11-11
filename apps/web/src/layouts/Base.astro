@@ -76,17 +76,17 @@ const canonical = abs(path);
         // Kachel (Startseite, Übersicht) oder Hero-Karte zu einer Projekt-URL. `kind` bevorzugt die Art, aus der man kam.
         function tileFor(url, kind) {
           var path = new URL(url, location.href).pathname;
-          var links = document.querySelectorAll('.tile[href], .g[href], .hp[href]');
+          var links = document.querySelectorAll('.tile[href], .g[href], .hp[href], .names a[href]');
           var first = null;
           for (var i = 0; i < links.length; i++) {
             if (new URL(links[i].href).pathname !== path) continue;
-            if (!kind || links[i].classList.contains(kind)) return media(links[i]);
+            if (!kind || kindOf(links[i]) === kind) return media(links[i]);
             first = first || media(links[i]);
           }
           return first;
         }
         function kindOf(el) {
-          return el.classList.contains('hp') ? 'hp' : el.classList.contains('g') ? 'g' : 'tile';
+          return el.closest('.names') ? 'nm' : el.classList.contains('hp') ? 'hp' : el.classList.contains('g') ? 'g' : 'tile';
         }
         function mark(el) {
           if (el) el.style.viewTransitionName = NAME;
@@ -126,9 +126,20 @@ const canonical = abs(path);
             var r = JSON.parse(sessionStorage.getItem(KEY + ':kind') || 'null');
             if (r && from && r.p === new URL(from.url).pathname) kind = r.k;
           } catch (x) {}
-          var ok = !reduce && at > 0 && Date.now() - at < 8000 && (mark(document.querySelector('.strip figure')) || (from && mark(tileFor(from.url, kind))));
-          if (ok) root.classList.add('vt-in');
-          else vt.skipTransition();
+          var back = null;
+          var ok = !reduce && at > 0 && Date.now() - at < 8000 && (mark(document.querySelector('.strip figure')) || (from && mark((back = tileFor(from.url, kind)))));
+          if (ok) {
+            root.classList.add('vt-in');
+            // Zurück zur Namenszeile: die Vorschau steht dort nur beim Hover, für den Morph zeigt sie sich bis zum Ende
+            var link = back && back.closest ? back.closest('.names a') : null;
+            if (link) {
+              link.classList.add('on');
+              var off = function () {
+                link.classList.remove('on');
+              };
+              vt.finished.then(off, off);
+            }
+          } else vt.skipTransition();
         });
         addEventListener('pageshow', function (e) {
           if (!e.persisted) return;

@@ -226,7 +226,7 @@ export function ServicesOverview({
           <ul class="names">
             {projectsFor(locale).map((p) => (
               <li>
-                <a href={projectUrl(p)}>
+                <a href={projectUrl(p)} {...vtAttrs(p)}>
                   {p.revision.title}
                   <span class="pk" aria-hidden="true">
                     <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="160px" />
