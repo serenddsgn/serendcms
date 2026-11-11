@@ -32,6 +32,7 @@ export const en: UiStrings = {
   allProjects: 'All projects',
   dockLabel: 'Browse projects',
   newest: 'New',
+  workedFor: 'Worked with',
   follow: {
     eyebrow: 'After the project',
     title: 'Planning something similar?',

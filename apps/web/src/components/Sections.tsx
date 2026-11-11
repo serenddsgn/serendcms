@@ -192,6 +192,7 @@ export function ServicesOverview({
   locale: Locale;
 }) {
   const link = projectIndexPath(locale);
+  const ui = t(locale);
   return (
     <section class="section side" id={idAttr(b)} style="padding-top:140px;padding-bottom:60px">
       <p class="eyebrow" style="margin:14px 0 0">
@@ -217,6 +218,23 @@ export function ServicesOverview({
               </span>
             </a>
           ))}
+        </div>
+        <div class="names-row">
+          <p class="eyebrow" style="margin:0 0 20px">
+            {ui.workedFor}
+          </p>
+          <ul class="names">
+            {projectsFor(locale).map((p) => (
+              <li>
+                <a href={projectUrl(p)}>
+                  {p.revision.title}
+                  <span class="pk" aria-hidden="true">
+                    <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="160px" />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

@@ -2042,6 +2042,71 @@ video.vid {
   transform: rotate(-45deg);
 }
 
+/* Namenszeile: echte Projektnamen statt Logos, Cover erscheint beim Hover */
+.names-row {
+  padding-top: 96px;
+}
+.names {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  font-size: clamp(20px, 2.3vw, 28px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.names li:not(:last-child)::after {
+  content: '·';
+  color: var(--mute);
+  opacity: 0.5;
+  padding: 0 0.45em;
+}
+.names a {
+  position: relative;
+  display: inline-block;
+  color: var(--mute);
+  transition: color 0.3s;
+}
+.names a:hover,
+.names a:focus-visible {
+  color: var(--fg);
+}
+.names .pk {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 14px);
+  width: 150px;
+  height: 190px;
+  margin-left: -75px;
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85) rotate(3deg);
+  transition: all 0.55s var(--ease-spring);
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+}
+.names a:hover .pk,
+.names a:focus-visible .pk {
+  opacity: 1;
+  transform: scale(1) rotate(3deg);
+}
+.names .pk picture,
+.names .pk img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (hover: none) {
+  .names .pk {
+    display: none;
+  }
+}
+
 /* Projektübersicht: Untertitel und Kategorie-Pills unter dem Namen */
 .g .sub {
   display: -webkit-box;
