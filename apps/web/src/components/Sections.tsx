@@ -219,23 +219,23 @@ export function ServicesOverview({
             </a>
           ))}
         </div>
-        <div class="names-row">
-          <p class="eyebrow" style="margin:0 0 20px">
-            {ui.workedFor}
-          </p>
-          <ul class="names">
-            {projectsFor(locale).map((p) => (
-              <li>
-                <a href={projectUrl(p)} {...vtAttrs(p)}>
-                  {p.revision.title}
-                  <span class="pk" aria-hidden="true">
-                    <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="160px" />
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+      </div>
+      <div class="names-row">
+        <p class="eyebrow" style="margin:0 0 20px">
+          {ui.workedFor}
+        </p>
+        <ul class="names">
+          {projectsFor(locale).map((p) => (
+            <li>
+              <a href={projectUrl(p)} {...vtAttrs(p)}>
+                {p.revision.title}
+                <span class="pk" aria-hidden="true">
+                  <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="160px" />
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

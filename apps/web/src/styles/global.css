@@ -2032,6 +2032,7 @@ video.vid {
 
 /* Namenszeile: echte Projektnamen statt Logos, Cover erscheint beim Hover */
 .names-row {
+  grid-column: 1 / -1;
   padding-top: 96px;
 }
 .names {
