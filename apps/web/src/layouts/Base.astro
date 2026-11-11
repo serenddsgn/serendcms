@@ -61,95 +61,46 @@ const canonical = abs(path);
       })();
     </script>
     <script is:inline>
-      /* Seitenübergang „Welle“: Projektkachel wird zum ersten Bild der Projektseite (View Transition über Dokumente).
-         Muss im Head stehen, weil pageswap/pagereveal vor dem ersten Rendern feuern. Ohne Unterstützung
-         oder bei reduzierter Bewegung läuft der Vorhang wie bisher. */
+      /* Seitenübergang „Welle“: Das Bild der angeklickten Kachel wächst zum ersten Bild der Projektseite (und zurück).
+         site.ts legt vor dem Seitenwechsel Position und Bild in sessionStorage. Dieses Skript steht im Head, damit schon
+         das erste Bild der neuen Seite die Überlagerung zeigt (kein Blitzen). site.ts animiert sie dann zum Ziel.
+         Bei reduzierter Bewegung oder ohne gültigen Eintrag läuft der Vorhang wie bisher. */
       (function () {
-        if (!('onpageswap' in window)) return;
-        var KEY = 'serend:vt';
-        var NAME = 'project-cover';
+        var KEY = 'serend:morph';
         var root = document.documentElement;
-        var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        function media(el) {
-          return el && el.querySelector('picture, video, img');
-        }
-        // Kachel (Startseite, Übersicht) oder Hero-Karte zu einer Projekt-URL. `kind` bevorzugt die Art, aus der man kam.
-        function tileFor(url, kind) {
-          var path = new URL(url, location.href).pathname;
-          var links = document.querySelectorAll('.tile[href], .g[href], .hp[href], .names a[href]');
-          var first = null;
-          for (var i = 0; i < links.length; i++) {
-            if (new URL(links[i].href).pathname !== path) continue;
-            if (!kind || kindOf(links[i]) === kind) return media(links[i]);
-            first = first || media(links[i]);
-          }
-          return first;
-        }
-        function kindOf(el) {
-          return el.closest('.names') ? 'nm' : el.classList.contains('hp') ? 'hp' : el.classList.contains('g') ? 'g' : 'tile';
-        }
-        function mark(el) {
-          if (el) el.style.viewTransitionName = NAME;
-          return !!el;
-        }
-        addEventListener('pageswap', function (e) {
-          var vt = e.viewTransition;
-          if (!vt) return;
-          var ok = false;
-          if (!reduce && e.activation) {
-            // Vorwärts: die angeklickte Kachel (site.ts merkt sie sich). Zurück per Browser-Button: erstes Bild der Projektseite.
-            var src = window.__vtSource;
-            if (src && src.isConnected && mark(media(src))) {
-              ok = true;
-              try {
-                sessionStorage.setItem(KEY + ':kind', JSON.stringify({ p: new URL(e.activation.entry.url, location.href).pathname, k: kindOf(src) }));
-              } catch (x) {}
-            } else if (e.activation.navigationType === 'traverse') {
-              ok = mark(document.querySelector('.strip figure'));
-            }
-          }
-          if (ok) {
-            try {
-              sessionStorage.setItem(KEY, String(Date.now()));
-            } catch (x) {}
-          } else vt.skipTransition();
-        });
-        addEventListener('pagereveal', function (e) {
-          var vt = e.viewTransition;
-          if (!vt) return;
-          var at = 0;
-          var kind = null;
-          var from = navigation.activation && navigation.activation.from;
+        function start() {
+          var raw = null;
           try {
-            at = +sessionStorage.getItem(KEY) || 0;
+            raw = sessionStorage.getItem(KEY);
             sessionStorage.removeItem(KEY);
-            var r = JSON.parse(sessionStorage.getItem(KEY + ':kind') || 'null');
-            if (r && from && r.p === new URL(from.url).pathname) kind = r.k;
-          } catch (x) {}
-          var back = null;
-          var ok = !reduce && at > 0 && Date.now() - at < 8000 && (mark(document.querySelector('.strip figure')) || (from && mark((back = tileFor(from.url, kind)))));
-          if (ok) {
-            root.classList.add('vt-in');
-            // Zurück zur Namenszeile: die Vorschau steht dort nur beim Hover, für den Morph zeigt sie sich bis zum Ende
-            var link = back && back.closest ? back.closest('.names a') : null;
-            if (link) {
-              link.classList.add('on');
-              var off = function () {
-                link.classList.remove('on');
-              };
-              vt.finished.then(off, off);
-            }
-          } else vt.skipTransition();
-        });
-        addEventListener('pageshow', function (e) {
-          if (!e.persisted) return;
-          window.__vtSource = null;
+          } catch (e) {}
+          if (!raw) return;
+          var m = null;
           try {
-            sessionStorage.removeItem(KEY);
-          } catch (x) {}
-          var named = document.querySelectorAll('[style*="view-transition-name"]');
-          for (var i = 0; i < named.length; i++) named[i].style.viewTransitionName = '';
-        });
+            m = JSON.parse(raw);
+          } catch (e) {}
+          if (!m || Date.now() - m.t > 6000 || m.p !== location.pathname) return;
+          if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          var bg = /^[#a-z0-9(),.% ]+$/i.test(m.bg) ? m.bg : 'transparent';
+          var o = document.createElement('div');
+          o.className = 'morph';
+          o.style.cssText =
+            'position:fixed;z-index:95;pointer-events:none;left:' + m.x + 'px;top:' + m.y + 'px;width:' + m.w + 'px;height:' + m.h +
+            'px;border-radius:' + m.rad + 'px;transform:rotate(' + (m.rot || 0) + 'deg);background:' + bg +
+            ' center/cover no-repeat url("' + String(m.src).replace(/"/g, '%22') + '")';
+          root.appendChild(o);
+          root.classList.add('morph-pending', 'vt-in');
+          window.__morph = { m: m, o: o };
+          // Sicherheitsnetz: läuft site.ts nicht, darf die Seite nicht verborgen bleiben
+          setTimeout(function () {
+            if (!window.__morph) return;
+            root.classList.remove('morph-pending');
+            window.__morph.o.remove();
+            window.__morph = null;
+          }, 3000);
+        }
+        window.__startMorph = start;
+        start();
       })();
     </script>
     <title>{fullTitle}</title>

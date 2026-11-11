@@ -38,9 +38,9 @@ function leave(href: string) {
     location.href = href;
   }, 900);
 }
-// Welle: Klick auf eine Projektkachel → die Nachbarn räumen das Feld (nächste zuerst), danach morpht die
-// Kachel zur Projektseite (View Transition, Namen setzt der Head-Script in Base.astro).
-const canWave = !reduced && 'onpageswap' in window;
+// Welle: Klick auf eine Projektkachel → die Nachbarn räumen das Feld (nächste zuerst), danach wächst das Bild der
+// Kachel zum ersten Bild der Projektseite (Morph, siehe unten).
+const canWave = !reduced;
 let waving: Animation[] = [];
 let leaving = false;
 function wave(from: HTMLElement): Promise<void> {
@@ -89,6 +89,9 @@ addEventListener('pageshow', (e) => {
   for (const a of waving) a.cancel();
   waving = [];
   leaving = false;
+  // Zurück aus dem Zwischenspeicher: das Bild der Projektseite fliegt in seine Kachel
+  (window as unknown as { __startMorph?: () => void }).__startMorph?.();
+  runMorph();
 });
 document.addEventListener('click', (e) => {
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
@@ -102,22 +105,192 @@ document.addEventListener('click', (e) => {
   if (/\.(md|png|txt|xml)$/.test(url.pathname)) return;
   e.preventDefault();
   document.dispatchEvent(new Event('serend:leave'));
-  // Die angeklickte Kachel merkt sich der Seitenübergang (Head-Script in Base.astro), damit bei doppelten Links
-  // (Hero-Karte und Kachel desselben Projekts) genau diese morpht
-  // Namenszeile: nur mit Hover (das Vorschaubild ist die Quelle des Morphs); auf Touch bleibt es beim Vorhang
+  // Kachel, Hero-Karte oder Name (nur mit Hover: dessen Vorschaubild ist die Quelle) morphen, sofern die
+  // Projektseite ein erstes Bild hat (data-vt-srcset); sonst bleibt es beim Vorhang
   const morphs =
-    a.matches('.tile, .g, .hp') || (a.matches('.names a') && matchMedia('(hover: hover)').matches);
-  (window as unknown as { __vtSource?: Element | null }).__vtSource = morphs ? a : null;
+    (a.matches('.tile, .g, .hp') ||
+      (a.matches('.names a') && matchMedia('(hover: hover)').matches)) &&
+    a.hasAttribute('data-vt-srcset') &&
+    forwardRecord(a, url) !== null;
   if (leaving) return;
   if (canWave && !samePage && morphs) {
     leaving = true;
     void wave(a).then(() => {
+      const rec = forwardRecord(a, url);
+      if (rec) {
+        stash(rec);
+        try {
+          sessionStorage.setItem(
+            FROM_KEY,
+            JSON.stringify({ proj: url.pathname, home: location.pathname, kind: rec.kind }),
+          );
+        } catch {
+          /* privater Modus */
+        }
+      }
       location.href = url.href;
     });
     return;
   }
   leave(url.href);
 });
+
+// ── Morph: das Bild der angeklickten Kachel wächst zum ersten Bild der Projektseite, und beim Zurückgehen wieder in die Kachel ──
+const MORPH_KEY = 'serend:morph';
+const FROM_KEY = 'serend:from';
+interface MorphRecord {
+  /** fwd: Kachel → Projektseite, back: Projektseite → Kachel */
+  k: 'fwd' | 'back';
+  /** Art der Quelle: tile, g, hp oder nm (Namenszeile) */
+  kind: string;
+  /** Pfad des Projekts */
+  proj: string;
+  /** Pfad der Seite, auf der der Morph läuft */
+  p: string;
+  src: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rad: number;
+  bg: string;
+  rot: number;
+  t: number;
+}
+const kindOf = (el: Element) =>
+  el.closest('.names') ? 'nm' : el.matches('.hp') ? 'hp' : el.matches('.g') ? 'g' : 'tile';
+/** Der sichtbare Rahmen des Bildes: Kachel, Hero-Karte, Rasterbild oder Vorschau der Namenszeile. */
+const frameOf = (a: HTMLElement): HTMLElement | null =>
+  a.closest('.names') ? $('.pk', a) : a.matches('.g') ? $('.ph', a) : a;
+/** Position und Größe ohne Drehung (die Vorschau der Namenszeile ist um 3° gedreht). */
+function measure(frame: HTMLElement) {
+  const bb = frame.getBoundingClientRect();
+  const w = frame.offsetWidth;
+  const h = frame.offsetHeight;
+  return { x: bb.left + bb.width / 2 - w / 2, y: bb.top + bb.height / 2 - h / 2, w, h };
+}
+function stash(rec: MorphRecord): void {
+  try {
+    sessionStorage.setItem(MORPH_KEY, JSON.stringify(rec));
+  } catch {
+    /* privater Modus: dann gibt es keinen Morph */
+  }
+}
+function forwardRecord(a: HTMLElement, url: URL): MorphRecord | null {
+  const frame = frameOf(a);
+  const img = frame && $<HTMLImageElement>('img', frame);
+  const src = img?.currentSrc || img?.src;
+  if (!frame || !src) return null;
+  const cs = getComputedStyle(frame);
+  const kind = kindOf(a);
+  return {
+    k: 'fwd',
+    kind,
+    proj: url.pathname,
+    p: url.pathname,
+    src,
+    ...measure(frame),
+    rad: parseFloat(cs.borderTopLeftRadius) || 0,
+    bg: cs.backgroundColor,
+    rot: kind === 'nm' ? 3 : 0,
+    t: Date.now(),
+  };
+}
+// Zurück per Browser-Button: das erste Bild der Projektseite merkt sich Position und Bild für die Startseite
+interface NavigationLike {
+  addEventListener(
+    type: 'navigate',
+    fn: (e: { navigationType: string; destination?: { url: string } }) => void,
+  ): void;
+}
+const nav = (window as unknown as { navigation?: NavigationLike }).navigation;
+nav?.addEventListener('navigate', (e) => {
+  if (reduced || e.navigationType !== 'traverse' || !e.destination) return;
+  let from: { proj: string; home: string; kind: string } | null;
+  try {
+    from = JSON.parse(sessionStorage.getItem(FROM_KEY) ?? 'null');
+  } catch {
+    from = null;
+  }
+  if (!from || from.proj !== location.pathname) return;
+  if (new URL(e.destination.url).pathname !== from.home) return;
+  const fig = $<HTMLElement>('.strip figure');
+  const img = fig && $<HTMLImageElement>('img', fig);
+  const src = img?.currentSrc || img?.src;
+  if (!fig || !src) return;
+  const bb = fig.getBoundingClientRect();
+  if (bb.bottom < 0 || bb.top > innerHeight) return; // nicht im Bild: kein Morph
+  stash({
+    k: 'back',
+    kind: from.kind,
+    proj: from.proj,
+    p: from.home,
+    src,
+    x: bb.left,
+    y: bb.top,
+    w: bb.width,
+    h: bb.height,
+    rad: parseFloat(getComputedStyle(fig).borderTopLeftRadius) || 0,
+    bg: getComputedStyle(fig).backgroundColor,
+    rot: 0,
+    t: Date.now(),
+  });
+});
+/** Läuft auf der Zielseite: die Überlagerung aus dem Head-Script fliegt von der Quelle zum (live gemessenen) Ziel. */
+function runMorph(): void {
+  const w = window as unknown as { __morph?: { m: MorphRecord; o: HTMLElement } };
+  const st = w.__morph;
+  if (!st) return;
+  w.__morph = undefined;
+  const { m, o } = st;
+  let link: HTMLElement | null = null;
+  let frame: HTMLElement | null;
+  if (m.k === 'fwd') frame = $('.strip figure');
+  else {
+    const links = $$<HTMLAnchorElement>('.tile[href], .g[href], .hp[href], .names a[href]').filter(
+      (a) => new URL(a.href).pathname === m.proj,
+    );
+    link = links.find((a) => kindOf(a) === m.kind) ?? links[0] ?? null;
+    frame = link && frameOf(link);
+  }
+  if (!frame) {
+    root.classList.remove('morph-pending');
+    o.remove();
+    return;
+  }
+  const target = frame;
+  link?.classList.add('on'); // die Vorschau der Namenszeile steht nur beim Hover, hier bis zum Ende
+  target.classList.add('morph-hide');
+  root.classList.remove('morph-pending');
+  const radTo = parseFloat(getComputedStyle(target).borderTopLeftRadius) || 0;
+  const rotTo = target.matches('.pk') ? 3 : 0;
+  const DURATION = 900;
+  const t0 = performance.now();
+  const ease = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+  const tick = (now: number) => {
+    const p = Math.min(1, (now - t0) / DURATION);
+    const e = ease(p);
+    const to = measure(target); // live: Schriften und Scroll-Wiederherstellung können das Ziel noch verschieben
+    o.style.left = `${m.x + (to.x - m.x) * e}px`;
+    o.style.top = `${m.y + (to.y - m.y) * e}px`;
+    o.style.width = `${m.w + (to.w - m.w) * e}px`;
+    o.style.height = `${m.h + (to.h - m.h) * e}px`;
+    o.style.borderRadius = `${m.rad + (radTo - m.rad) * e}px`;
+    o.style.transform = `rotate(${m.rot + (rotTo - m.rot) * e}deg)`;
+    if (p < 1) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    target.classList.remove('morph-hide');
+    const fade = o.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: 'forwards' });
+    void fade.finished.then(() => {
+      o.remove();
+      link?.classList.remove('on');
+    });
+  };
+  requestAnimationFrame(tick);
+}
+runMorph();
 
 // ── Seitenübergang vorbereiten: erstes Bild der Projektseite laden, sobald man eine Kachel anpeilt ──
 {
