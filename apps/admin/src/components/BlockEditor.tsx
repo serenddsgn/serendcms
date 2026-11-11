@@ -260,6 +260,40 @@ const Text = ({
   </Field>
 );
 
+/** Projekt, das im Hero der Startseite beworben wird. Leer = automatisch das neueste. */
+function HeroProjectField({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
+}) {
+  const locale = useContext(LocaleContext) ?? 'de';
+  const projects = useQuery({
+    queryKey: ['projects', locale],
+    queryFn: () =>
+      api.get<{ projects: { id: string; title: string; year: number; status: string }[] }>(
+        `/projects?locale=${locale}`,
+      ),
+  });
+  const list = projects.data?.projects.filter((p) => p.status === 'published') ?? [];
+  return (
+    <Field label="Projekt im Hero">
+      <select value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
+        <option value="">Automatisch: das neueste Projekt</option>
+        {value && projects.data && !list.some((p) => p.id === value) && (
+          <option value={value}>(Projekt dieser Sprache nicht in der Liste)</option>
+        )}
+        {list.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.title} ({p.year})
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
 /** Link mit festem Ziel: Seite (Auswahl), Projekt (ID) oder URL. */
 function LinkForm({
   label,
@@ -510,6 +544,7 @@ function BlockForm({ block: b, onChange }: { block: Block; onChange: (b: Block) 
             area
             onChange={(v) => up({ intro: v })}
           />
+          <HeroProjectField value={b.projectId} onChange={(v) => up({ projectId: v })} />
           <LinkForm label="Link" value={b.link} onChange={(v) => up({ link: v })} />
         </>
       );

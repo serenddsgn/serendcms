@@ -1247,6 +1247,7 @@ a.loc {
 }
 .strip figure {
   margin: 0;
+  background: var(--tc, transparent);
   flex: 0 0 auto;
   scroll-snap-align: start;
   border-radius: var(--r-card);

@@ -45,9 +45,9 @@ interface Entry {
 }
 
 /** Muss zur Startseite passen (apps/web, Sections.tsx): im Automodus bekommen die ersten Kacheln feste Größen. */
-const AUTO_SIZE: FeaturedSize[] = ['l', 't'];
+const AUTO_SIZE: FeaturedSize[] = [];
 const SIZES: { value: FeaturedSize; label: string; hint: string }[] = [
-  { value: 'auto', label: 'Auto', hint: 'Größe richtet sich nach der Position' },
+  { value: 'auto', label: 'Auto', hint: 'Standard: klein (1 × 1)' },
   { value: 's', label: 'Klein', hint: '1 × 1' },
   { value: 'w', label: 'Breit', hint: '2 × 1' },
   { value: 't', label: 'Hoch', hint: '1 × 2' },

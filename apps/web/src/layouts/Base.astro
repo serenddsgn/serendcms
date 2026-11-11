@@ -73,13 +73,20 @@ const canonical = abs(path);
         function media(el) {
           return el && el.querySelector('picture, video, img');
         }
-        function tileFor(url) {
+        // Kachel (Startseite, Übersicht) oder Hero-Karte zu einer Projekt-URL. `kind` bevorzugt die Art, aus der man kam.
+        function tileFor(url, kind) {
           var path = new URL(url, location.href).pathname;
-          var links = document.querySelectorAll('.tile[href], .g[href]');
+          var links = document.querySelectorAll('.tile[href], .g[href], .hp[href]');
+          var first = null;
           for (var i = 0; i < links.length; i++) {
-            if (new URL(links[i].href).pathname === path) return media(links[i]);
+            if (new URL(links[i].href).pathname !== path) continue;
+            if (!kind || links[i].classList.contains(kind)) return media(links[i]);
+            first = first || media(links[i]);
           }
-          return null;
+          return first;
+        }
+        function kindOf(el) {
+          return el.classList.contains('hp') ? 'hp' : el.classList.contains('g') ? 'g' : 'tile';
         }
         function mark(el) {
           if (el) el.style.viewTransitionName = NAME;
@@ -88,16 +95,18 @@ const canonical = abs(path);
         addEventListener('pageswap', function (e) {
           var vt = e.viewTransition;
           if (!vt) return;
-          // Links ohne Kachel (Teaser, Namenszeile): kein Morph, sonst würde eine fremde Kachel mit gleichem Ziel animiert
-          if (window.__noVt) {
-            vt.skipTransition();
-            return;
-          }
           var ok = false;
           if (!reduce && e.activation) {
-            var figure = document.querySelector('.strip figure');
-            // Vorwärts: Kachel der Zielseite. Zurück per Browser-Button: erstes Bild der Projektseite.
-            ok = mark(tileFor(e.activation.entry.url)) || (e.activation.navigationType === 'traverse' && mark(figure));
+            // Vorwärts: die angeklickte Kachel (site.ts merkt sie sich). Zurück per Browser-Button: erstes Bild der Projektseite.
+            var src = window.__vtSource;
+            if (src && src.isConnected && mark(media(src))) {
+              ok = true;
+              try {
+                sessionStorage.setItem(KEY + ':kind', JSON.stringify({ p: new URL(e.activation.entry.url, location.href).pathname, k: kindOf(src) }));
+              } catch (x) {}
+            } else if (e.activation.navigationType === 'traverse') {
+              ok = mark(document.querySelector('.strip figure'));
+            }
           }
           if (ok) {
             try {
@@ -109,18 +118,21 @@ const canonical = abs(path);
           var vt = e.viewTransition;
           if (!vt) return;
           var at = 0;
+          var kind = null;
+          var from = navigation.activation && navigation.activation.from;
           try {
             at = +sessionStorage.getItem(KEY) || 0;
             sessionStorage.removeItem(KEY);
+            var r = JSON.parse(sessionStorage.getItem(KEY + ':kind') || 'null');
+            if (r && from && r.p === new URL(from.url).pathname) kind = r.k;
           } catch (x) {}
-          var from = navigation.activation && navigation.activation.from;
-          var ok = !reduce && at > 0 && Date.now() - at < 8000 && (mark(document.querySelector('.strip figure')) || (from && mark(tileFor(from.url))));
+          var ok = !reduce && at > 0 && Date.now() - at < 8000 && (mark(document.querySelector('.strip figure')) || (from && mark(tileFor(from.url, kind))));
           if (ok) root.classList.add('vt-in');
           else vt.skipTransition();
         });
         addEventListener('pageshow', function (e) {
           if (!e.persisted) return;
-          window.__noVt = false;
+          window.__vtSource = null;
           try {
             sessionStorage.removeItem(KEY);
           } catch (x) {}

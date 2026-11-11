@@ -110,7 +110,7 @@ const blocks =
             <ImageFigure b={seg.b as never} locale={locale} />
           </section>
         ) : seg.type === 'gallery' ? (
-          <GalleryBlockView b={seg.b as never} locale={locale} />
+          <GalleryBlockView b={seg.b as never} locale={locale} color={entry.project.revision.tileColor ?? entry.project.revision.color} />
         ) : (
           <DemoSection locale={locale} block={seg.b as never} />
         ),

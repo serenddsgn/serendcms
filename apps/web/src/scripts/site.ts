@@ -48,8 +48,16 @@ function wave(from: HTMLElement): Promise<void> {
   const o = from.getBoundingClientRect();
   const ox = o.left + o.width / 2;
   const oy = o.top + o.height / 2;
-  const peers = $$<HTMLElement>('.tile, .g', scope)
-    .filter((el) => el !== from)
+  // Hero-Karte: Überschrift, Text und sichtbare Kacheln räumen das Feld
+  const hero = from.matches('.hp') ? from.closest('section') : null;
+  const neighbours = hero
+    ? [
+        ...$$<HTMLElement>('.eyebrow, .hero-h1, .hero-grid > :first-child', hero),
+        ...$$<HTMLElement>('.tile'),
+      ]
+    : $$<HTMLElement>('.tile, .g', scope);
+  const peers = neighbours
+    .filter((el) => el !== from && !from.contains(el))
     .map((el) => {
       const r = el.getBoundingClientRect();
       return { el, r, d: Math.hypot(r.left + r.width / 2 - ox, r.top + r.height / 2 - oy) };
@@ -92,9 +100,13 @@ document.addEventListener('click', (e) => {
   if (/\.(md|png|txt|xml)$/.test(url.pathname)) return;
   e.preventDefault();
   document.dispatchEvent(new Event('serend:leave'));
-  if (a.hasAttribute('data-no-vt')) (window as unknown as { __noVt?: boolean }).__noVt = true;
+  // Die angeklickte Kachel merkt sich der Seitenübergang (Head-Script in Base.astro), damit bei doppelten Links
+  // (Hero-Karte und Kachel desselben Projekts) genau diese morpht
+  (window as unknown as { __vtSource?: Element | null }).__vtSource = a.matches('.tile, .g, .hp')
+    ? a
+    : null;
   if (leaving) return;
-  if (canWave && !samePage && a.matches('.tile, .g')) {
+  if (canWave && !samePage && a.matches('.tile, .g, .hp')) {
     leaving = true;
     void wave(a).then(() => {
       location.href = url.href;
@@ -103,6 +115,24 @@ document.addEventListener('click', (e) => {
   }
   leave(url.href);
 });
+
+// ── Seitenübergang vorbereiten: erstes Bild der Projektseite laden, sobald man eine Kachel anpeilt ──
+{
+  const warmed = new Set<string>();
+  const keep: HTMLImageElement[] = [];
+  const warm = (e: Event) => {
+    const a = (e.target as Element).closest?.<HTMLElement>('[data-vt-srcset]');
+    const srcset = a?.dataset.vtSrcset;
+    if (!srcset || warmed.has(srcset)) return;
+    warmed.add(srcset);
+    const img = new Image();
+    img.sizes = '(max-width: 900px) 90vw, 700px'; // wie der Streifen auf der Projektseite
+    img.srcset = srcset;
+    keep.push(img);
+  };
+  for (const ev of ['pointerover', 'focusin', 'touchstart'])
+    document.addEventListener(ev, warm, { passive: true });
+}
 
 // ── CTA-Hover: Verlauf füllt kreisförmig von der Stelle, an der die Maus den Button betritt ──
 for (const el of $$<HTMLElement>('.cta')) {

@@ -281,6 +281,36 @@ export const newestProject = (locale: Locale): BuildProject | undefined =>
     undefined,
   );
 
+/** Projekt im Hero: das im Admin gewählte (ID in beliebiger Sprache), sonst das neueste. */
+export function heroProject(locale: Locale, projectId?: string): BuildProject | undefined {
+  if (projectId) {
+    const d = data();
+    const chosen = d.projectById.get(projectId);
+    const own =
+      chosen && chosen.locale !== locale
+        ? d.projects.find(
+            (p) => p.translationGroupId === chosen.translationGroupId && p.locale === locale,
+          )
+        : chosen;
+    if (own) return own;
+  }
+  return newestProject(locale);
+}
+
+/** Erstes Bild des Streifens, den die Projektseite zeigt: Galerie des Projekts, sonst der erste Streifen-Block. */
+export function firstStripMedia(p: BuildProject): string | undefined {
+  const blocks = p.revision.content as {
+    type?: string;
+    layout?: string;
+    items?: { mediaId: string }[];
+  }[];
+  const id =
+    p.revision.gallery[0]?.mediaId ??
+    blocks.find((b) => b.type === 'gallery' && b.layout !== 'grid')?.items?.[0]?.mediaId;
+  const m = id ? data().mediaById.get(id) : undefined;
+  return id && m && !m.mime.startsWith('video/') ? id : undefined;
+}
+
 /** Studio-Porträt aus dem Bild-mit-Text-Block der Startseite (Header-Button und Projektende). */
 export function studioPortraitId(locale: Locale): string | undefined {
   const home = data().pages.find((p) => p.locale === locale && p.systemKey === 'home');

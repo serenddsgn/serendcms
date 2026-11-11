@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CONTENT_SCHEMA_VERSION,
   ContentPageContent,
+  HeroBlock,
   HomeContent,
   ProjectContent,
   ProjectRevisionInput,
@@ -159,6 +160,24 @@ describe('Block-Schemas', () => {
     expect(collectMediaIds([{ type: 'media_text_card', mediaId: m }, { type: 'quote' }])).toEqual([
       m,
     ]);
+  });
+});
+
+describe('Hero-Block', () => {
+  const hero = (extra: Record<string, unknown> = {}) => ({
+    id: id(),
+    type: 'hero',
+    eyebrow: 'Designstudio',
+    headline: [[{ text: 'Zeile' }]],
+    intro: 'Text',
+    link,
+    ...extra,
+  });
+
+  it('nimmt optional ein Projekt entgegen', () => {
+    expect(HeroBlock.safeParse(hero()).success).toBe(true);
+    expect(HeroBlock.safeParse(hero({ projectId: id() })).success).toBe(true);
+    expect(HeroBlock.safeParse(hero({ projectId: 'kein-uuid' })).success).toBe(false);
   });
 });
 

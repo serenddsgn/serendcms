@@ -1,5 +1,5 @@
-import { splitEmphasis, type Inline } from '@serend/schema';
-import { data } from '../lib/data';
+import { splitEmphasis, type BuildProject, type Inline } from '@serend/schema';
+import { data, firstStripMedia } from '../lib/data';
 import { isVideo, pictureData, videoData } from '../lib/images';
 
 export const ArrowIcon = ({ size = 16 }: { size?: number }) => (
@@ -34,6 +34,15 @@ export function Runs({ runs }: { runs: Inline }) {
       })}
     </>
   );
+}
+
+/**
+ * Hinweis für den Seitenübergang: das erste Bild der Projektseite. site.ts lädt es beim Hover vor, damit der Morph
+ * auf ein fertiges Bild trifft. Die Größenangabe muss zum Streifen der Projektseite passen (Project.tsx).
+ */
+export function vtAttrs(p: BuildProject): Record<string, string> {
+  const id = firstStripMedia(p);
+  return id ? { 'data-vt-srcset': pictureData(id).avif } : {};
 }
 
 /** Klartext mit `**Schlüsselwörtern**`: sie stehen in voller Textfarbe, der Rest bleibt gedämpft. */

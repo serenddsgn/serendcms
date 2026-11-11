@@ -44,6 +44,8 @@ export const HeroBlock = z.object({
   headline: z.array(Inline).min(1).max(4),
   intro: z.string().max(600),
   link: Link,
+  /** Beworbenes Projekt im Hero (ID in beliebiger Sprache, die Seite nimmt die Fassung ihrer Sprache). Ohne Wert: das neueste. */
+  projectId: Uuid.optional(),
 });
 export const FeaturedProjectsBlock = z.object({
   ...Base,

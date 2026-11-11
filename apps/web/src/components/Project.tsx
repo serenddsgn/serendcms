@@ -103,7 +103,7 @@ export function ImageStrip({ p, locale }: { p: BuildProject; locale: Locale }) {
       role="region"
       aria-label={ui.stripLabel}
       tabindex={0}
-      style="animation-delay:1.2s"
+      style={`animation-delay:1.2s;--tc:${p.revision.tileColor ?? p.revision.color}`}
     >
       {items.map((g, i) => (
         <figure>
@@ -123,6 +123,7 @@ export function ImageStrip({ p, locale }: { p: BuildProject; locale: Locale }) {
 export function GalleryBlockView({
   b,
   locale,
+  color,
 }: {
   b: {
     id: string;
@@ -131,6 +132,8 @@ export function GalleryBlockView({
     items: { mediaId: string; caption?: string }[];
   };
   locale: Locale;
+  /** Projektfarbe: Untergrund der Bilder, bis sie geladen sind (der Morph des Seitenübergangs landet darauf) */
+  color?: string | undefined;
 }) {
   const ui = t(locale);
   if (b.items.length === 0) return null;
@@ -159,7 +162,7 @@ export function GalleryBlockView({
       role="region"
       aria-label={ui.stripLabel}
       tabindex={0}
-      style="margin-bottom:96px"
+      style={`margin-bottom:96px${color ? `;--tc:${color}` : ''}`}
     >
       {b.items.map((g) => (
         <figure>

@@ -20,7 +20,7 @@ import {
   altOf,
   categoryName,
   featuredFor,
-  newestProject,
+  heroProject,
   projectUrl,
   projectsFor,
   resolveTarget,
@@ -29,7 +29,7 @@ import {
 } from '../lib/data';
 import { t } from '../i18n';
 import { plainText } from '../lib/seo';
-import { ArrowIcon, BigLink, Emphasis, Picture, Runs } from './Common';
+import { ArrowIcon, BigLink, Emphasis, Picture, Runs, vtAttrs } from './Common';
 
 type B<T extends z.ZodType> = z.infer<T>;
 const idAttr = (b: { anchor?: string | undefined }) => b.anchor;
@@ -39,7 +39,7 @@ function HeroProject({
   p,
   locale,
 }: {
-  p: NonNullable<ReturnType<typeof newestProject>>;
+  p: NonNullable<ReturnType<typeof heroProject>>;
   locale: Locale;
 }) {
   const ui = t(locale);
@@ -48,7 +48,7 @@ function HeroProject({
     <a
       class="hp"
       href={projectUrl(p)}
-      data-no-vt
+      {...vtAttrs(p)}
       style={`--tc:${p.revision.tileColor ?? p.revision.color}`}
     >
       <Picture
@@ -74,7 +74,7 @@ function HeroProject({
 }
 
 export function Hero({ b, locale }: { b: B<typeof HeroBlock>; locale: Locale }) {
-  const newest = newestProject(locale);
+  const newest = heroProject(locale, b.projectId);
   const delays = ['.75s', '.85s', '.95s', '1.05s'];
   // Zeichenzahl der längsten Zeile: daraus leitet das CSS die Schriftgröße ab, damit keine Zeile in der Mitte umbricht
   const longest = Math.max(
@@ -150,6 +150,7 @@ export function FeaturedProjects({
             <a
               class={`tile reveal sz-${size}`}
               href={projectUrl(p)}
+              {...vtAttrs(p)}
               style={`--tc:${p.revision.tileColor ?? p.revision.color}`}
             >
               <Picture
@@ -420,6 +421,7 @@ export function ProjectIndex({ b, locale }: { b: B<typeof ProjectIndexBlock>; lo
             class="g"
             data-cats={p.revision.categories.join(' ')}
             href={projectUrl(p)}
+            {...vtAttrs(p)}
             style={`--tc:${p.revision.color};animation-delay:${(i * 0.05).toFixed(2)}s;margin-top:${offsets[i % 3]}`}
           >
             <span class="ph" style={`aspect-ratio:${ratios[i % 3]}`}>
