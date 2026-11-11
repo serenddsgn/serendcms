@@ -1,6 +1,6 @@
 import type { Locale } from '@serend/schema';
 import type { UiStrings } from '../i18n';
-import { ArrowIcon } from './Common';
+import { ArrowIcon, Picture } from './Common';
 
 export interface NavLink {
   label: string;
@@ -17,9 +17,21 @@ interface Props {
   cta: NavLink;
   /** Ziel für „Made in Wuppertal“ (Einstellung site.location); ohne Wert bleibt es Text. */
   locationHref?: string | undefined;
+  /** Porträt (Medien-ID) im Anfrage-Button; ohne Wert bleibt es beim Statuspunkt. */
+  portraitId?: string | undefined;
 }
 
-export function Header({ locale, ui, nav, currentPath, home, switchTo, cta, locationHref }: Props) {
+export function Header({
+  locale,
+  ui,
+  nav,
+  currentPath,
+  home,
+  switchTo,
+  cta,
+  locationHref,
+  portraitId,
+}: Props) {
   const locAttrs = {
     class: 'loc',
     'data-location': true,
@@ -115,6 +127,11 @@ export function Header({ locale, ui, nav, currentPath, home, switchTo, cta, loca
             aria-haspopup="dialog"
             aria-controls="inquiry"
           >
+            {portraitId && (
+              <span class="av" aria-hidden="true">
+                <Picture mediaId={portraitId} alt="" sizes="52px" focal />
+              </span>
+            )}
             <span class="dot" />
             <span class="lbl">{cta.label}</span>
           </a>

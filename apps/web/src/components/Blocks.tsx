@@ -8,6 +8,7 @@ import {
   ImageFigure,
   MediaTextCard,
   PageTitle,
+  Process,
   ProjectIndex,
   RichText,
   ServicesOverview,
@@ -42,7 +43,7 @@ export function PageBlocks({
     const b = raw as any;
     switch (b.type) {
       case 'hero':
-        out.push(<Hero b={b} />);
+        out.push(<Hero b={b} locale={locale} />);
         break;
       case 'featured_projects':
         out.push(<FeaturedProjects b={b} locale={locale} />);
@@ -68,6 +69,10 @@ export function PageBlocks({
         break;
       case 'richtext':
         column.push(<RichText b={b} />);
+        break;
+      case 'process':
+        flush();
+        out.push(<Process b={b} />);
         break;
       case 'image':
         if (b.size === 'full') {

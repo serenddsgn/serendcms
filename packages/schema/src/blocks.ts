@@ -184,6 +184,17 @@ export const RichTextBlock = z.object({
     .max(60),
 });
 
+/** Arbeitsweise in wenigen Schritten auf der Liquid-Linie. Reihenfolge ist Information, daher feste Schrittzahl 2 bis 6. */
+export const ProcessBlock = z.object({
+  ...Base,
+  type: z.literal('process'),
+  eyebrow: z.string().max(80),
+  steps: z
+    .array(z.object({ title: z.string().min(1).max(40), text: z.string().max(200) }))
+    .min(2)
+    .max(6),
+});
+
 // ── erlaubte Blöcke je Inhaltstyp ─────────────────────────────────────
 const unique = (blocks: { id: string }[]) =>
   new Set(blocks.map((b) => b.id)).size === blocks.length;
@@ -204,7 +215,15 @@ export const ProjectContent = z
 export type ProjectContent = z.infer<typeof ProjectContent>;
 
 export const ContentPageContent = z
-  .array(z.discriminatedUnion('type', [PageTitleBlock, HeadingBlock, RichTextBlock, ImageBlock]))
+  .array(
+    z.discriminatedUnion('type', [
+      PageTitleBlock,
+      HeadingBlock,
+      RichTextBlock,
+      ImageBlock,
+      ProcessBlock,
+    ]),
+  )
   .max(80)
   .refine(unique, uniqueIds);
 

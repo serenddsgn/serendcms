@@ -285,7 +285,7 @@ export function PageEditPage() {
         locale={d.page.locale}
         blocks={content}
         onChange={setContent}
-        allowed={system ? [] : ['page_title', 'heading', 'richtext', 'image']}
+        allowed={system ? [] : ['page_title', 'heading', 'richtext', 'image', 'process']}
       />
       <TranslationPanel
         kind="pages"

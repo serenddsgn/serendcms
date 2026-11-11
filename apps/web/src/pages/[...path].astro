@@ -12,8 +12,16 @@ import DemoSection from '../components/DemoSection.astro';
 import { PageBlocks, planProject } from '../components/Blocks';
 import { Chapter, ImageFigure, Quote } from '../components/Sections';
 import { ChapterNav } from '../components/Project';
-import { GalleryBlockView, ImageStrip, NextProject, ProjectHero } from '../components/Project';
-import { altOf, loadData, pageFor, projectsFor, setting } from '../lib/data';
+import {
+  GalleryBlockView,
+  ImageStrip,
+  NextProject,
+  ProjectAside,
+  ProjectDock,
+  ProjectFollowUp,
+  ProjectHero,
+} from '../components/Project';
+import { loadData, pageFor, projectsFor, resolveTarget, setting, studioPortraitId } from '../lib/data';
 import { allEntries, findEntry, mdPath, ogPath, routeParam, type Entry } from '../lib/pages';
 import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText } from '../lib/seo';
 import { data } from '../lib/data';
@@ -33,6 +41,9 @@ const locale = entry.locale as Locale;
 const ui = t(locale);
 const seo = setting(locale, 'seo.defaults');
 const homeUrl = homePath(locale);
+const siteCta = setting(locale, 'site.cta');
+const cta = { label: siteCta.label, href: resolveTarget(siteCta.target) };
+const portraitId = studioPortraitId(locale);
 const projectsPage = pageFor(locale, 'projects');
 const projectsUrl = allEntries().find((e) => e.kind === 'projects' && e.locale === locale)!.url;
 
@@ -87,9 +98,10 @@ const blocks =
       <ImageStrip p={entry.project} locale={locale} />
       {plan.segments.map((seg) =>
         seg.type === 'chapters' ? (
-          <section class="section side split" style={`padding-top:${seg.first ? 128 : 0}px`}>
+          <section class={`section side split${seg.first ? ' with-aside' : ''}`} style={`padding-top:${seg.first ? 128 : 0}px`}>
             {seg.first && plan.entries.length > 0 ? <ChapterNav entries={plan.entries} label={ui.chapters} /> : <div class="hide-m" />}
             <div style="max-width:760px">{seg.items.map((i) => i.b.type === 'chapter' ? <Chapter b={i.b as never} no={i.no} /> : <ImageFigure b={i.b as never} locale={locale} />)}</div>
+            {seg.first && <ProjectAside p={entry.project} locale={locale} cta={cta} />}
           </section>
         ) : seg.type === 'quote' ? (
           <Quote b={seg.b as never} />
@@ -103,7 +115,9 @@ const blocks =
           <DemoSection locale={locale} block={seg.b as never} />
         ),
       )}
+      <ProjectFollowUp p={entry.project} locale={locale} cta={cta} portraitId={portraitId} />
       <NextProject p={entry.project} locale={locale} />
+      <ProjectDock p={entry.project} locale={locale} />
     </>
   ) : (
     <PageBlocks blocks={blocks as never} locale={locale} projectCount={projectsFor(locale).length} />

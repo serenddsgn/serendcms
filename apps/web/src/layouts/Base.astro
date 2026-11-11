@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import { homePath, type Locale } from '@serend/schema';
-import { loadData, navFor, optionalSetting, resolveTarget, setting } from '../lib/data';
+import { loadData, navFor, optionalSetting, resolveTarget, setting, studioPortraitId } from '../lib/data';
 import { abs } from '../lib/seo';
 import { t } from '../i18n';
 import { Header } from '../components/Header';
@@ -88,6 +88,11 @@ const canonical = abs(path);
         addEventListener('pageswap', function (e) {
           var vt = e.viewTransition;
           if (!vt) return;
+          // Links ohne Kachel (Teaser, Namenszeile): kein Morph, sonst würde eine fremde Kachel mit gleichem Ziel animiert
+          if (window.__noVt) {
+            vt.skipTransition();
+            return;
+          }
           var ok = false;
           if (!reduce && e.activation) {
             var figure = document.querySelector('.strip figure');
@@ -115,6 +120,7 @@ const canonical = abs(path);
         });
         addEventListener('pageshow', function (e) {
           if (!e.persisted) return;
+          window.__noVt = false;
           try {
             sessionStorage.removeItem(KEY);
           } catch (x) {}
@@ -150,7 +156,7 @@ const canonical = abs(path);
     <a class="skip" href="#main">{ui.skip}</a>
     <div class="curtain" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="progress liquid-bg" aria-hidden="true"></div>
-    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={homePath(locale)} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} locationHref={locationTarget ? resolveTarget(locationTarget) : undefined} />
+    <Header locale={locale} ui={ui} nav={nav} currentPath={path} home={homePath(locale)} switchTo={switchTo} cta={{ label: cta.label, href: resolveTarget(cta.target) }} locationHref={locationTarget ? resolveTarget(locationTarget) : undefined} portraitId={studioPortraitId(locale)} />
     <InquiryModal ui={ui} locale={locale} email={identity.email} privacyHref={legal.at(-1)?.href} />
     <main id="main" key={locale}>
       <slot />

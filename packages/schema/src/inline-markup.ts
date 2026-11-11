@@ -22,6 +22,27 @@ export function parseInlineMarkup(text: string): Inline {
   return runs;
 }
 
+/**
+ * Hervorhebung in Klartext-Feldern (Einleitung, Karten-Text): `**Wort**` zieht Schlüsselbegriffe in die volle Textfarbe,
+ * der Rest bleibt gedämpft. Die Felder sind einfache Strings, deshalb gibt es hier keine Inline-Läufe.
+ */
+const EMPHASIS = /\*\*(.+?)\*\*/g;
+
+export function splitEmphasis(text: string): { text: string; strong: boolean }[] {
+  const parts: { text: string; strong: boolean }[] = [];
+  let last = 0;
+  for (const m of text.matchAll(EMPHASIS)) {
+    if (m.index > last) parts.push({ text: text.slice(last, m.index), strong: false });
+    parts.push({ text: m[1]!, strong: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), strong: false });
+  return parts;
+}
+
+/** Text ohne die `**`-Markierungen (für Meta-Beschreibungen und Klartext). */
+export const stripEmphasis = (text: string): string => text.replace(EMPHASIS, '$1');
+
 export function formatInlineMarkup(runs: Inline | null | undefined): string {
   return (runs ?? [])
     .map((r) => {

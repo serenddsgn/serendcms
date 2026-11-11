@@ -162,6 +162,31 @@ describe('Block-Schemas', () => {
   });
 });
 
+describe('Ablauf-Block', () => {
+  const step = (title: string) => ({ title, text: 'Ein Satz.' });
+  const block = (steps: unknown[]) => ({
+    id: id(),
+    type: 'process',
+    eyebrow: 'So arbeiten wir',
+    steps,
+  });
+
+  it('gilt auf Inhaltsseiten mit zwei bis sechs Schritten', () => {
+    expect(ContentPageContent.safeParse([block([step('Verstehen'), step('Bauen')])]).success).toBe(
+      true,
+    );
+    expect(ContentPageContent.safeParse([block([step('Nur einer')])]).success).toBe(false);
+    expect(
+      ContentPageContent.safeParse([block(Array.from({ length: 7 }, (_, i) => step(`S${i}`)))])
+        .success,
+    ).toBe(false);
+  });
+
+  it('ist auf Projekten nicht erlaubt', () => {
+    expect(ProjectContent.safeParse([block([step('A'), step('B')])]).success).toBe(false);
+  });
+});
+
 describe('Revisions-Eingabe', () => {
   const base = {
     slug: 'dolce-falcone',

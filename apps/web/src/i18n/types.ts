@@ -26,6 +26,18 @@ export interface UiStrings {
   chapters: string;
   stripLabel: string;
   next: string;
+  prev: string;
+  allProjects: string;
+  dockLabel: string;
+  newest: string;
+  workedFor: string;
+  /** Block am Ende eines Projekts: persönlicher Kontakt mit Bezug auf das Projekt */
+  follow: {
+    eyebrow: string;
+    title: string;
+    text: string;
+    reference: string;
+  };
   breadcrumbHome: string;
   skip: string;
   legal: string;

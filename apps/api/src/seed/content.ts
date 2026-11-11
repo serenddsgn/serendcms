@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Database } from '@serend/db';
 import type { Inline, Locale } from '@serend/schema';
-import { ROUTE_SEGMENTS } from '@serend/schema';
+import { ROUTE_SEGMENTS, stripEmphasis } from '@serend/schema';
 import { siteRepo } from '../repositories/site.repo.js';
 import type { MediaService } from '../services/media.service.js';
 import type { PagesService } from '../services/pages.service.js';
@@ -331,7 +331,7 @@ const SITE: Record<
         [run('zu füllen.')],
       ],
       intro:
-        'Wir entwickeln Webseiten mit individuellen Funktionen, die genau auf Ihr Geschäftsmodell zugeschnitten sind. Damit Ihre Website mehr leistet, als nur zu repräsentieren. Sie soll arbeiten. Verkaufen. Organisieren.',
+        'Wir entwickeln Webseiten mit **individuellen Funktionen**, die genau auf Ihr **Geschäftsmodell** zugeschnitten sind. Damit Ihre Website mehr leistet, als nur zu repräsentieren. Sie soll **arbeiten. Verkaufen. Organisieren.**',
       link: 'Was wir machen',
     },
     servicesEyebrow: 'Was wir machen',
@@ -361,7 +361,7 @@ const SITE: Record<
       eyebrow: 'Design studio, Wuppertal',
       lines: [[run('We don’t just design')], [run('to fill '), run('surfaces', true), run('.')]],
       intro:
-        'We build websites with custom functionality, tailored precisely to your business model. So your website does more than represent you. It should work. Sell. Organise.',
+        'We build websites with **custom functionality**, tailored precisely to your **business model**. So your website does more than represent you. It should **work. Sell. Organise.**',
       link: 'What we do',
     },
     servicesEyebrow: 'What we do',
@@ -697,7 +697,7 @@ export async function seedContent(d: SeedDeps): Promise<void> {
     });
     await site.upsertSetting('seo.defaults', locale, {
       siteName: 'serend.design',
-      description: s.hero.intro,
+      description: stripEmphasis(s.hero.intro),
     });
     await site.upsertSetting('organization', locale, { legalName: 'serend.design®' });
   }

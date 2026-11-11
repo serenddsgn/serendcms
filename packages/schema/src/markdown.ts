@@ -89,6 +89,15 @@ export function blocksToMarkdown(blocks: readonly unknown[], ctx: MarkdownContex
         );
         break;
       }
+      case 'process': {
+        out.push(
+          `## ${String(b.eyebrow)}`,
+          (b.steps as { title: string; text: string }[])
+            .map((st, i) => `${i + 1}. **${st.title}**${st.text ? `: ${st.text}` : ''}`)
+            .join('\n'),
+        );
+        break;
+      }
       case 'heading':
         out.push(`${'#'.repeat(Number(b.level))} ${String(b.text)}`);
         break;

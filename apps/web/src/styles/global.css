@@ -400,7 +400,8 @@ video {
   transition: background-color 0.6s;
 }
 .nav .wrap {
-  height: var(--nav-h);
+  height: var(--nav-hc, var(--nav-h));
+  transition: height 0.5s var(--ease-inout);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -478,7 +479,27 @@ a.loc {
 }
 .mainnav {
   display: flex;
+  align-items: center;
   gap: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  transition:
+    padding 0.5s var(--ease-inout),
+    gap 0.5s var(--ease-inout),
+    border-color 0.5s,
+    background-color 0.5s;
+}
+/* Nach etwas Scrollen (site.ts setzt .nav-compact): Leiste 56 px hoch, Navigation als Pille */
+:root.nav-compact {
+  --nav-hc: 56px;
+}
+:root.nav-compact .mainnav {
+  padding: 0 22px;
+  gap: 28px;
+  border-color: var(--line);
+  background: var(--card);
 }
 .tools {
   display: flex;
@@ -945,7 +966,7 @@ a.loc {
 /* Projekte */
 .bar {
   position: sticky;
-  top: 81px;
+  top: calc(var(--nav-hc, var(--nav-h)) + 1px);
   z-index: 20;
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(12px);
@@ -958,7 +979,9 @@ a.loc {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  transition: background-color 0.6s;
+  transition:
+    background-color 0.6s,
+    top 0.5s var(--ease-inout);
 }
 .tab {
   position: relative;
@@ -1075,25 +1098,6 @@ a.loc {
 .g:hover .ph img,
 .g:hover .ph video {
   transform: scale(1.04);
-}
-.g .tag {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(10, 10, 10, 0.62);
-  color: #f5f5f4;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: all 0.45s var(--ease-out);
-}
-.g:hover .tag,
-.g:focus-visible .tag {
-  opacity: 1;
-  transform: none;
 }
 .g .t {
   display: flex;
@@ -1904,4 +1908,567 @@ a.loc {
 video.vid {
   display: block;
   background: transparent;
+}
+
+/* ── Learnings aus Schwarz+Matt und pechschwarz ─────────────────────── */
+
+/* Schlüsselwörter im Intro (Klartext mit **Wort**) */
+.kw {
+  color: var(--fg);
+  font-weight: 500;
+  transition: color 0.6s;
+}
+
+/* Header-Button: Porträt vor dem Statuspunkt */
+.cta .av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+}
+.cta .av picture,
+.cta .av img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cta:has(.av) {
+  padding-left: 7px;
+}
+@media (max-width: 900px) {
+  .cta .av {
+    display: none;
+  }
+}
+
+/* Hero: Karte mit dem neuesten Projekt */
+.teaser {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 36px;
+  max-width: 440px;
+  padding: 10px 14px 10px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--card);
+  transition:
+    border-color 0.4s,
+    background-color 0.6s;
+}
+.teaser:hover {
+  border-color: color-mix(in srgb, var(--fg) 32%, transparent);
+}
+.tz-img {
+  display: block;
+  width: 76px;
+  height: 76px;
+  flex: none;
+  overflow: hidden;
+  border-radius: calc(var(--r-card) - 6px);
+  background: var(--tc);
+}
+.tz-img picture,
+.tz-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tz-img img {
+  transition: transform 1.2s var(--ease-out);
+}
+.teaser:hover .tz-img img {
+  transform: scale(1.045);
+}
+.tz-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.tz-tx b {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.tz-cat {
+  font-size: 13px;
+  color: var(--mute);
+}
+.teaser .ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: all 0.45s var(--ease-out);
+}
+.teaser:hover .ring {
+  background: var(--fg);
+  color: var(--bg);
+  transform: rotate(-45deg);
+}
+
+/* Namenszeile: echte Projektnamen statt Logos, Cover erscheint beim Hover */
+.names-row {
+  padding-top: 96px;
+}
+.names {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  font-size: clamp(20px, 2.3vw, 28px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.names li:not(:last-child)::after {
+  content: '·';
+  color: var(--mute);
+  opacity: 0.5;
+  padding: 0 0.45em;
+}
+.names a {
+  position: relative;
+  display: inline-block;
+  color: var(--mute);
+  transition: color 0.3s;
+}
+.names a:hover,
+.names a:focus-visible {
+  color: var(--fg);
+}
+.names .pk {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 14px);
+  width: 150px;
+  height: 190px;
+  margin-left: -75px;
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85) rotate(3deg);
+  transition: all 0.55s var(--ease-spring);
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+}
+.names a:hover .pk,
+.names a:focus-visible .pk {
+  opacity: 1;
+  transform: scale(1) rotate(3deg);
+}
+.names .pk picture,
+.names .pk img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (hover: none) {
+  .names .pk {
+    display: none;
+  }
+}
+
+/* Projektübersicht: Untertitel und Kategorie-Pills unter dem Namen */
+.g .sub {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 6px 2px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.g .pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 2px 0;
+}
+.pill {
+  font-size: 12px;
+  line-height: 1;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--fg);
+}
+
+/* Projektseite: mitlaufende Eckdaten rechts neben dem Text (ab 1280 px, sonst steht alles im Hero) */
+.with-aside .aside {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .with-aside {
+    grid-template-columns: 200px minmax(0, 760px) minmax(220px, 1fr);
+  }
+  .with-aside .aside {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-hc, var(--nav-h)) + 40px);
+    align-self: start;
+  }
+}
+.metacard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--card);
+  transition:
+    background-color 0.6s,
+    border-color 0.6s;
+}
+.metacard dl {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.metacard dt {
+  color: var(--mute);
+  margin-bottom: 4px;
+}
+.metacard dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.metacard dd a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.mc-cta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 600;
+}
+.mc-cta svg {
+  transition: transform 0.45s var(--ease-out);
+}
+.mc-cta:hover svg {
+  transform: translateX(4px);
+}
+
+/* Schmale Leiste unten auf Projektseiten: voriges, alle, nächstes Projekt */
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  width: min(760px, calc(100% - 2 * var(--gutter)));
+  height: 60px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transform: translate(-50%, calc(100% + 32px));
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.6s var(--ease-out),
+    opacity 0.4s,
+    visibility 0s 0.6s;
+}
+.dock.on {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    transform 0.6s var(--ease-out),
+    opacity 0.4s,
+    visibility 0s;
+}
+.dk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 0 6px;
+}
+.dk-next {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.dk-img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 9px;
+}
+.dk-img picture,
+.dk-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dk-t {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dk-t .mono {
+  color: var(--mute);
+  font-size: 10px;
+}
+.dk-t b {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dk-all {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  color: var(--mute);
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+.dk-all:hover,
+.dk:hover b {
+  color: var(--fg);
+}
+@media (max-width: 560px) {
+  .dk-img,
+  .dk-all {
+    display: none;
+  }
+}
+
+/* Abschluss einer Projektseite: Gesicht, Antwortzeit, Anfrage mit Bezug */
+.follow {
+  padding-top: 32px;
+  padding-bottom: 128px;
+}
+.fu {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+  padding: clamp(20px, 3vw, 40px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-section);
+  background: var(--card);
+  transition:
+    background-color 0.6s,
+    border-color 0.6s;
+}
+.fu-p {
+  margin: 0;
+  width: clamp(96px, 14vw, 180px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--r-card);
+}
+.fu-p picture,
+.fu-p img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fu h2 {
+  margin: 0;
+  font-size: clamp(32px, 4.2vw, 60px);
+  line-height: 1;
+}
+.fu-p2 {
+  margin: 16px 0 0;
+  max-width: 46ch;
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--mute);
+}
+.fu-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin-top: 28px;
+}
+.fu .cta {
+  width: auto;
+  padding: 0 22px;
+}
+.fu .cta .lbl {
+  display: inline;
+}
+.fu .ref {
+  padding: 9px 13px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  color: var(--mute);
+}
+@media (max-width: 560px) {
+  .fu {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fu-p {
+    width: 96px;
+  }
+}
+
+/* Ablauf: Schritte auf der Liquid-Linie, die Punkte füllen sich beim Scrollen */
+.flow {
+  list-style: none;
+  margin: 0;
+  padding: 28px 0 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+  gap: 24px;
+  position: relative;
+  view-timeline: --flow block;
+}
+.flow::before,
+.flow::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  right: 7px;
+  height: 2px;
+  border-radius: 2px;
+}
+.flow::before {
+  background: var(--line);
+}
+.flow::after {
+  background-image: var(--liquid-line);
+  transform-origin: left;
+}
+.flow li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.fl-n {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  transition: background-color 0.6s;
+}
+.fl-n::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background-image: var(--liquid-line);
+}
+.fl-t {
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.1;
+}
+.fl-x {
+  max-width: 30ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--mute);
+}
+@supports (animation-timeline: view()) {
+  .flow::after {
+    animation: flowline linear both;
+    animation-timeline: --flow;
+    animation-range: cover 5% cover 38%;
+  }
+  .fl-n::after {
+    animation: flownode linear both;
+    animation-timeline: --flow;
+    animation-range: cover calc(5% + var(--i) / var(--m) * 33%) cover
+      calc(9% + var(--i) / var(--m) * 33%);
+  }
+}
+@keyframes flowline {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes flowliney {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes flownode {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@media (max-width: 700px) {
+  .flow {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 0 0 36px;
+    gap: 28px;
+  }
+  .flow::before,
+  .flow::after {
+    top: 7px;
+    bottom: 7px;
+    left: 7px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+  .flow::after {
+    transform-origin: top;
+    animation-name: flowliney;
+  }
+  .fl-n {
+    top: 4px;
+    left: -36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow::after,
+  .fl-n::after {
+    animation: none;
+  }
 }

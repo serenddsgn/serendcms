@@ -8,6 +8,7 @@ import type {
   HeroBlock,
   MediaTextCardBlock,
   PageTitleBlock,
+  ProcessBlock,
   ProjectIndexBlock,
   QuoteBlock,
   ServicesOverviewBlock,
@@ -19,6 +20,7 @@ import {
   altOf,
   categoryName,
   featuredFor,
+  newestProject,
   projectUrl,
   projectsFor,
   resolveTarget,
@@ -26,12 +28,48 @@ import {
   setting,
 } from '../lib/data';
 import { t } from '../i18n';
-import { ArrowIcon, BigLink, Picture, Runs } from './Common';
+import { plainText } from '../lib/seo';
+import { ArrowIcon, BigLink, Emphasis, Picture, Runs } from './Common';
 
 type B<T extends z.ZodType> = z.infer<T>;
 const idAttr = (b: { anchor?: string | undefined }) => b.anchor;
 
-export function Hero({ b }: { b: B<typeof HeroBlock> }) {
+/** Kleine Karte im Hero: das neueste Projekt, damit schon über dem Falz Arbeit zu sehen ist. */
+function ProjectTeaser({
+  p,
+  locale,
+}: {
+  p: NonNullable<ReturnType<typeof newestProject>>;
+  locale: Locale;
+}) {
+  const ui = t(locale);
+  const area = p.revision.categories.map((c) => categoryName(locale, c)).join(' · ');
+  return (
+    <a
+      class="teaser"
+      href={projectUrl(p)}
+      data-no-vt
+      style={`--tc:${p.revision.tileColor ?? p.revision.color}`}
+    >
+      <span class="tz-img">
+        <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="96px" />
+      </span>
+      <span class="tz-tx">
+        <span class="eyebrow">
+          {ui.newest} · {p.revision.year}
+        </span>
+        <b>{p.revision.title}</b>
+        <span class="tz-cat">{area}</span>
+      </span>
+      <span class="ring" aria-hidden="true">
+        <ArrowIcon size={14} />
+      </span>
+    </a>
+  );
+}
+
+export function Hero({ b, locale }: { b: B<typeof HeroBlock>; locale: Locale }) {
+  const newest = newestProject(locale);
   const delays = ['.75s', '.85s', '.95s', '1.05s'];
   // Zeichenzahl der längsten Zeile: daraus leitet das CSS die Schriftgröße ab, damit keine Zeile in der Mitte umbricht
   const longest = Math.max(
@@ -43,10 +81,7 @@ export function Hero({ b }: { b: B<typeof HeroBlock> }) {
         {b.eyebrow}
       </p>
       <div>
-        <h1
-          class="display hero-h1"
-          style={`margin:0;line-height:.98;--hl:${longest}`}
-        >
+        <h1 class="display hero-h1" style={`margin:0;line-height:.98;--hl:${longest}`}>
           {b.headline.map((line, i) => (
             <>
               {i > 0 && ' '}
@@ -62,8 +97,9 @@ export function Hero({ b }: { b: B<typeof HeroBlock> }) {
           <div />
           <div class="fade" style="animation-delay:1.25s">
             <p style="margin:0;font-size:18px;line-height:1.6;color:var(--mute);max-width:520px">
-              {b.intro}
+              <Emphasis text={b.intro} />
             </p>
+            {newest && <ProjectTeaser p={newest} locale={locale} />}
             <BigLink
               href={resolveTarget(b.link.target)}
               label={b.link.label}
@@ -131,6 +167,23 @@ export function FeaturedProjects({
           label={b.allProjectsLink.label}
           style="font-size:32px;font-weight:700"
         />
+      </div>
+      <div class="side names-row reveal">
+        <p class="eyebrow" style="margin:10px 0 0">
+          {ui.workedFor}
+        </p>
+        <ul class="names">
+          {projectsFor(locale).map((p) => (
+            <li>
+              <a href={projectUrl(p)} data-no-vt>
+                {p.revision.title}
+                <span class="pk" aria-hidden="true">
+                  <Picture mediaId={p.revision.coverMediaId!} alt="" sizes="160px" />
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -203,7 +256,9 @@ export function MediaTextCard({ b, locale }: { b: B<typeof MediaTextCardBlock>; 
           >
             <Runs runs={b.heading} />
           </h2>
-          <p style="margin:0;font-size:19px;line-height:1.6;color:var(--mute)">{b.text}</p>
+          <p style="margin:0;font-size:19px;line-height:1.6;color:var(--mute)">
+            <Emphasis text={b.text} />
+          </p>
           {b.link && (
             <BigLink
               href={resolveTarget(b.link.target)}
@@ -225,10 +280,7 @@ export function ContactCta({ b, locale }: { b: B<typeof ContactCtaBlock>; locale
       <p class="eyebrow" style="margin:0 0 28px">
         {b.eyebrow}
       </p>
-      <h2
-        class="display reveal"
-        style="margin:0;font-size:clamp(56px,9vw,150px);line-height:.92"
-      >
+      <h2 class="display reveal" style="margin:0;font-size:clamp(56px,9vw,150px);line-height:.92">
         {b.line1}
         <br />
         <span style="color:var(--mute);font-style:italic">{b.line2}</span>
@@ -259,10 +311,7 @@ export function PageTitle({
       class="section"
       style="padding-top:104px;padding-bottom:56px;display:flex;justify-content:space-between;align-items:end;gap:32px;flex-wrap:wrap"
     >
-      <h1
-        class="display"
-        style="margin:0;font-size:clamp(72px,12vw,184px);line-height:.86"
-      >
+      <h1 class="display" style="margin:0;font-size:clamp(72px,12vw,184px);line-height:.86">
         <span class="w">
           <span>{b.title}</span>
         </span>
@@ -384,13 +433,18 @@ export function ProjectIndex({ b, locale }: { b: B<typeof ProjectIndexBlock>; lo
                 sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 33vw"
                 eager={i < 3}
               />
-              <span class="tag mono">{cats(p)}</span>
             </span>
             <span class="t">
               <b>{p.revision.title}</b>
               <span class="mono" style="color:var(--mute)">
                 {p.revision.year}
               </span>
+            </span>
+            {p.revision.subtitle && <span class="sub">{plainText(p.revision.subtitle)}</span>}
+            <span class="pills">
+              {p.revision.categories.map((c) => (
+                <span class="pill">{categoryName(locale, c)}</span>
+              ))}
             </span>
           </a>
         ))}
@@ -465,10 +519,7 @@ export function Quote({ b }: { b: B<typeof QuoteBlock> }) {
   return (
     <section class="section reveal" style="padding-bottom:128px">
       <blockquote style="margin:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:64px 0">
-        <p
-          class="display"
-          style="margin:0;font-size:clamp(36px,5.4vw,80px);line-height:1"
-        >
+        <p class="display" style="margin:0;font-size:clamp(36px,5.4vw,80px);line-height:1">
           {b.lines.map((line, i) => (
             <>
               {i > 0 && <br />}
@@ -518,6 +569,27 @@ export function ImageFigure({ b, locale }: { b: B<typeof ImageBlock>; locale: Lo
       />
       {b.caption && <figcaption>{b.caption}</figcaption>}
     </figure>
+  );
+}
+
+/** Arbeitsweise: wenige Schritte auf der Liquid-Linie, die Punkte füllen sich beim Scrollen nacheinander. */
+export function Process({ b }: { b: B<typeof ProcessBlock> }) {
+  const last = b.steps.length - 1;
+  return (
+    <section class="section side" id={idAttr(b)} style="padding-top:48px;padding-bottom:72px">
+      <p class="eyebrow" style="margin:6px 0 0">
+        {b.eyebrow}
+      </p>
+      <ol class="flow" style={`--cols:${b.steps.length};--m:${last}`}>
+        {b.steps.map((s, i) => (
+          <li style={`--i:${i}`}>
+            <span class="fl-n" aria-hidden="true" />
+            <span class="fl-t display">{s.title}</span>
+            {s.text && <span class="fl-x">{s.text}</span>}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

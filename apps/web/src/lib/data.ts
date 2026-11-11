@@ -274,6 +274,21 @@ export const projectsFor = (locale: Locale) =>
     .projects.filter((p) => p.locale === locale)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+/** Neuestes Projekt (höchstes Jahr, bei Gleichstand das weiter vorn einsortierte). */
+export const newestProject = (locale: Locale): BuildProject | undefined =>
+  projectsFor(locale).reduce<BuildProject | undefined>(
+    (best, p) => (!best || p.revision.year > best.revision.year ? p : best),
+    undefined,
+  );
+
+/** Studio-Porträt aus dem Bild-mit-Text-Block der Startseite (Header-Button und Projektende). */
+export function studioPortraitId(locale: Locale): string | undefined {
+  const home = data().pages.find((p) => p.locale === locale && p.systemKey === 'home');
+  const blocks = (home?.revision.content ?? []) as { type?: string; mediaId?: string }[];
+  const id = blocks.find((b) => b.type === 'media_text_card')?.mediaId;
+  return id && data().mediaById.has(id) ? id : undefined;
+}
+
 export const featuredFor = (locale: Locale) =>
   projectsFor(locale)
     .filter((p) => p.featured)

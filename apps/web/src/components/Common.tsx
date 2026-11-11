@@ -1,4 +1,4 @@
-import type { Inline } from '@serend/schema';
+import { splitEmphasis, type Inline } from '@serend/schema';
 import { data } from '../lib/data';
 import { isVideo, pictureData, videoData } from '../lib/images';
 
@@ -32,6 +32,15 @@ export function Runs({ runs }: { runs: Inline }) {
           );
         return node;
       })}
+    </>
+  );
+}
+
+/** Klartext mit `**Schlüsselwörtern**`: sie stehen in voller Textfarbe, der Rest bleibt gedämpft. */
+export function Emphasis({ text }: { text: string }) {
+  return (
+    <>
+      {splitEmphasis(text).map((p) => (p.strong ? <strong class="kw">{p.text}</strong> : p.text))}
     </>
   );
 }

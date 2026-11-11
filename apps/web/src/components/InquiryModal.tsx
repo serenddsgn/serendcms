@@ -24,6 +24,7 @@ export function InquiryModal({ ui, locale, email, privacyHref }: Props) {
       data-state="closed"
       aria-labelledby="iq-title"
       data-locale={locale}
+      data-ref-label={ui.follow.reference}
     >
       <div class="wrap iq-inner">
         <div class="iq-bar iq-a" style={d(0)}>

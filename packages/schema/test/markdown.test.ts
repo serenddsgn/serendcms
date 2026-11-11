@@ -47,6 +47,24 @@ describe('Markdown-Serialisierung', () => {
     expect(md).not.toContain('Erster.\n\n\n');
   });
 
+  it('gibt den Ablauf als nummerierte Liste aus', () => {
+    const md = blocksToMarkdown(
+      [
+        {
+          id: randomUUID(),
+          type: 'process',
+          eyebrow: 'So arbeiten wir',
+          steps: [
+            { title: 'Verstehen', text: 'Ziel und Zielgruppe.' },
+            { title: 'Bauen', text: '' },
+          ],
+        },
+      ],
+      ctx,
+    );
+    expect(md).toBe('## So arbeiten wir\n\n1. **Verstehen**: Ziel und Zielgruppe.\n2. **Bauen**\n');
+  });
+
   it('gibt Bilder mit Bildunterschrift oder Alt-Text aus', () => {
     const md = blocksToMarkdown(
       [

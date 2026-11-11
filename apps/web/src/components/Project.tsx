@@ -1,8 +1,8 @@
 import type { Locale } from '@serend/schema';
-import type { BuildProject } from '@serend/schema';
+import { projectIndexPath, type BuildProject } from '@serend/schema';
 import { altOf, categoryName, data, projectUrl, projectsFor } from '../lib/data';
 import { t } from '../i18n';
-import { Picture, Runs } from './Common';
+import { ArrowIcon, Picture, Runs } from './Common';
 
 /** Teilt den Titel in zwei möglichst gleich lange Zeilen („Dolce &“ / „Falcone“). */
 export function titleLines(title: string): string[] {
@@ -206,15 +206,155 @@ export function ChapterNav({ entries, label }: { entries: ChapterEntry[]; label:
   );
 }
 
-export function NextProject({ p, locale }: { p: BuildProject; locale: Locale }) {
-  const ui = t(locale);
+/** Nächstes Projekt: das im Admin gewählte, sonst das folgende in der Reihenfolge der Übersicht. */
+function nextProjectOf(p: BuildProject, locale: Locale): BuildProject | undefined {
   const list = projectsFor(locale);
   const explicit = p.revision.nextProjectId
     ? data().projectById.get(p.revision.nextProjectId)
     : undefined;
   const idx = list.findIndex((x) => x.id === p.id);
   const next = explicit ?? list[(idx + 1) % list.length];
-  if (!next || next.id === p.id) return null;
+  return !next || next.id === p.id ? undefined : next;
+}
+
+export interface Cta {
+  label: string;
+  href: string;
+}
+
+/** Mitlaufende Karte rechts neben dem Text: die Eckdaten bleiben im Blick, dazu der Weg zur Anfrage. */
+export function ProjectAside({ p, locale, cta }: { p: BuildProject; locale: Locale; cta: Cta }) {
+  const ui = t(locale);
+  const area = p.revision.categories.map((c) => categoryName(locale, c)).join(' · ');
+  return (
+    <aside class="aside" aria-label={p.revision.title}>
+      <div class="metacard">
+        <dl>
+          {p.revision.client && (
+            <div>
+              <dt class="mono">{ui.client}</dt>
+              <dd>{p.revision.client}</dd>
+            </div>
+          )}
+          <div>
+            <dt class="mono">{ui.area}</dt>
+            <dd>{area}</dd>
+          </div>
+          <div>
+            <dt class="mono">{ui.year}</dt>
+            <dd>{p.revision.year}</dd>
+          </div>
+          {p.revision.liveUrl && (
+            <div>
+              <dt class="mono">{ui.live}</dt>
+              <dd>
+                <a href={p.revision.liveUrl} rel="noopener" target="_blank">
+                  {host(p.revision.liveUrl)} ↗
+                </a>
+              </dd>
+            </div>
+          )}
+        </dl>
+        <a
+          class="mc-cta"
+          href={cta.href}
+          data-inquiry-open
+          data-inquiry-ref={p.revision.title}
+          aria-haspopup="dialog"
+          aria-controls="inquiry"
+        >
+          {ui.follow.title}
+          <ArrowIcon size={14} />
+        </a>
+      </div>
+    </aside>
+  );
+}
+
+/** Schmale Leiste unten: voriges und nächstes Projekt. Erscheint nach dem Hero (site.ts), ohne JS bleibt sie verborgen. */
+export function ProjectDock({ p, locale }: { p: BuildProject; locale: Locale }) {
+  const ui = t(locale);
+  const list = projectsFor(locale);
+  const next = nextProjectOf(p, locale);
+  if (list.length < 2 || !next) return null;
+  const idx = list.findIndex((x) => x.id === p.id);
+  const prev = list[(idx - 1 + list.length) % list.length]!;
+  const item = (target: BuildProject, dir: 'prev' | 'next') => (
+    <a class={`dk dk-${dir}`} href={projectUrl(target)} rel={dir}>
+      <span class="dk-img">
+        <Picture mediaId={target.revision.coverMediaId!} alt="" sizes="48px" />
+      </span>
+      <span class="dk-t">
+        <span class="mono">{dir === 'prev' ? `← ${ui.prev}` : `${ui.next} →`}</span>
+        <b>{target.revision.title}</b>
+      </span>
+    </a>
+  );
+  return (
+    <nav class="dock" aria-label={ui.dockLabel} data-dock>
+      {item(prev, 'prev')}
+      <a class="dk-all mono" href={projectIndexPath(locale)}>
+        {ui.allProjects}
+      </a>
+      {item(next, 'next')}
+    </nav>
+  );
+}
+
+/** Abschluss einer Projektseite: Gesicht, Zusage zur Antwortzeit und Anfrage mit Bezug auf das Projekt. */
+export function ProjectFollowUp({
+  p,
+  locale,
+  cta,
+  portraitId,
+}: {
+  p: BuildProject;
+  locale: Locale;
+  cta: Cta;
+  portraitId?: string | undefined;
+}) {
+  const ui = t(locale);
+  return (
+    <section class="section follow reveal">
+      <div class="fu">
+        {portraitId && (
+          <figure class="fu-p">
+            <Picture mediaId={portraitId} alt={altOf(portraitId, locale)} sizes="160px" focal />
+          </figure>
+        )}
+        <div class="fu-tx">
+          <p class="eyebrow" style="margin:0 0 14px">
+            {ui.follow.eyebrow}
+          </p>
+          <h2 class="display">{ui.follow.title}</h2>
+          <p class="fu-p2">{ui.follow.text}</p>
+          <div class="fu-row">
+            <a
+              class="cta"
+              href={cta.href}
+              data-inquiry-open
+              data-inquiry-ref={p.revision.title}
+              aria-haspopup="dialog"
+              aria-controls="inquiry"
+            >
+              <span class="dot" />
+              <span class="lbl">{cta.label}</span>
+            </a>
+            <span class="ref mono">
+              {ui.follow.reference}: {p.revision.title}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function NextProject({ p, locale }: { p: BuildProject; locale: Locale }) {
+  const ui = t(locale);
+  const list = projectsFor(locale);
+  const next = nextProjectOf(p, locale);
+  if (!next) return null;
   const nr = list.findIndex((x) => x.id === next.id) + 1;
   const pad = (n: number) => String(n).padStart(2, '0');
   return (

@@ -90,6 +90,7 @@ document.addEventListener('click', (e) => {
   if (samePage && url.hash) return; // Anker auf derselben Seite
   if (/\.(md|png|txt|xml)$/.test(url.pathname)) return;
   e.preventDefault();
+  if (a.hasAttribute('data-no-vt')) (window as unknown as { __noVt?: boolean }).__noVt = true;
   if (leaving) return;
   if (canWave && !samePage && a.matches('.tile, .g')) {
     leaving = true;
@@ -110,6 +111,46 @@ for (const el of $$<HTMLElement>('.cta')) {
     el.style.setProperty('--mx', `${e.clientX - r.left}px`);
     el.style.setProperty('--my', `${e.clientY - r.top}px`);
   });
+}
+
+// ── Header: nach etwas Scrollen schrumpft die Leiste, die Navigation wird zur Pille ──
+{
+  let compact = false;
+  const check = () => {
+    // Hysterese: erst ab 120 px zusammenziehen, erst unter 40 px wieder öffnen (kein Flackern an der Schwelle)
+    const next = compact ? scrollY > 40 : scrollY > 120;
+    if (next === compact) return;
+    compact = next;
+    root.classList.toggle('nav-compact', compact);
+  };
+  addEventListener('scroll', check, { passive: true });
+  check();
+}
+
+// ── Projekt-Leiste unten: erscheint nach dem Hero, weicht Demo, "Nächstes Projekt", Abschluss und Footer ──
+{
+  const dock = $<HTMLElement>('[data-dock]');
+  const hero = $('main > section');
+  if (dock && hero) {
+    let pastHero = false;
+    const blockers = new Set<Element>();
+    const paint = () => dock.classList.toggle('on', pastHero && blockers.size === 0);
+    new IntersectionObserver(
+      ([en]) => {
+        pastHero = !!en && !en.isIntersecting && en.boundingClientRect.top < 0;
+        paint();
+      },
+      { threshold: 0 },
+    ).observe(hero);
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        if (en.isIntersecting) blockers.add(en.target);
+        else blockers.delete(en.target);
+      }
+      paint();
+    });
+    $$('.demo, .next, .footer, .follow').forEach((el) => io.observe(el));
+  }
 }
 
 // ── Mobile-Menü ──────────────────────────────────────────────────────
@@ -292,8 +333,18 @@ if (inquiry && typeof inquiry.showModal === 'function') {
     inquiry!.style.setProperty('--oy', `${y}px`);
     inquiry!.style.setProperty('--or', `${radius}px`);
   }
+  // Projektbezug: "Bezug: Dolce & Falcone" steht vorab im Nachrichtenfeld. Eigene Eingaben bleiben unangetastet.
+  const message = form.elements.namedItem('message') as HTMLTextAreaElement | null;
+  let prefill = '';
+  function applyReference(trigger: HTMLElement | null) {
+    if (!message || (message.value !== '' && message.value !== prefill)) return;
+    const ref = trigger?.dataset.inquiryRef;
+    prefill = ref ? `${inquiry!.dataset.refLabel ?? ''}: ${ref}\n\n` : '';
+    message.value = prefill;
+  }
   function openInquiry(trigger: HTMLElement | null) {
     if (inquiry!.open) return;
+    applyReference(trigger);
     origin = trigger;
     closing = false;
     setOrigin();
@@ -313,6 +364,7 @@ if (inquiry && typeof inquiry.showModal === 'function') {
       done.hidden = true;
       form.hidden = false;
       form.reset();
+      prefill = '';
     }
   }
   function closeInquiry() {

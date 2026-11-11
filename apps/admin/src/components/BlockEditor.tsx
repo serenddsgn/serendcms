@@ -26,6 +26,7 @@ export const BLOCK_LABELS: Record<string, string> = {
   interactive_demo: 'Interaktive Demo',
   heading: 'Überschrift',
   richtext: 'Text',
+  process: 'Ablauf',
   image: 'Bild',
   gallery: 'Bilderstrecke',
 };
@@ -81,6 +82,16 @@ export function newBlock(type: string): Block {
       return { id, type, level: 2, text: 'Überschrift' };
     case 'richtext':
       return { id, type, nodes: [{ kind: 'paragraph', runs: run('Text') }] };
+    case 'process':
+      return {
+        id,
+        type,
+        eyebrow: 'So arbeiten wir',
+        steps: [
+          { title: 'Verstehen', text: '' },
+          { title: 'Bauen', text: '' },
+        ],
+      };
     case 'page_title':
       return { id, type, title: 'Titel', showCount: false };
     case 'image':
@@ -493,7 +504,12 @@ function BlockForm({ block: b, onChange }: { block: Block; onChange: (b: Block) 
               </button>
             )}
           </div>
-          <Text label="Einleitung" value={b.intro} area onChange={(v) => up({ intro: v })} />
+          <Text
+            label="Einleitung (**Wort** hebt Schlüsselbegriffe hervor)"
+            value={b.intro}
+            area
+            onChange={(v) => up({ intro: v })}
+          />
           <LinkForm label="Link" value={b.link} onChange={(v) => up({ link: v })} />
         </>
       );
@@ -608,6 +624,53 @@ function BlockForm({ block: b, onChange }: { block: Block; onChange: (b: Block) 
           </button>
         </>
       );
+    case 'process': {
+      const steps = b.steps as { title: string; text: string }[];
+      const setStep = (i: number, patch: Partial<{ title: string; text: string }>) =>
+        up({ steps: steps.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
+      return (
+        <>
+          <Text label="Überschrift" value={b.eyebrow} onChange={(v) => up({ eyebrow: v })} />
+          {steps.map((s, i) => (
+            <div key={i} className="row" style={{ alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <Text
+                  label={`Schritt ${i + 1}`}
+                  value={s.title}
+                  onChange={(v) => setStep(i, { title: v })}
+                />
+              </div>
+              <div style={{ flex: 2 }}>
+                <Text
+                  label="Ein Satz dazu"
+                  value={s.text}
+                  onChange={(v) => setStep(i, { text: v })}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn small"
+                disabled={steps.length <= 2}
+                aria-label={`Schritt ${i + 1} entfernen`}
+                onClick={() => up({ steps: steps.filter((_, j) => j !== i) })}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <div className="row">
+            <button
+              type="button"
+              className="btn small"
+              disabled={steps.length >= 6}
+              onClick={() => up({ steps: [...steps, { title: 'Neuer Schritt', text: '' }] })}
+            >
+              + Schritt
+            </button>
+          </div>
+        </>
+      );
+    }
     case 'quote':
       return (
         <>
