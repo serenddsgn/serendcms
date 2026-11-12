@@ -1,4 +1,4 @@
-/** Minimales Client-Script (kein Framework): Theme, Sprache, Seitenübergang, Menü, Anfrage-Modal, Projektfilter, Kapitel-Navigation. */
+/** Minimales Client-Script (kein Framework): Theme, Sprache, Seitenübergang, Menü, Anfrage-Modal, Projektfilter, Kapitel-Navigation, Bildstrecken ziehen. */
 const root = document.documentElement;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = <T extends Element>(sel: string, ctx: ParentNode = document) => ctx.querySelector<T>(sel);
@@ -810,6 +810,72 @@ if (chapterLinks.length > 0) {
     { rootMargin: '-30% 0px -60% 0px' },
   );
   targets.forEach((t) => io.observe(t));
+}
+
+// ── Bildstrecken: mit der Maus ziehen (Touch scrollt nativ), mit Schwung nach dem Loslassen ──────
+for (const strip of $$<HTMLElement>('.strip')) {
+  let startX = 0;
+  let startLeft = 0;
+  let lastX = 0;
+  let lastT = 0;
+  let velocity = 0;
+  let moved = false;
+  let down = false;
+  let raf = 0;
+  const stop = () => cancelAnimationFrame(raf);
+  strip.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    stop();
+    startX = lastX = e.clientX;
+    startLeft = strip.scrollLeft;
+    lastT = e.timeStamp;
+    velocity = 0;
+    moved = false;
+    down = true;
+    strip.setPointerCapture(e.pointerId);
+    strip.classList.add('dragging');
+  });
+  strip.addEventListener('pointermove', (e) => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    if (!moved && Math.abs(dx) < 4) return;
+    moved = true;
+    strip.scrollLeft = startLeft - dx;
+    const dt = e.timeStamp - lastT;
+    if (dt > 0) velocity = (lastX - e.clientX) / dt;
+    lastX = e.clientX;
+    lastT = e.timeStamp;
+  });
+  const release = (e: PointerEvent) => {
+    if (!down) return;
+    down = false;
+    if (strip.hasPointerCapture(e.pointerId)) strip.releasePointerCapture(e.pointerId);
+    // Schwung: Geschwindigkeit klingt ab, danach rastet die Leiste (scroll-snap) auf das nächste Bild ein
+    let v = e.timeStamp - lastT > 80 ? 0 : Math.max(-60, Math.min(60, velocity * 16));
+    const glide = () => {
+      v *= 0.94;
+      const before = strip.scrollLeft;
+      strip.scrollLeft += v;
+      if (Math.abs(v) > 0.5 && strip.scrollLeft !== before && !reduced)
+        raf = requestAnimationFrame(glide);
+      else strip.classList.remove('dragging');
+    };
+    glide();
+  };
+  strip.addEventListener('pointerup', release);
+  strip.addEventListener('pointercancel', release);
+  // Ein Zug soll keinen Klick auslösen (z. B. auf ein Bild mit Link)
+  strip.addEventListener(
+    'click',
+    (e) => {
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
+    },
+    true,
+  );
 }
 
 // ── Projektübersicht: Filter, Raster/Liste ───────────────────────────

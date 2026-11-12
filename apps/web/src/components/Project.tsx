@@ -2,7 +2,7 @@ import type { Locale } from '@serend/schema';
 import { projectIndexPath, type BuildProject } from '@serend/schema';
 import { altOf, categoryName, data, projectUrl, projectsFor } from '../lib/data';
 import { t } from '../i18n';
-import { ArrowIcon, Picture, Runs } from './Common';
+import { Picture, Runs } from './Common';
 
 /** Teilt den Titel in zwei möglichst gleich lange Zeilen („Dolce &“ / „Falcone“). */
 export function titleLines(title: string): string[] {
@@ -34,8 +34,8 @@ export function ProjectHero({ p, locale }: { p: BuildProject; locale: Locale }) 
       <p class="mono fade" style="margin:16px 0 0;color:var(--mute);animation-delay:.9s">
         {ui.caseLabel} {pad(nr)} / {pad(list.length)} · {area}
       </p>
-      <div>
-        <h1 class="display" style="margin:0;font-size:clamp(56px,9.6vw,152px);line-height:.88">
+      <div class="hero-main">
+        <h1 class="display proj-h1" style={`--hl:${Math.max(...lines.map((l) => l.length))}`}>
           {lines.map((l, i) => (
             <>
               {i > 0 && <br />}
@@ -45,49 +45,45 @@ export function ProjectHero({ p, locale }: { p: BuildProject; locale: Locale }) 
             </>
           ))}
         </h1>
-        <div class="split hero-sub">
-          {p.revision.subtitle ? (
-            <p
-              class="fade display"
-              style="margin:0;font-size:clamp(26px,2.6vw,38px);line-height:1.15;font-weight:700;animation-delay:1s"
-            >
-              <Runs runs={p.revision.subtitle} />
-            </p>
-          ) : (
-            <div />
+        {p.revision.subtitle && (
+          <p
+            class="fade display hero-lead"
+            style="margin:0;font-size:clamp(26px,2.6vw,38px);line-height:1.15;font-weight:700;animation-delay:1s"
+          >
+            <Runs runs={p.revision.subtitle} />
+          </p>
+        )}
+        <dl class="meta hero-meta fade" style="animation-delay:1.1s">
+          {p.revision.client && (
+            <div>
+              <dt class="mono">{ui.client}</dt>
+              <dd>{p.revision.client}</dd>
+            </div>
           )}
-          <dl class="meta fade" style="animation-delay:1.1s">
-            {p.revision.client && (
-              <div>
-                <dt class="mono">{ui.client}</dt>
-                <dd>{p.revision.client}</dd>
-              </div>
-            )}
-            <div>
-              <dt class="mono">{ui.area}</dt>
-              <dd>{area}</dd>
-            </div>
-            <div>
-              <dt class="mono">{ui.year}</dt>
-              <dd>{p.revision.year}</dd>
-            </div>
-            <div style="border-bottom:1px solid var(--line)" hidden={!p.revision.liveUrl}>
-              <dt class="mono">{ui.live}</dt>
-              <dd>
-                {p.revision.liveUrl && (
-                  <a
-                    href={p.revision.liveUrl}
-                    rel="noopener"
-                    target="_blank"
-                    style="text-decoration:underline;text-underline-offset:4px"
-                  >
-                    {host(p.revision.liveUrl)} ↗
-                  </a>
-                )}
-              </dd>
-            </div>
-          </dl>
-        </div>
+          <div>
+            <dt class="mono">{ui.area}</dt>
+            <dd>{area}</dd>
+          </div>
+          <div>
+            <dt class="mono">{ui.year}</dt>
+            <dd>{p.revision.year}</dd>
+          </div>
+          <div style="border-bottom:1px solid var(--line)" hidden={!p.revision.liveUrl}>
+            <dt class="mono">{ui.live}</dt>
+            <dd>
+              {p.revision.liveUrl && (
+                <a
+                  href={p.revision.liveUrl}
+                  rel="noopener"
+                  target="_blank"
+                  style="text-decoration:underline;text-underline-offset:4px"
+                >
+                  {host(p.revision.liveUrl)} ↗
+                </a>
+              )}
+            </dd>
+          </div>
+        </dl>
       </div>
     </section>
   );
@@ -185,12 +181,7 @@ export interface ChapterEntry {
 
 export function ChapterNav({ entries, label }: { entries: ChapterEntry[]; label: string }) {
   return (
-    <nav
-      class="chap hide-m"
-      aria-label={label}
-      style="position:sticky;top:120px;align-self:start"
-      data-chapter-nav
-    >
+    <nav class="chap hide-m" aria-label={label} data-chapter-nav>
       <div style="position:relative">
         <span class="rail" aria-hidden="true">
           <i class="liquid-bg" />
@@ -220,54 +211,6 @@ function nextProjectOf(p: BuildProject, locale: Locale): BuildProject | undefine
 export interface Cta {
   label: string;
   href: string;
-}
-
-/** Mitlaufende Karte rechts neben dem Text: die Eckdaten bleiben im Blick, dazu der Weg zur Anfrage. */
-export function ProjectAside({ p, locale, cta }: { p: BuildProject; locale: Locale; cta: Cta }) {
-  const ui = t(locale);
-  const area = p.revision.categories.map((c) => categoryName(locale, c)).join(' · ');
-  return (
-    <aside class="aside" aria-label={p.revision.title}>
-      <div class="metacard">
-        <dl>
-          {p.revision.client && (
-            <div>
-              <dt class="mono">{ui.client}</dt>
-              <dd>{p.revision.client}</dd>
-            </div>
-          )}
-          <div>
-            <dt class="mono">{ui.area}</dt>
-            <dd>{area}</dd>
-          </div>
-          <div>
-            <dt class="mono">{ui.year}</dt>
-            <dd>{p.revision.year}</dd>
-          </div>
-          {p.revision.liveUrl && (
-            <div>
-              <dt class="mono">{ui.live}</dt>
-              <dd>
-                <a href={p.revision.liveUrl} rel="noopener" target="_blank">
-                  {host(p.revision.liveUrl)} ↗
-                </a>
-              </dd>
-            </div>
-          )}
-        </dl>
-        <a
-          class="mc-cta"
-          href={cta.href}
-          data-inquiry-open
-          aria-haspopup="dialog"
-          aria-controls="inquiry"
-        >
-          {ui.follow.cardCta}
-          <ArrowIcon size={14} />
-        </a>
-      </div>
-    </aside>
-  );
 }
 
 /** Schmale Leiste unten: voriges und nächstes Projekt. Erscheint nach dem Hero (site.ts), ohne JS bleibt sie verborgen. */

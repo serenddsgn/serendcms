@@ -1257,6 +1257,21 @@ a.loc {
   max-width: var(--container);
   margin: 0 auto;
 }
+@media (hover: hover) and (pointer: fine) {
+  .strip {
+    cursor: grab;
+  }
+  .strip img {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+}
+/* Beim Ziehen und Ausschwingen aus: sonst springt scroll-snap bei jedem Pixel zurück */
+.strip.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
 .strip figure {
   margin: 0;
   background: var(--tc, transparent);
@@ -2151,67 +2166,40 @@ video.vid {
   color: var(--fg);
 }
 
-/* Projektseite: mitlaufende Eckdaten rechts neben dem Text (ab 1280 px, sonst steht alles im Hero) */
-.with-aside .aside {
-  display: none;
+/* Projektseite: die Kapitel-Navigation läuft über den ganzen Projektkörper mit. Der Wrapper hat keine Höhe, die Navigation
+   klebt darin (sticky) und wird weder von Zitaten noch von Bildern oder Bildstrecken aufgehalten. Der Abstand oben
+   entspricht dem Innenabstand des ersten Kapitelabschnitts und wird gleich wieder abgezogen. */
+.pbody {
+  position: relative;
 }
-@media (min-width: 1280px) {
-  .with-aside {
-    grid-template-columns: 200px minmax(0, 760px) minmax(220px, 1fr);
-  }
-  .with-aside .aside {
-    display: block;
-    position: sticky;
-    top: calc(var(--nav-hc, var(--nav-h)) + 40px);
-    align-self: start;
-  }
+.pnav {
+  position: sticky;
+  top: 120px;
+  z-index: 5;
+  height: 0;
+  margin: 128px auto -128px;
+  max-width: var(--container);
+  padding: 0 var(--gutter);
+  pointer-events: none;
 }
-.metacard {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--card);
-  transition:
-    background-color 0.6s,
-    border-color 0.6s;
+.pnav .chap {
+  width: 200px;
+  pointer-events: auto;
 }
-.metacard dl {
-  margin: 0;
-  display: grid;
-  gap: 16px;
+/* Läuft die Navigation über Zitate, Bilder oder Bildstrecken, bekommt sie einen weichen Untergrund in der Seitenfarbe.
+   Auf leerem Grund ist er unsichtbar. Die Polsterung wird durch den negativen Rand ausgeglichen, der Text bleibt in der Spalte. */
+.pnav .chap > div {
+  margin: -12px 0 -12px -28px;
+  padding: 12px 12px 12px 28px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
-.metacard dt {
-  color: var(--mute);
-  margin-bottom: 4px;
-}
-.metacard dd {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.4;
-}
-.metacard dd a {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.mc-cta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  font-size: 15px;
-  font-weight: 600;
-}
-.mc-cta svg {
-  transition: transform 0.45s var(--ease-out);
-}
-.mc-cta:hover svg {
-  transform: translateX(4px);
+.pnav .rail {
+  left: 8px;
+  top: 12px;
+  bottom: 12px;
 }
 
 /* Schmale Leiste unten auf Projektseiten: voriges, alle, nächstes Projekt */
@@ -2511,23 +2499,53 @@ video.vid {
   }
 }
 
-/* Projekt-Hero: Untertitel und Eckdaten nebeneinander. Ab 1280 px übernimmt die mitlaufende Karte die Eckdaten,
-   der Untertitel bekommt die ganze Breite. */
-.hero-sub {
+/* Projekt-Hero: Titel, Untertitel und Eckdaten. Schmal untereinander, ab 901 px stehen Untertitel und Eckdaten
+   nebeneinander unter dem Titel, ab 1100 px stehen die Eckdaten rechts neben dem Titel. */
+.hero-main {
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 't' 's' 'm';
   gap: 48px;
-  margin-top: 48px;
   align-items: start;
 }
-@media (min-width: 1280px) {
-  .hero-sub {
-    grid-template-columns: minmax(0, 1fr);
+/* Schriftgröße: höchstens die Wunschgröße, sonst so, dass die längste Zeile (--hl Zeichen, ca. 0,62 em je Zeichen)
+   in die Spalte passt (--hx = Platz, den die Eckdaten daneben nehmen). */
+.proj-h1 {
+  --max: clamp(56px, 9.6vw, 152px);
+  grid-area: t;
+  margin: 0;
+  font-size: min(var(--max), max(36px, calc((100cqw - var(--hx, 0px)) / (var(--hl, 12) * 0.62))));
+  line-height: 0.88;
+}
+.hero-lead {
+  grid-area: s;
+}
+.hero-meta {
+  grid-area: m;
+}
+@media (min-width: 901px) {
+  .hero-main {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-areas: 't t' 's m';
   }
-  .hero-sub .meta {
-    display: none;
+  .proj-h1 {
+    --max: clamp(56px, 9.6vw, 140px);
   }
-  .hero-sub > p {
+}
+@media (min-width: 1100px) {
+  .hero-main {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    grid-template-areas: 't m' 's s';
+  }
+  .proj-h1 {
+    --max: clamp(56px, 7.6vw, 120px);
+    --hx: 408px;
+  }
+  .hero-meta {
+    align-self: end;
+  }
+  .hero-lead {
     max-width: 1000px;
     font-size: clamp(32px, 3.2vw, 48px) !important;
   }
