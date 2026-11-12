@@ -2186,20 +2186,22 @@ video.vid {
   width: 200px;
   pointer-events: auto;
 }
-/* Läuft die Navigation über Zitate, Bilder oder Bildstrecken, bekommt sie einen weichen Untergrund in der Seitenfarbe.
-   Auf leerem Grund ist er unsichtbar. Die Polsterung wird durch den negativen Rand ausgeglichen, der Text bleibt in der Spalte. */
-.pnav .chap > div {
-  margin: -12px 0 -12px -28px;
-  padding: 12px 12px 12px 28px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+/* Die linke Spalte (Navigation, 200 px + 24 px Abstand) bleibt frei: Zitate, Bilder, Bildstrecken und Demos beginnen
+   rechts davon, dürfen aber breiter sein als die Textspalte (Zitate und Bilder bis zum rechten Rand des Inhalts, Bildstrecken
+   bis zum Fensterrand). Unter 901 px gibt es die Spalte nicht, dort bleibt alles wie gehabt. */
+:root {
+  --col-l: calc(max(0px, (100% - var(--container)) / 2) + var(--gutter) + 224px);
 }
-.pnav .rail {
-  left: 8px;
-  top: 12px;
-  bottom: 12px;
+@media (min-width: 901px) {
+  .pbody > .section:not(.side) {
+    padding-left: calc(var(--gutter) + 224px);
+  }
+  .pbody > .strip {
+    max-width: none;
+    margin-left: var(--col-l);
+    margin-right: 0;
+    padding-left: 0;
+  }
 }
 
 /* Schmale Leiste unten auf Projektseiten: voriges, alle, nächstes Projekt */
@@ -2236,6 +2238,17 @@ video.vid {
     transform 0.6s var(--ease-out),
     opacity 0.4s,
     visibility 0s;
+}
+/* Ab 901 px beginnt die Leiste links bündig mit der Inhaltsspalte (wie Zitate und Bilder) */
+@media (min-width: 901px) {
+  .dock {
+    left: var(--col-l);
+    width: min(760px, calc(100% - var(--col-l) - var(--gutter)));
+    transform: translateY(calc(100% + 32px));
+  }
+  .dock.on {
+    transform: none;
+  }
 }
 .dk {
   display: flex;
