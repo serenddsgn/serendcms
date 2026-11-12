@@ -322,16 +322,126 @@ for (const el of $$<HTMLElement>('.cta')) {
 }
 
 // ── Header: nach etwas Scrollen schrumpft die Leiste, die Navigation wird zur Pille ──
+// Dann schweben Logo und Standort direkt über dem Inhalt: sie wechseln zwischen hell und dunkel, je nachdem,
+// was gerade hinter ihnen liegt (Hintergrundfarbe oder Pixel eines Bildes oder Videos).
 {
+  const nav = $<HTMLElement>('.nav');
+  const logo = $<HTMLElement>('.nav .mark');
+  const loc = $<HTMLElement>('.nav .loc-text');
+  const rgbOf = (css: string): { l: number; a: number } | null => {
+    const m =
+      /^rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/.exec(css) ??
+      null;
+    let r: number;
+    let g: number;
+    let b: number;
+    let a: number;
+    if (m) {
+      [r, g, b] = [Number(m[1]), Number(m[2]), Number(m[3])];
+      a = m[4] === undefined ? 1 : Number(m[4]);
+    } else {
+      const c = /^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)$/.exec(css);
+      if (!c) return null;
+      [r, g, b] = [Number(c[1]) * 255, Number(c[2]) * 255, Number(c[3]) * 255];
+      a = c[4] === undefined ? 1 : Number(c[4]);
+    }
+    return { l: (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255, a };
+  };
+  const thumbs = new WeakMap<Element, CanvasRenderingContext2D | null>();
+  /** Helligkeit des Bildpunkts unter (x, y); berücksichtigt object-fit: cover. */
+  const mediaLuma = (el: HTMLImageElement | HTMLVideoElement, x: number, y: number) => {
+    const video = el instanceof HTMLVideoElement;
+    const nw = video ? el.videoWidth : el.naturalWidth;
+    const nh = video ? el.videoHeight : el.naturalHeight;
+    if (!nw || !nh || (!video && !el.complete)) return null;
+    let ctx = video ? undefined : thumbs.get(el);
+    if (!ctx) {
+      const cv = document.createElement('canvas');
+      cv.width = 48;
+      cv.height = Math.max(1, Math.round((48 * nh) / nw));
+      ctx = cv.getContext('2d', { willReadFrequently: true });
+      try {
+        ctx?.drawImage(el, 0, 0, cv.width, cv.height);
+        ctx?.getImageData(0, 0, 1, 1);
+      } catch {
+        ctx = null; // fremde Herkunft: nicht lesbar
+      }
+      if (!video) thumbs.set(el, ctx ?? null);
+    }
+    if (!ctx) return null;
+    const r = el.getBoundingClientRect();
+    const cover = getComputedStyle(el).objectFit === 'cover';
+    const k = cover ? Math.max(r.width / nw, r.height / nh) : 0;
+    const u = cover ? (x - r.left - (r.width - nw * k) / 2) / (nw * k) : (x - r.left) / r.width;
+    const v = cover ? (y - r.top - (r.height - nh * k) / 2) / (nh * k) : (y - r.top) / r.height;
+    const px = ctx.getImageData(
+      Math.min(ctx.canvas.width - 1, Math.max(0, Math.floor(u * ctx.canvas.width))),
+      Math.min(ctx.canvas.height - 1, Math.max(0, Math.floor(v * ctx.canvas.height))),
+      1,
+      1,
+    ).data;
+    return (0.2126 * px[0]! + 0.7152 * px[1]! + 0.0722 * px[2]!) / 255;
+  };
+  /** Helligkeit (0 dunkel bis 1 hell) dessen, was hinter dem Punkt liegt. */
+  const lumaAt = (x: number, y: number): number => {
+    for (const el of document.elementsFromPoint(x, y)) {
+      if (nav?.contains(el) || el.matches('.curtain, .morph, .progress, .preview-banner')) continue;
+      if (el instanceof HTMLImageElement || el instanceof HTMLVideoElement) {
+        const l = mediaLuma(el, x, y);
+        if (l !== null) return l;
+        continue;
+      }
+      const c = rgbOf(getComputedStyle(el).backgroundColor);
+      if (c && c.a > 0.6) return c.l;
+    }
+    return root.classList.contains('light') ? 1 : 0;
+  };
+  const tones = new Map<HTMLElement, 'dark' | 'light'>();
+  const ink = (el: HTMLElement | null, attr: string) => {
+    if (!nav || !el || el.offsetParent === null) return;
+    const r = el.getBoundingClientRect();
+    const l = lumaAt(r.left + r.width / 2, r.top + r.height / 2);
+    const before = tones.get(el);
+    // Hysterese: erst deutlich hell oder dunkel wechselt die Farbe
+    const next = l > 0.6 ? 'dark' : l < 0.42 ? 'light' : (before ?? (l > 0.5 ? 'dark' : 'light'));
+    tones.set(el, next);
+    nav.dataset[attr] = next;
+  };
   let compact = false;
+  let queued = 0;
+  const paintInk = () => {
+    queued = 0;
+    if (!nav) return;
+    if (!compact) {
+      // Mit Leistenhintergrund gilt die Farbe des Themas
+      delete nav.dataset.logo;
+      delete nav.dataset.loc;
+      tones.clear();
+      return;
+    }
+    ink(logo, 'logo');
+    ink(loc, 'loc');
+  };
+  const queueInk = () => {
+    if (!queued) queued = requestAnimationFrame(paintInk);
+  };
   const check = () => {
     // Hysterese: erst ab 120 px zusammenziehen, erst unter 40 px wieder öffnen (kein Flackern an der Schwelle)
     const next = compact ? scrollY > 40 : scrollY > 120;
-    if (next === compact) return;
-    compact = next;
-    root.classList.toggle('nav-compact', compact);
+    if (next !== compact) {
+      compact = next;
+      root.classList.toggle('nav-compact', compact);
+    }
+    queueInk();
   };
   addEventListener('scroll', check, { passive: true });
+  addEventListener('resize', queueInk, { passive: true });
+  // Bilder laden nach: dann kann sich der Untergrund hinter dem Logo ändern
+  document.addEventListener('load', queueInk, { capture: true });
+  // Videos laufen weiter: gelegentlich neu messen
+  setInterval(() => {
+    if (compact && !document.hidden) queueInk();
+  }, 600);
   check();
 }
 
