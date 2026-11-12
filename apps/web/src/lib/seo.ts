@@ -19,7 +19,7 @@ export function organizationJsonLd(locale: Locale) {
   const org = setting(locale, 'organization');
   return {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'ProfessionalService'],
     '@id': abs('/#organization'),
     name: org.legalName,
     url: abs(homePath(locale)),
@@ -39,6 +39,19 @@ export function breadcrumbJsonLd(crumbs: Crumb[]) {
       name: c.name,
       item: abs(c.path),
     })),
+  };
+}
+
+/** Die Leistung hinter dem Projekt, damit Suchmaschinen sie dem Studio zuordnen (und nicht dem Kundennamen). */
+export function serviceJsonLd(p: BuildProject, url: string) {
+  const services = p.revision.categories.map((c) => categoryName(p.locale, c));
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: services.join(', '),
+    serviceType: services,
+    url: abs(url),
+    provider: { '@id': abs('/#organization') },
   };
 }
 

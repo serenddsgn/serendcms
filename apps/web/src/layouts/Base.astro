@@ -18,6 +18,8 @@ interface Props {
   ogType?: 'website' | 'article';
   jsonLd?: object[];
   noindex?: boolean;
+  /** Bei noindex: Links der Seite trotzdem folgen lassen (Fallstudien), statt `nofollow`. */
+  followLinks?: boolean;
   mdPath?: string | undefined;
 }
 await loadData();
@@ -108,8 +110,8 @@ const canonical = abs(path);
     <link rel="canonical" href={canonical} />
     {altEntries.map(([l, p]) => <link rel="alternate" hreflang={l} href={abs(p)} />)}
     {altEntries.length > 0 && <link rel="alternate" hreflang="x-default" href={abs(alternates.de ?? altEntries[0]![1])} />}
-    {mdPath && <link rel="alternate" type="text/markdown" href={mdPath} />}
-    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
+    {mdPath && !noindex && <link rel="alternate" type="text/markdown" href={mdPath} />}
+    <meta name="robots" content={noindex ? (Astro.props.followLinks === true && !preview ? 'noindex, follow' : 'noindex, nofollow') : 'index, follow, max-image-preview:large'} />
     <meta property="og:site_name" content={seo.siteName} />
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={fullTitle} />

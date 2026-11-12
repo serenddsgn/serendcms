@@ -110,6 +110,18 @@ beforeAll(async () => {
   );
   await as(t, session, 'POST', `/api/v1/projects/${cardex.id}/publish`);
 
+  // Dolce & Falcone ist für Suchmaschinen freigegeben, alle anderen Projekte bleiben auf dem Standard (noindex)
+  const dolce = list.find((p) => p.slug === 'dolce-falcone')!;
+  const dolceDetail = (await as(t, session, 'GET', `/api/v1/projects/${dolce.id}`)).json();
+  await as(
+    t,
+    session,
+    'PUT',
+    `/api/v1/projects/${dolce.id}/draft`,
+    draftBody(dolceDetail, { indexable: true }),
+  );
+  await as(t, session, 'POST', `/api/v1/projects/${dolce.id}/publish`);
+
   const live = list.find((p) => p.slug === 'cista')!;
   const detail = (await as(t, session, 'GET', `/api/v1/projects/${live.id}`)).json();
   await as(
@@ -218,7 +230,7 @@ describe('Build-Output', () => {
 
   it('baut die veröffentlichte Revision (alter Titel, alter Slug)', () => {
     const html = text(join(out, 'projekte/cista/index.html'));
-    expect(html).toContain('<title>Cista · serend.design</title>');
+    expect(html).toMatch(/<title>Cista – [^<]+ · serend\.design<\/title>/);
   });
 
   it('erzeugt alle Seiten beider Sprachen', () => {
@@ -252,8 +264,9 @@ describe('Build-Output', () => {
       'property="og:image" content="https://www.example.com/og/de/projekte/dolce-falcone.png"',
     );
     expect(html).toContain('"@type":"CreativeWork"');
+    expect(html).toContain('"@type":"Service"');
     expect(html).toContain('"@type":"BreadcrumbList"');
-    expect(text(join(out, 'index.html'))).toContain('"@type":"Organization"');
+    expect(text(join(out, 'index.html'))).toContain('"ProfessionalService"');
     expect(existsSync(join(out, 'og/de/projekte/dolce-falcone.png'))).toBe(true);
     expect(text(join(out, 'robots.txt'))).toContain('Sitemap: https://www.example.com/sitemap.xml');
     const sitemap = text(join(out, 'sitemap.xml'));
@@ -264,6 +277,25 @@ describe('Build-Output', () => {
     expect(md).toContain('# Dolce & Falcone');
     expect(md).toContain('## 01 · Um wen es geht');
     expect(existsSync(join(out, 'index.md'))).toBe(true);
+  });
+
+  it('indexiert Projekte nur nach Freigabe: Standard noindex, follow, nicht in der Sitemap', () => {
+    const free = text(join(out, 'projekte/dolce-falcone/index.html'));
+    expect(free).toContain('content="index, follow, max-image-preview:large"');
+    expect(free).toContain('rel="alternate" type="text/markdown"');
+    // Titel mit Leistung und Studio, Beschreibung nennt das Studio
+    expect(free).toMatch(/<title>Dolce &(amp;|#38;) Falcone – [^<]+ · serend\.design<\/title>/);
+    expect(free).toContain('Ein Projekt von serend.design.');
+
+    const hidden = text(join(out, 'projekte/schramowski-getraenke/index.html'));
+    expect(hidden).toContain('<meta name="robots" content="noindex, follow">');
+    expect(hidden).not.toContain('rel="alternate" type="text/markdown"');
+    const sitemap = text(join(out, 'sitemap.xml'));
+    expect(sitemap).not.toContain('/projekte/schramowski-getraenke/');
+    expect(sitemap).not.toContain('/en/work/schramowski-getraenke/');
+    expect(sitemap).toContain('/projekte/dolce-falcone/');
+    // Die Übersichtsseite selbst bleibt indexierbar
+    expect(text(join(out, 'projekte/index.html'))).toContain('index, follow');
   });
 
   it('liefert Bilder als AVIF/WebP mit width, height, srcset und sizes', () => {

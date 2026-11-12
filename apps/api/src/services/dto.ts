@@ -84,6 +84,7 @@ export function toRevisionDto(
     gallery: gallery.map((g) => ({ mediaId: g.mediaId, altOverride: g.altOverride })),
     seoTitle: row.seoTitle,
     seoDescription: row.seoDescription,
+    indexable: row.indexable,
     ogMediaId: row.ogMediaId,
     publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),

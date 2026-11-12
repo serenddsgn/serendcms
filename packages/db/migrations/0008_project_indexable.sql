@@ -1,0 +1,1 @@
+ALTER TABLE "project_revisions" ADD COLUMN "indexable" boolean DEFAULT false NOT NULL;

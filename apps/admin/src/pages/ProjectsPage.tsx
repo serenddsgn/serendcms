@@ -200,6 +200,7 @@ export function ProjectEditPage() {
       liveUrl: l.liveUrl ?? '',
       seoTitle: l.seoTitle ?? '',
       seoDescription: l.seoDescription ?? '',
+      indexable: l.indexable ?? false,
       nextProjectId: l.nextProjectId ?? '',
     });
     setContent(l.content);
@@ -228,6 +229,7 @@ export function ProjectEditPage() {
       })),
       seoTitle: nn(v.seoTitle),
       seoDescription: nn(v.seoDescription),
+      indexable: !!v.indexable,
       ogMediaId: meta.ogMediaId ?? null,
       expectedRevisionNo: d.latest.revisionNo,
     };
@@ -468,11 +470,30 @@ export function ProjectEditPage() {
       <h2>SEO</h2>
       <div className="card grid2">
         <Field label="SEO-Titel">
-          <input {...form.register('seoTitle')} />
+          <input
+            {...form.register('seoTitle')}
+            placeholder="Leer: Titel – Leistungen · Studioname"
+          />
         </Field>
         <Field label="SEO-Beschreibung">
-          <input {...form.register('seoDescription')} />
+          <input
+            {...form.register('seoDescription')}
+            placeholder="Leer: Titel: Untertitel. Ein Projekt von Studioname."
+          />
         </Field>
+        <label className="row" style={{ gridColumn: '1 / -1' }}>
+          <input type="checkbox" {...form.register('indexable')} />
+          <span>
+            In Suchmaschinen anzeigen
+            <span className="muted small" style={{ display: 'block' }}>
+              Standard: aus (noindex). So konkurriert die Fallstudie nicht mit der Seite deines
+              Kunden bei Google. Für Besucher und per Link bleibt sie erreichbar. Einschalten am
+              besten nach Absprache mit dem Kunden. Ein Titel mit Leistung und Studioname („Shop mit
+              Konfigurator · serend.design“) hilft, für die Leistung statt für den Kundennamen
+              gefunden zu werden.
+            </span>
+          </span>
+        </label>
       </div>
       <TranslationPanel
         kind="projects"

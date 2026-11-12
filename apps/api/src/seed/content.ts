@@ -430,6 +430,7 @@ export async function seedContent(d: SeedDeps): Promise<void> {
         gallery: [],
         seoTitle: null,
         seoDescription: null,
+        indexable: false,
         ogMediaId: null,
       });
       groupId = detail.project.translationGroupId;
@@ -498,6 +499,7 @@ export async function seedContent(d: SeedDeps): Promise<void> {
       gallery,
       seoTitle: null,
       seoDescription: null,
+      indexable: false,
       ogMediaId: null,
     });
   }

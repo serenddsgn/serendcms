@@ -48,6 +48,7 @@ export const BuildProject = z.object({
     gallery: z.array(z.object({ mediaId: Uuid, altOverride: z.string().nullable() })),
     seoTitle: z.string().nullable(),
     seoDescription: z.string().nullable(),
+    indexable: z.boolean(),
     ogMediaId: Uuid.nullable(),
     publishedAt: z.iso.datetime(),
   }),

@@ -149,6 +149,8 @@ export const projectRevisions = pgTable(
     schemaVersion: integer('schema_version').notNull(),
     seoTitle: text('seo_title'),
     seoDescription: text('seo_description'),
+    /** Standard false: Kundenprojekte stehen auf noindex, damit sie nicht mit der Seite des Kunden konkurrieren. */
+    indexable: boolean('indexable').notNull().default(false),
     ogMediaId: uuid('og_media_id').references(() => media.id, { onDelete: 'restrict' }),
     /** NULL = Entwurf. Veröffentlichte Revisionen sind unveränderlich. */
     publishedAt: ts('published_at'),

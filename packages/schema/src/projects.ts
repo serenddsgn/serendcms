@@ -42,6 +42,8 @@ export const ProjectRevisionInput = z.object({
   gallery: z.array(GalleryItem).max(30).default([]),
   seoTitle: z.string().trim().max(70).nullable().default(null),
   seoDescription: z.string().trim().max(200).nullable().default(null),
+  /** In Suchmaschinen anzeigen. Standard: nein (noindex), damit die Fallstudie nicht mit der Seite des Kunden konkurriert. */
+  indexable: z.boolean().default(false),
   ogMediaId: Uuid.nullable().default(null),
 });
 export type ProjectRevisionInput = z.infer<typeof ProjectRevisionInput>;
@@ -137,6 +139,7 @@ export const ProjectRevisionDto = z.object({
   gallery: z.array(GalleryItem),
   seoTitle: z.string().nullable(),
   seoDescription: z.string().nullable(),
+  indexable: z.boolean(),
   ogMediaId: Uuid.nullable(),
   publishedAt: z.iso.datetime().nullable(),
   createdAt: z.iso.datetime(),

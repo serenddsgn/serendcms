@@ -30,6 +30,8 @@ export interface UiStrings {
   allProjects: string;
   dockLabel: string;
   newest: string;
+  /** Meta-Beschreibung von Projekten: „… Ein Projekt von serend.design.“ */
+  seoBy: string;
   workedFor: string;
   /** Block am Ende eines Projekts: persönlicher Kontakt; cardCta ist der Link in der mitlaufenden Karte */
   follow: {

@@ -44,6 +44,7 @@ function revisionValues(
     schemaVersion: CONTENT_SCHEMA_VERSION,
     seoTitle: input.seoTitle,
     seoDescription: input.seoDescription,
+    indexable: input.indexable,
     ogMediaId: input.ogMediaId,
   };
 }
@@ -536,6 +537,7 @@ export function createProjectsService({ db, onPublishedChange }: ProjectsService
           gallery: gallery.map((g) => ({ mediaId: g.mediaId, altOverride: null })),
           seoTitle: null,
           seoDescription: null,
+          indexable: latest.indexable,
           ogMediaId: latest.ogMediaId,
         };
         const revision = await repo.insertRevision({

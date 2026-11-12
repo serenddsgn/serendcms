@@ -113,6 +113,7 @@ export function createPreviewService({
             gallery: gallery.map((g) => ({ mediaId: g.mediaId, altOverride: g.altOverride })),
             seoTitle: latest.seoTitle,
             seoDescription: latest.seoDescription,
+            indexable: latest.indexable,
             ogMediaId: latest.ogMediaId,
             publishedAt: latest.updatedAt.toISOString(),
           },

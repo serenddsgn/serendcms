@@ -305,6 +305,7 @@ export function draftBody(
     gallery: l.gallery,
     seoTitle: l.seoTitle,
     seoDescription: l.seoDescription,
+    indexable: l.indexable,
     ogMediaId: l.ogMediaId,
     ...over,
   };

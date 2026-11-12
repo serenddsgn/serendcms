@@ -7,12 +7,16 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 export const GET: APIRoute = async () => {
   await loadData();
-  const urls = allEntries().map((e) => {
+  // Projekte ohne Freigabe für Suchmaschinen (noindex) gehören nicht in die Sitemap
+  const listed = allEntries().filter((e) => e.kind !== 'project' || e.project.revision.indexable);
+  const urls = listed.map((e) => {
     const links = Object.entries(e.alternates).map(
       ([l, p]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${esc(abs(p))}"/>`,
     );
     if (e.alternates.de)
-      links.push(`    <xhtml:link rel="alternate" hreflang="x-default" href="${esc(abs(e.alternates.de))}"/>`);
+      links.push(
+        `    <xhtml:link rel="alternate" hreflang="x-default" href="${esc(abs(e.alternates.de))}"/>`,
+      );
     const alt = links.join('\n');
     return `  <url>\n    <loc>${esc(abs(e.url))}</loc>\n    <lastmod>${e.lastmod.slice(0, 10)}</lastmod>\n${alt}\n  </url>`;
   });

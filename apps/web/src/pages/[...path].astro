@@ -21,9 +21,9 @@ import {
   ProjectFollowUp,
   ProjectHero,
 } from '../components/Project';
-import { loadData, pageFor, projectsFor, resolveTarget, setting, studioPortraitId } from '../lib/data';
+import { categoryName, loadData, pageFor, projectsFor, resolveTarget, setting, studioPortraitId } from '../lib/data';
 import { allEntries, findEntry, mdPath, ogPath, routeParam, type Entry } from '../lib/pages';
-import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText } from '../lib/seo';
+import { breadcrumbJsonLd, creativeWorkJsonLd, organizationJsonLd, plainText, serviceJsonLd } from '../lib/seo';
 import { data } from '../lib/data';
 import { t } from '../i18n';
 
@@ -55,11 +55,16 @@ let ogType: 'website' | 'article' = 'website';
 
 if (entry.kind === 'project') {
   const r = entry.project.revision;
-  title = r.seoTitle ?? r.title;
-  description = r.seoDescription ?? (r.subtitle ? plainText(r.subtitle) : undefined);
+  // Titel mit Leistung und Studio („Shop mit Konfigurator · serend.design“), damit die Fallstudie für die Leistung gefunden
+  // wird und nicht mit dem Namen des Kunden konkurriert; die Marke hängt Base.astro an.
+  title = r.seoTitle ?? `${r.title} – ${r.categories.map((c) => categoryName(locale, c)).join(', ')}`;
+  description =
+    r.seoDescription ??
+    `${r.title}${r.subtitle ? `: ${plainText(r.subtitle)}` : ''} ${ui.seoBy} ${seo.siteName}.`.slice(0, 200);
   ogType = 'article';
   jsonLd = [
     creativeWorkJsonLd(entry.project, entry.url, ogImage, data()),
+    serviceJsonLd(entry.project, entry.url),
     breadcrumbJsonLd([
       { name: ui.breadcrumbHome, path: homeUrl },
       { name: projectsPage.revision.title, path: projectsUrl },
@@ -91,7 +96,7 @@ const blocks =
       ? ContentPageContent.parse(entry.page.revision.content)
       : [];
 ---
-<Base locale={locale} title={title} description={description} path={entry.url} alternates={entry.alternates} ogImage={ogImage} ogType={ogType} jsonLd={jsonLd} mdPath={mdPath(entry)}>
+<Base noindex={entry.kind === 'project' && !entry.project.revision.indexable} followLinks locale={locale} title={title} description={description} path={entry.url} alternates={entry.alternates} ogImage={ogImage} ogType={ogType} jsonLd={jsonLd} mdPath={mdPath(entry)}>
   {entry.kind === 'project' ? (
     <>
       <ProjectHero p={entry.project} locale={locale} />

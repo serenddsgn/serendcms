@@ -33,6 +33,7 @@ export const de: UiStrings = {
   allProjects: 'Alle Projekte',
   dockLabel: 'Projekte durchblättern',
   newest: 'Neu',
+  seoBy: 'Ein Projekt von',
   workedFor: 'Gearbeitet für',
   follow: {
     eyebrow: 'Dein Projekt',

@@ -53,6 +53,7 @@ export function createBuildService({ db, storage }: { db: Database; storage: Sto
           .map((g) => ({ mediaId: g.mediaId, altOverride: g.altOverride })),
         seoTitle: revision.seoTitle,
         seoDescription: revision.seoDescription,
+        indexable: revision.indexable,
         ogMediaId: revision.ogMediaId,
         // Veröffentlichte Revisionen haben immer einen Zeitstempel.
         publishedAt: (revision.publishedAt ?? revision.createdAt).toISOString(),
