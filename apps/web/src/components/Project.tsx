@@ -64,10 +64,6 @@ export function ProjectHero({ p, locale }: { p: BuildProject; locale: Locale }) 
             <dt class="mono">{ui.area}</dt>
             <dd>{area}</dd>
           </div>
-          <div>
-            <dt class="mono">{ui.year}</dt>
-            <dd>{p.revision.year}</dd>
-          </div>
           <div style="border-bottom:1px solid var(--line)" hidden={!p.revision.liveUrl}>
             <dt class="mono">{ui.live}</dt>
             <dd>

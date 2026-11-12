@@ -17,11 +17,9 @@ export interface UiStrings {
   colNr: string;
   colClient: string;
   colArea: string;
-  colYear: string;
   caseLabel: string;
   client: string;
   area: string;
-  year: string;
   live: string;
   chapters: string;
   stripLabel: string;

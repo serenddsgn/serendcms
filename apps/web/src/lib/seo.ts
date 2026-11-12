@@ -70,8 +70,6 @@ export function creativeWorkJsonLd(
     ...(p.revision.subtitle && { description: plainText(p.revision.subtitle) }),
     url: abs(url),
     inLanguage: p.locale,
-    dateCreated: String(p.revision.year),
-    datePublished: p.revision.publishedAt,
     creator: { '@id': abs('/#organization') },
     keywords: p.revision.categories.map((c) => categoryName(p.locale, c)).join(', '),
     ...(imageUrl && { image: abs(imageUrl) }),

@@ -18,7 +18,6 @@ function context(locale: Locale): MarkdownContext {
     projects: projectsFor(locale).map((p) => ({
       title: p.revision.title,
       url: abs(projectUrl(p)),
-      year: p.revision.year,
       categories: p.revision.categories.map((c) => categoryName(locale, c)),
     })),
     services: servicesFor(locale).map((s) => ({ name: s.name, description: s.description })),
@@ -45,7 +44,6 @@ export function markdownFor(e: Entry): string {
     const meta = [
       r.client ? `- ${ui.client}: ${r.client}` : null,
       `- ${ui.area}: ${r.categories.map((c) => categoryName(e.locale, c)).join(', ')}`,
-      `- ${ui.year}: ${r.year}`,
       r.liveUrl ? `- ${ui.live}: ${r.liveUrl}` : null,
       `- URL: ${abs(e.url)}`,
     ].filter(Boolean);

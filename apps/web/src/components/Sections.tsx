@@ -59,9 +59,7 @@ function HeroProject({
       />
       <span class="hp-cap">
         <span class="hp-tx">
-          <span class="eyebrow">
-            {ui.newest} · {p.revision.year}
-          </span>
+          <span class="eyebrow">{ui.newest}</span>
           <b>{p.revision.title}</b>
           <span class="hp-cat">{area}</span>
         </span>
@@ -452,9 +450,6 @@ export function ProjectIndex({ b, locale }: { b: B<typeof ProjectIndexBlock>; lo
             </span>
             <span class="t">
               <b>{p.revision.title}</b>
-              <span class="mono" style="color:var(--mute)">
-                {p.revision.year}
-              </span>
             </span>
             {p.revision.subtitle && <span class="sub">{plainText(p.revision.subtitle)}</span>}
             <span class="pills">
@@ -476,9 +471,6 @@ export function ProjectIndex({ b, locale }: { b: B<typeof ProjectIndexBlock>; lo
           <span class="mono hm" style="color:var(--mute)">
             {ui.colArea}
           </span>
-          <span class="mono hm" style="color:var(--mute)">
-            {ui.colYear}
-          </span>
           <span />
         </div>
         {list.map((p, i) => (
@@ -497,9 +489,6 @@ export function ProjectIndex({ b, locale }: { b: B<typeof ProjectIndexBlock>; lo
             </span>
             <span class="hm" style="color:var(--mute)">
               {cats(p)}
-            </span>
-            <span class="mono hm" style="color:var(--mute)">
-              {p.revision.year}
             </span>
             <ArrowIcon size={20} />
             <span class="peek">

@@ -12,7 +12,6 @@ const ctx: MarkdownContext = {
     {
       title: 'Dolce & Falcone',
       url: '/de/projekte/dolce-falcone',
-      year: 2026,
       categories: ['E-Commerce'],
     },
   ],
@@ -122,7 +121,7 @@ describe('Markdown-Serialisierung', () => {
       ],
       ctx,
     );
-    expect(md).toContain('- [Dolce & Falcone](/de/projekte/dolce-falcone) (2026, E-Commerce)');
+    expect(md).toContain('- [Dolce & Falcone](/de/projekte/dolce-falcone) (E-Commerce)');
     expect(md).toContain('- **Webdesign**: Individuelle Funktionen.');
   });
 });

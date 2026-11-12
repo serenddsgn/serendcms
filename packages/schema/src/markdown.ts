@@ -3,7 +3,7 @@ import { splitParagraphs } from './inline-markup.js';
 
 /** Kontext für datengetriebene Blöcke und Link-/Medienauflösung. */
 export interface MarkdownContext {
-  projects: { title: string; url: string; year: number; categories: string[] }[];
+  projects: { title: string; url: string; categories: string[] }[];
   services: { name: string; description: string }[];
   /** Löst Link-Ziele zu Pfaden auf; unbekannte Ziele liefern null. */
   resolveLink: (target: unknown) => string | null;
@@ -127,5 +127,5 @@ export function blocksToMarkdown(blocks: readonly unknown[], ctx: MarkdownContex
 }
 
 function projectLine(p: MarkdownContext['projects'][number]): string {
-  return `- [${p.title}](${p.url}) (${p.year}, ${p.categories.join(', ')})`;
+  return `- [${p.title}](${p.url}) (${p.categories.join(', ')})`;
 }
